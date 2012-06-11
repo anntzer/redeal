@@ -1,0 +1,7 @@
+Copyright (C) 2012, Antony Lee
+
+Redeal is released under the GNU General Public License v3.0.
+See the file, GPL-3.0.txt, for the complete text of the license.
+
+The DDS code was obtained from the source of Thomas Andrews' Deal, which is
+under a different license and copyright.
