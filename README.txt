@@ -1,7 +1,8 @@
 Redeal: a reimplementation of Thomas Andrews' Deal in Python.
 =============================================================
 
-Redeal runs under Python 3.  See script.py for an example simulation.
+Redeal runs under Python 2.7 or higher.  See script.py for an example
+simulation.
 
 GNU make and g++ are needed to build Bo Haglund's DDS v.1.1.9 (the latest
 version I could find that can easily be built on Linux -- extracted and

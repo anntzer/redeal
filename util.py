@@ -1,3 +1,7 @@
+# vim: set fileencoding=utf-8
+from __future__ import division, print_function, unicode_literals
+
+
 class Immutable(object):
     """An object whose attributes cannot be set, except reify class attributes.
     """

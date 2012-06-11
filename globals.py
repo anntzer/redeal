@@ -1,3 +1,5 @@
+# vim: set fileencoding=utf-8
+from __future__ import division, print_function, unicode_literals
 from collections import namedtuple as _namedtuple
 from itertools import product as _product
 

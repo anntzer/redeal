@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# vim: set fileencoding=utf-8
+from __future__ import division, print_function, unicode_literals
 from argparse import ArgumentParser
 from array import array
 from bisect import bisect
@@ -12,7 +14,7 @@ from globals import *
 from util import Immutable, reify
 
 
-class Shape:
+class Shape(object):
     """A shape specification, represented as a 0-1 table."""
 
     JOKER = "x"
@@ -21,7 +23,7 @@ class Shape:
 
     def __init__(self, init=None):
         """Initialize with a string."""
-        self.table = array("b")
+        self.table = array(str("b"))
         self.table.fromlist([0] * (PER_SUIT + 1) ** N_SUITS)
         if init:
             self.insert([self.TABLE[char.lower()] for char in init])
@@ -30,7 +32,7 @@ class Shape:
     def from_table(cls, table):
         """Initialize from a table."""
         self = cls()
-        self.table = array("b")
+        self.table = array(str("b"))
         self.table.fromlist(list(table))
         return self
 
@@ -78,7 +80,7 @@ class Shape:
         return self.table[self.flatten(int_shape)]
 
     def __add__(self, other):
-        table = array("b")
+        table = array(str("b"))
         table.fromlist([x or y for x, y in zip(self.table, other.table)])
         return Shape.from_table(table)
 
@@ -92,7 +94,7 @@ Balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
 SemiBalanced = Balanced + Shape("(5422)") + Shape("(6322)")
 
 
-class Deal:
+class Deal(object):
     """A deal, represented as a list of cards."""
 
     def __init__(self, predeal=None):
@@ -116,6 +118,9 @@ class Deal:
 
     def __str__(self):
         return " ".join(map(str, self.hands))
+
+    def __unicode__(self):
+        return " ".join(map(unicode, self.hands))
 
     @property
     def _long_str(self):
@@ -225,7 +230,7 @@ class Hand(Immutable):
 
 
 class Contract:
-    def __init__(self, level, strain, *, doubled=0, vul=False):
+    def __init__(self, level, strain, doubled=0, vul=False):
         self.level = level
         self.strain = strain
         self.doubled = doubled
@@ -349,6 +354,7 @@ if __name__ == "__main__":
     max_tries = args.N
     if args.l:
         Deal.__str__ = lambda self: self._long_str
+        Deal.__unicode__ = lambda self: self._long_str
 
     initial()
     tries = generate(n_hands, max_tries, predeal, accept)

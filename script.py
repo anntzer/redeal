@@ -1,3 +1,4 @@
+# vim: set fileencoding=utf-8
 """An example script for redeal.
 
 The following problem was presented on BridgeWinners.  You hold 652 K752 53
@@ -13,6 +14,8 @@ strategy, on average, at BAM scoring.
 The following names will be imported from the simulation module: `predeal`,
 `initial`, `accept` and `final`.
 """
+
+from __future__ import division, print_function, unicode_literals
 
 from collections import Counter
 
