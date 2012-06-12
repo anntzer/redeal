@@ -169,7 +169,7 @@ class Hand(tuple, object):
         """Initialize with a list of cards, or with another hand."""
         return tuple.__new__(
             cls,
-            (Holding(sorted(card for card in cards if card.suit == suit))
+            (Holding(card for card in cards if card.suit == suit)
              for suit in range(N_SUITS)))
 
     @classmethod
@@ -224,6 +224,10 @@ class Hand(tuple, object):
         return sum(holding.hcp for holding in self)
 
     @reify
+    def losers(self):
+        return sum(holding.losers for holding in self)
+
+    @reify
     def _bits(self):
         """Used for dds interop."""
         # bit #i (0<=i<=12) set if card i+2 held
@@ -235,11 +239,29 @@ class Holding(tuple, object):
     """A one-suit holding, represented as a tuple of cards."""
 
     def __new__(cls, cards):
-        return tuple.__new__(cls, tuple(cards))
+        return tuple.__new__(cls, tuple(sorted(cards)))
 
     @reify
     def hcp(self):
         return sum(HCP[card.rank] for card in self)
+
+    _A, _K, _Q, _J, _T = [RANKS.index(rank) for rank in "AKQJT"]
+    @reify
+    def losers(self):
+        if len(self) == 0:
+            return 0
+        losers = 0
+        if not any(card.rank == self._A for card in self):
+            losers += 1
+        if len(self) >= 2 and not any(card.rank == self._K for card in self):
+            losers += 1
+        if len(self) >= 3:
+            if not any(card.rank == self._Q for card in self):
+                losers += 1
+            elif (losers == 2 and
+                  not any(card.rank in [self._J, self._T] for card in self)):
+                losers += 0.5
+        return losers
 
 
 class Contract(object):
@@ -309,6 +331,16 @@ H = Hand.from_str
 C = Contract.from_str
 
 
+def defvector(*vals):
+    """Additive holding evaluator.
+    
+    For example, `defvector(4, 3, 2, 1)(holding)` returns the HCPs of
+    `holding`.
+    """
+    return lambda holding: sum(val for rank, val in enumerate(vals)
+                               if any(card.rank == rank for card in holding))
+
+
 def generate(n_hands, max_tries, predeal, accept):
     """Repeatedly pass hands to an `accept` function until enough are accepted.
     """
@@ -372,7 +404,8 @@ if __name__ == "__main__":
         accept = lambda found, deal: _accept(deal)
     else:
         accept = _accept
-    final = verbose_getattr("final", lambda tries: None)
+    final = verbose_getattr("final",
+                            lambda tries: print("Tries: {}".format(tries)))
     n_hands = args.n
     max_tries = args.N
     if args.l:

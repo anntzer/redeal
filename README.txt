@@ -9,5 +9,5 @@ version I could find that can easily be built on Linux -- extracted and
 slightly modified from the source of Thomas Andrews' Deal).  Simply run `make`
 in the dds-1.1.9 folder.
 
-Then run `./redeal.py --help`, or `./redeal.py -n 10` to get a few hands, or
-`./redeal.py -n 10 script` for an example simulation.
+Then run `./redeal.py --help`, or `./redeal.py` to get a few hands, or
+`./redeal.py examples/deal1.py` for an example simulation.
