@@ -6,13 +6,14 @@ from array import array
 from bisect import bisect
 from functools import reduce
 import imp
-from itertools import permutations
+import inspect
+from itertools import chain, permutations
 from os import path
 import random
 
 from dds import solve_board
 from globals import *
-from util import Immutable, reify
+from util import reify
 
 
 class Shape(object):
@@ -95,33 +96,33 @@ Balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
 SemiBalanced = Balanced + Shape("(5422)") + Shape("(6322)")
 
 
-class Deal(object):
-    """A deal, represented as a list of cards."""
+class Deal(tuple, object):
+    """A deal, represented as a tuple of hands."""
 
-    def __init__(self, predeal=None):
-        """Randomly deal a hand, with map of predealt cards."""
+    def __new__(cls, predeal=None):
+        """Randomly deal a hand, with map of predealt hands."""
         predeal = predeal or {}
-        for seat in SEATS:
-            predeal.setdefault(seat, [])
-        predeal = {SEATS.index(seat.upper()): list(pre)
+        predeal = {seat.upper(): reduce(Hand.__add__, pre, ())
                    for seat, pre in predeal.items()}
-        predealt_cards = reduce(list.__add__, predeal.values())
+        predealt_cards = reduce(tuple.__add__, predeal.values(), ())
         predealt_set = set(predealt_cards)
         if len(predealt_set) < len(predealt_cards):
             raise Exception("Same card dealt twice.")
         cards = [card for card in FULL_DECK if card not in predealt_set]
         random.shuffle(cards)
-        self.hands = [None] * N_SUITS
-        for seat, pre in predeal.items():
+        hands = []
+        for seat in SEATS:
+            pre = predeal.get(seat, ())
             to_deal = PER_SUIT - len(pre)
-            hand, cards = pre + cards[:to_deal], cards[to_deal:]
-            self.hands[seat] = Hand(hand)
+            hand, cards = pre + tuple(cards[:to_deal]), cards[to_deal:]
+            hands.append(Hand(hand))
+        return tuple.__new__(cls, hands)
 
     def __str__(self):
-        return " ".join(map(str, self.hands))
+        return " ".join(map(str, self))
 
     def __unicode__(self):
-        return " ".join(map(unicode, self.hands))
+        return " ".join(map(unicode, self))
 
     @property
     def _long_str(self):
@@ -136,34 +137,40 @@ class Deal(object):
             s += " " * 7 + line + "\n"
         return s
 
+    _N = SEATS.index("N")
     @property
     def north(self):
-        return self.hands[SEATS.index("N")]
+        return self[self._N]
 
+    _E = SEATS.index("E")
     @property
     def east(self):
-        return self.hands[SEATS.index("E")]
+        return self[self._E]
 
+    _S = SEATS.index("S")
     @property
     def south(self):
-        return self.hands[SEATS.index("S")]
+        return self[self._S]
 
+    _W = SEATS.index("W")
     @property
     def west(self):
-        return self.hands[SEATS.index("W")]
+        return self[self._W]
 
     @property
-    def _deal(self):
-        return [hand._bits for hand in self.hands]
+    def _bits(self):
+        return [hand._bits for hand in self]
 
 
-class Hand(Immutable):
-    """A hand, represented as a list of cards."""
+class Hand(tuple, object):
+    """A hand, represented as a tuple of holdings."""
 
-    def __init__(self, cards):
-        """Initialize with a list of cards."""
-        cards = sorted(cards)
-        object.__setattr__(self, "cards", tuple(cards))
+    def __new__(cls, cards):
+        """Initialize with a list of cards, or with another hand."""
+        return tuple.__new__(
+            cls,
+            (Holding(sorted(card for card in cards if card.suit == suit))
+             for suit in range(N_SUITS)))
 
     @classmethod
     def from_str(cls, init):
@@ -178,59 +185,64 @@ class Hand(Immutable):
 
     def __str__(self):
         return "".join(
-            suit_symbol +
-            "".join(RANKS[card.rank] for card in self.cards if card.suit == suit)
-            for suit, suit_symbol in enumerate(SUITS_SYM))
+            suit_symbol + "".join(RANKS[card.rank] for card in holding)
+            for suit_symbol, holding in zip(SUITS_SYM, self))
 
     @property
     def _long_str(self):
         """A pretty-printed version of the hand."""
         return "\n" + "\n".join(
-            suit_symbol +
-            "".join(RANKS[card.rank] for card in self.cards if card.suit == suit)
-            for suit, suit_symbol in enumerate(SUITS_SYM))
+            suit_symbol + "".join(RANKS[card.rank] for card in holding)
+            for suit_symbol, holding in zip(SUITS_SYM, self))
 
-    def __len__(self):
-        return len(self.cards)
-
-    def __iter__(self):
-        return iter(self.cards)
-
+    _S = SUITS.index("S")
     @reify
     def spades(self):
-        return type(self)([c for c in self.cards if c.suit == 0])
+        return self[self._S]
 
+    _H = SUITS.index("H")
     @reify
     def hearts(self):
-        return type(self)([c for c in self.cards if c.suit == 1])
+        return self[self._H]
 
+    _D = SUITS.index("D")
     @reify
     def diamonds(self):
-        return type(self)([c for c in self.cards if c.suit == 2])
+        return self[self._D]
 
+    _C = SUITS.index("C")
     @reify
     def clubs(self):
-        return type(self)([c for c in self.cards if c.suit == 3])
+        return self[self._C]
 
     @reify
     def shape(self):
-        return [len([c for c in self.cards if c.suit == suit])
-                for suit in range(N_SUITS)]
+        return map(len, self)
 
     @reify
     def hcp(self):
-        return sum(HCP[c.rank] for c in self.cards)
+        return sum(holding.hcp for holding in self)
 
     @reify
     def _bits(self):
         """Used for dds interop."""
         # bit #i (0<=i<=12) set if card i+2 held
-        return [sum(1 << (PER_SUIT - 1 - rank) for rank in range(PER_SUIT)
-                    if (suit, rank) in self.cards)
-                for suit in range(N_SUITS)]
+        return [sum(1 << (PER_SUIT - 1 - card.rank) for card in holding)
+                for holding in self]
 
 
-class Contract:
+class Holding(tuple, object):
+    """A one-suit holding, represented as a tuple of cards."""
+
+    def __new__(cls, cards):
+        return tuple.__new__(cls, tuple(cards))
+
+    @reify
+    def hcp(self):
+        return sum(HCP[card.rank] for card in self)
+
+
+class Contract(object):
     def __init__(self, level, strain, doubled=0, vul=False):
         self.level = level
         self.strain = strain
@@ -354,8 +366,12 @@ if __name__ == "__main__":
             return default
     initial = verbose_getattr("initial", lambda: None)
     predeal = verbose_getattr("predeal", {})
-    accept = verbose_getattr("accept",
-                             lambda found, deal: print(str(deal)) or True)
+    _accept = verbose_getattr("accept",
+                              lambda found, deal: print(str(deal)) or True)
+    if len(inspect.getargspec(_accept).args) == 1:
+        accept = lambda found, deal: _accept(deal)
+    else:
+        accept = _accept
     final = verbose_getattr("final", lambda tries: None)
     n_hands = args.n
     max_tries = args.N

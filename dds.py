@@ -21,7 +21,7 @@ class _Deal(Structure):
     @classmethod
     def from_deal(cls, deal):
         self = cls()
-        for i, hand in enumerate(deal._deal):
+        for i, hand in enumerate(deal._bits):
             for j, holding in enumerate(hand):
                 self.cards[i][j] = holding
         return self

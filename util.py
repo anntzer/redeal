@@ -2,17 +2,6 @@
 from __future__ import division, print_function, unicode_literals
 
 
-class Immutable(object):
-    """An object whose attributes cannot be set, except reify class attributes.
-    """
-
-    def __setattr__(self, attr, val):
-        if isinstance(type(self).__dict__.get(attr, None), reify):
-            object.__setattr__(self, attr, val)
-        else:
-            raise Exception("{} is immutable.".format(self))
-
-
 class reify(object):
     """Auto-destructing property, from Pyramid code."""
 
