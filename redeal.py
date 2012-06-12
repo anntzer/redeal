@@ -11,9 +11,13 @@ from itertools import chain, permutations
 from os import path
 import random
 
-from dds import solve_board
 from globals import *
 from util import reify
+try:
+    from dds import solve_board
+except OSError:
+    def solve_board(deal, strain, declarer):
+        raise Exception("Unable to load DDS.  `solve_board` is unavailable.")
 
 
 class Shape(object):
