@@ -5,8 +5,9 @@ from argparse import ArgumentParser
 from array import array
 from bisect import bisect
 from functools import reduce
-from importlib import import_module
+import imp
 from itertools import permutations
+from os import path
 import random
 
 from dds import solve_board
@@ -309,11 +310,11 @@ def generate(n_hands, max_tries, predeal, accept):
     return i + 1
 
 
-def matchpoint(my, other):
+def matchpoints(my, other):
     return (1 + (my > other) - (my < other)) / 2
 
 
-def imp(my, other):
+def imps(my, other):
     imp_table = [15, 45, 85, 125, 165, 215, 265, 315, 365, 425, 495, 595,
         745, 895, 1095, 1295, 1495, 1745, 1995, 2245, 2495, 2995, 3495, 3995]
     return bisect(imp_table, abs(my - other)) * (1 if my > other else -1)
@@ -328,7 +329,7 @@ if __name__ == "__main__":
     parser.add_argument("-N", type=int,
         help="the maximum number of tries (defaults to 1000×n)")
     parser.add_argument("script", nargs="?",
-        help="module that can be imported as `import module` (without `.py`)")
+        help="path to script")
     parser.add_argument("-l", action="store_true",
         help="long output for diagrams")
     parser.add_argument("-v", action="store_true",
@@ -336,7 +337,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.N is None:
         args.N = 1000 * args.n
-    module = import_module(args.script) if args.script else None
+    if args.script is None:
+        module = None
+    else:
+        folder, name = path.split(path.splitext(args.script)[0])
+        file, pathname, description = imp.find_module(name, [folder])
+        module = imp.load_module(name, file, pathname, description)
+        file.close()
 
     def verbose_getattr(attr, default):
         if hasattr(module, attr):
