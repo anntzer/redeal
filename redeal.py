@@ -399,7 +399,7 @@ if __name__ == "__main__":
     initial = verbose_getattr("initial", lambda: None)
     predeal = verbose_getattr("predeal", {})
     _accept = verbose_getattr("accept",
-                              lambda found, deal: print(str(deal)) or True)
+        lambda found, deal: print("{}".format(deal)) or True)
     if len(inspect.getargspec(_accept).args) == 1:
         accept = lambda found, deal: _accept(deal)
     else:

@@ -11,3 +11,4 @@ in the dds-1.1.9 folder.
 
 Then run `./redeal.py --help`, or `./redeal.py` to get a few hands, or
 `./redeal.py examples/deal1.py` for an example simulation.
+`./run_all_examples.sh` will go through all the examples.
