@@ -358,7 +358,7 @@ def generate(n_hands, max_tries, predeal, accept, verbose=False):
         if accept(deal):
             found += 1
             if verbose:
-                print("(hand #{}, found after {} tries)".format(found, i))
+                print("(hand #{}, found after {} tries)".format(found, i + 1))
         if found >= n_hands:
             break
     return i + 1
