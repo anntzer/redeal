@@ -6,7 +6,6 @@ from array import array
 from bisect import bisect
 from functools import reduce
 import imp
-import inspect
 from itertools import chain, permutations
 from os import path
 import random
@@ -18,6 +17,11 @@ try:
 except OSError:
     def solve_board(deal, strain, declarer):
         raise Exception("Unable to load DDS.  `solve_board` is unavailable.")
+
+
+__all__ = ["solve_board", "Shape", "Balanced", "SemiBalanced",
+           "Deal", "Hand", "Holding", "Contract", "H", "C",
+           "defvector", "matchpoints", "imps"]
 
 
 class Shape(object):
@@ -106,7 +110,7 @@ class Deal(tuple, object):
     def __new__(cls, predeal=None):
         """Randomly deal a hand, with map of predealt hands."""
         predeal = predeal or {}
-        predeal = {seat.upper(): reduce(Hand.__add__, pre, ())
+        predeal = {seat: reduce(Hand.__add__, pre, ())
                    for seat, pre in predeal.items()}
         predealt_cards = reduce(tuple.__add__, predeal.values(), ())
         predealt_set = set(predealt_cards)
@@ -345,14 +349,16 @@ def defvector(*vals):
                                if any(card.rank == rank for card in holding))
 
 
-def generate(n_hands, max_tries, predeal, accept):
+def generate(n_hands, max_tries, predeal, accept, verbose=False):
     """Repeatedly pass hands to an `accept` function until enough are accepted.
     """
     found = 0
     for i in range(max_tries):
         deal = Deal(predeal)
-        if accept(found, deal):
+        if accept(deal):
             found += 1
+            if verbose:
+                print("(hand #{}, found after {} tries)".format(found, i))
         if found >= n_hands:
             break
     return i + 1
@@ -374,17 +380,23 @@ if __name__ == "__main__":
         epilog="See script.py for an example")
     parser.add_argument("-n", type=int, default=10,
         help="the number of requested hands")
-    parser.add_argument("-N", type=int,
+    parser.add_argument("--max", type=int,
         help="the maximum number of tries (defaults to 1000×n)")
     parser.add_argument("script", nargs="?",
         help="path to script")
+    parser.add_argument("-N",
+        help="predealt North hand as string (overrides script)")
+    parser.add_argument("-E",
+        help="predealt East hand as string (overrides script)")
+    parser.add_argument("-S",
+        help="predealt West hand as string (overrides script)")
+    parser.add_argument("-W",
+        help="predealt South hand as string (overrides script)")
     parser.add_argument("-l", action="store_true",
         help="long output for diagrams")
     parser.add_argument("-v", action="store_true",
         help="be verbose")
     args = parser.parse_args()
-    if args.N is None:
-        args.N = 1000 * args.n
     if args.script is None:
         module = None
     else:
@@ -402,21 +414,19 @@ if __name__ == "__main__":
             return default
     initial = verbose_getattr("initial", lambda: None)
     predeal = verbose_getattr("predeal", {})
-    _accept = verbose_getattr("accept",
-        lambda found, deal: print("{}".format(deal)) or True)
-    if len(inspect.getargspec(_accept).args) == 1:
-        accept = lambda found, deal: _accept(deal)
-    else:
-        accept = _accept
+    for seat in SEATS:
+        if getattr(args, seat):
+            predeal[seat] = H(getattr(args, seat))
+    accept = verbose_getattr("accept",
+        lambda deal: print("{}".format(deal)) or True)
     final = verbose_getattr("final",
                             lambda tries: print("Tries: {}".format(tries)))
-    n_hands = args.n
-    max_tries = args.N
     if args.l:
         Deal.__str__ = lambda self: self._long_str
         Deal.__unicode__ = lambda self: self._long_str
 
     initial()
-    tries = generate(n_hands, max_tries, predeal, accept)
+    tries = generate(args.n, args.max or 1000 * args.n, predeal, accept,
+                     verbose=args.v)
     final(tries)
 

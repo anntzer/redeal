@@ -32,10 +32,9 @@ def initial():
     TABLE = [[Counter() for _ in range(5)] for _ in range(5)]
 
 
-# `accept` is called for each hand with the number of already found hands and
-# the currently dealt hand as arguments.  It must return True if the hand is
-# accepted, or False if not.
-def accept(found, deal):
+# `accept` is called for each hand with the currently dealt hand as argument.
+# It must return True if the hand is accepted, or False if not.
+def accept(deal):
     global TABLE
     # Deals have four properties: north, south, east, west.  Each of them is a
     # hand object, with properties spades, hearts, diamonds, clubs (that are
@@ -64,7 +63,7 @@ def accept(found, deal):
     # Respectively: pass 2N, bid 3N directly, go through Stayman, go through
     # puppet Stayman, and go through Stayman but prefer a 4-3 S fit to 3N.
     scores = [pass2N, bid3N, stayman, pstayman, majorgame]
-    print("{}: {} {}".format(found + 1, deal, " ".join(map(str, scores))))
+    print("{} {}".format(deal, " ".join(map(str, scores))))
     for i, scorei in enumerate(scores):
         for j, scorej in enumerate(scores):
             # Update the cross-matchpoint table.  `imp(my_score, their_score)`

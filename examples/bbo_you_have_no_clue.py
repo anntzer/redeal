@@ -7,7 +7,7 @@ from redeal import *
 predeal = {"S": H("T8 8762 KT4 KQ52")}
 
 
-def accept(found, deal):
+def accept(deal):
     global TABLE
     if not (15 <= deal.north.hcp <= 17 and deal.north.shape in Balanced):
         return False
@@ -36,7 +36,7 @@ def accept(found, deal):
         else:
             s16 = C("3H", True).score(hetricks)
     scores = [pass1N, s16, s17]
-    print("{}: {} {}".format(found + 1, deal, " ".join(map(str, scores))))
+    print("{} {}".format(deal, " ".join(map(str, scores))))
     global TABLE
     try:
         TABLE
