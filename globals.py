@@ -2,12 +2,14 @@
 from __future__ import division, print_function, unicode_literals
 from collections import namedtuple as _namedtuple
 from itertools import product as _product
+import sys as _sys
 
 
 SEATS = list("NESW")
 SUITS = list("SHDC")
 STRAINS = SUITS + ["N"]
-SUITS_SYM = list("♠♡♢♣")
+SUITS_SYM = (list("♠♡♢♣") if _sys.getdefaultencoding() == "utf-8"
+             else [" S", " H", " D", " C"])
 N_SUITS = len(SUITS)
 RANKS = list("AKQJT98765432")
 HCP = list(map(int, "4321000000000"))

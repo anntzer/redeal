@@ -1,20 +1,29 @@
 Redeal: a reimplementation of Thomas Andrews' Deal in Python.
 =============================================================
 
+Thomas Andrew's Deal is a deal generator: it outputs deals satisfying whatever
+conditions you specify -- deals with a double void, deals with a strong 2♣
+opener opposite a yarborough, etc.  Using Bo Haglund's double dummy solver, it
+can even solve the hands it has generated for you. Unfortunately, I have never
+really liked the language Deal uses for scripting: Tcl.  Redeal is thus my
+rewrite of Deal using another language: Python.
+
 Redeal runs under Python 2.7 or higher.  See the `examples/` folder for some
 example simulations.
 
-A double-dummy solver function is available through Bo Haglund's DDS v.1.1.9
-(the latest version I could find that can easily be built on Linux -- extracted
-and slightly modified from the source of Thomas Andrews' Deal), but you will
-need a C++ compiler.  If you have g++ and make, simply run `make` in the
-dds-1.1.9 folder; otherwise use the compiler of your choice.  If you cannot
+A double-dummy solver function is also available through Bo Haglund's DDS
+v.1.1.9 (the latest version I could find that can easily be built on Linux --
+extracted and slightly modified from the source of Thomas Andrews' Deal), but
+you will need a C++ compiler.  If you have g++ and make, simply run `make` in
+the dds-1.1.9 folder; otherwise use the compiler of your choice.  If you cannot
 compile the DDS library, Redeal will work fine but the `solve_board` function
 will be unavailable.
 
-Run `./redeal.py --help`, or `./redeal.py` to get a few hands, or `./redeal.py
-examples/deal1.py` for an example simulation.  `./run_all_examples.sh` will go
-through all the examples.
+Download everything, open a terminal (a.k.a. Command Prompt in Windows), `cd`
+to the directory where you downloaded the code and run `python redeal.py
+--help`, or `python redeal.py` to get a few hands, or `python redeal.py
+examples/deal1.py` for an example simulation.  `./run_all_examples.sh` (or
+`run_all_examples.bat` on Windows) will go through all the examples.
 
 An introductory tutorial
 ------------------------
@@ -23,13 +32,17 @@ All these examples come from Deal's documentation.
 
 ### Dealing hands
 
-Run `./redeal.py` at the command line to deal 10 hands, or `./redeal.py -n N`
-to deal N hands.
+Run `python redeal.py` at the command line to deal 10 hands, or `python
+redeal.py -n N` to deal N hands.
 
-    $ ./redeal.py -n2
+    $ python redeal.py -n2
     ♠AQ53♡QJ9♢K963♣T9 ♠K♡AK853♢AQ87♣A42 ♠976♡7642♢T2♣KJ73 ♠JT842♡T♢J54♣Q865
     ♠T7♡J862♢QT4♣8752 ♠Q93♡T95♢A32♣KQ94 ♠K854♡AK7♢KJ87♣T3 ♠AJ62♡Q43♢965♣AJ6
     Tries: 2
+
+Note that if your terminal does not support UTF-8 (e.g. Windows' Command
+Prompt, or possibly Mac's Terminal.app), suit symbols will be replaced by
+letters -- but the rest should work fine.
 
 Here, the number of tries is the same as the number of hands, as any hand is
 accepted.  This may not be the case in more complex cases.
@@ -39,7 +52,7 @@ accepted.  This may not be the case in more complex cases.
 Would you open 2 or 3♡ with ♠-♡KQJT62♢T9876♣84?  Well, let's deal a couple of
 hands to see how this would fare.
 
-    $ ./redeal.py -S"- KQJT62 T9876 84" -n25         
+    $ python redeal.py -S"- KQJT62 T9876 84" -n25
     ♠AT982♡854♢J42♣KT ♠KQ7♡A973♢AK5♣AQJ ♠♡KQJT62♢T9876♣84 ♠J6543♡♢Q3♣976532
     ♠85♡854♢K4♣JT9752 ♠K97643♡A97♢A♣KQ6 ♠♡KQJT62♢T9876♣84 ♠AQJT2♡3♢QJ532♣A3
     <... 23 other hands elided>
@@ -49,7 +62,7 @@ hands to see how this would fare.
 The default output is compact, but not very friendly.  What about more classic
 diagrams?  The `-l` flag is there for that!
 
-    $ ./redeal.py -l -n1
+    $ python redeal.py -l -n1
            
            ♠
            ♡632
@@ -71,19 +84,19 @@ diagrams?  The `-l` flag is there for that!
 ### Our first script
 
 Let's say we want a selection of deals in which north holds a one spade opener.
-For now, we will use a crude definition for an opening 1♠ call - we will
-require north to have 5 or more spades and 12 or more points.
+For now, we will use a crude definition for an opening 1♠ call -- we will
+require North to have 5 or more spades and 12 or more points.
 
 Here is the script we write (to a file we'll call onespade.py):
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
-            print(deal) # use print(unicode(deal)) if using Python2
+            print(deal) # use print(unicode(deal)) if using Python2 on Linux
             return True
 
 and run it as follows:
 
-    $ ./redeal.py examples/onespade.py # put the path to onespade.py
+    $ python redeal.py examples/onespade.py # put the path to onespade.py
     ♠AJ854♡J986♢T♣AKJ ♠KQ96♡2♢KJ874♣T52 ♠T732♡AKQT43♢Q2♣3 ♠♡75♢A9653♣Q98764
     ♠AQ875♡T87♢A♣QJ84 ♠T943♡♢9752♣T9652 ♠J6♡AQJ9432♢J6♣A7 ♠K2♡K65♢KQT843♣K3
     ♠KQ9874♡J4♢J43♣KQ ♠J65♡A873♢2♣AJT87 ♠A2♡K65♢AT975♣652 ♠T3♡QT92♢KQ86♣943
@@ -109,7 +122,7 @@ increment the counter of accepted hands.
 
 Redeal gives more information about its progress when given the `-v` flag:
 
-    ± ./redeal.py -v examples/onespade.py
+    ± python redeal.py -v examples/onespade.py
     Using default for initial.
     Using default for predeal.
     Using default for final.
@@ -143,7 +156,7 @@ This is also a good way to check that it is not the default `accept` function
 Your partner opens 1♠ and you hold ♠-♡96532♢A864♣T962... do you pass or bid
 a forcing NT?  Let's generate a few hands so that we can see how we would fare.
 
-    $ ./redeal.py -S"- 96532 A864 T962" examples/onespade.py
+    $ python redeal.py -S"- 96532 A864 T962" examples/onespade.py
     ♠A8643♡A8♢QT72♣Q8 ♠QT972♡Q♢K95♣K754 ♠♡96532♢A864♣T962 ♠KJ5♡KJT74♢J3♣AJ3
     ♠AQ864♡4♢KJT72♣QJ ♠JT7♡AJT8♢Q3♣A743 ♠♡96532♢A864♣T962 ♠K9532♡KQ7♢95♣K85
     ♠AQT765♡7♢J72♣KQ8 ♠K9832♡AKT♢K953♣5 ♠♡96532♢A864♣T962 ♠J4♡QJ84♢QT♣AJ743
@@ -208,3 +221,5 @@ one suit at a time, and attribute some value to each card.  Just like `deal`,
 Now you can test the quality of a suit with, for example,
 `top3(deal.north.spades) >= 2` (this may be relevant when generating weak two
 hands).
+
+// vim: fileencoding=utf-8
