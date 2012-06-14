@@ -42,8 +42,8 @@ def accept(deal):
     # hcp.
     # Shape can also be tested by an expression such as `shape in
     # Shape("(4333)")+Shape("22(54)")` which behaves as expected. The
-    # `Balanced` and `SemiBalanced` shapes are predefined.
-    if not (22 <= deal.north.hcp <= 24 and deal.north.shape in Balanced):
+    # `balanced` and `semibalanced` shapes are predefined.
+    if not (22 <= deal.north.hcp <= 24 and balanced(deal.north)):
         return False
     # `solve_board(deal, strain, declarer)` returns the DD number of tricks.
     nttricks = solve_board(deal, "N", "N")
@@ -103,7 +103,7 @@ def initial2():
 
 def accept2(found, deal):
     global TABLE
-    if not (22 <= deal.north.hcp <= 24 and deal.north.shape in Balanced):
+    if not (22 <= deal.north.hcp <= 24 and balanced(deal.north.shape)):
         return False
     if (solve_board(deal, "H", "N") >= 10 or solve_board(deal, "S", "N") >= 10
         or solve_board(deal, "N", "N") >= 9):

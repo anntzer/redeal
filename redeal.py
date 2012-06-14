@@ -19,7 +19,7 @@ except OSError:
         raise Exception("Unable to load DDS.  `solve_board` is unavailable.")
 
 
-__all__ = ["solve_board", "Shape", "Balanced", "SemiBalanced",
+__all__ = ["solve_board", "Shape", "balanced", "semibalanced",
            "Deal", "Hand", "Holding", "Contract", "H", "C",
            "defvector", "matchpoints", "imps"]
 
@@ -89,6 +89,9 @@ class Shape(object):
     def __contains__(self, int_shape):
         return self.table[self.flatten(int_shape)]
 
+    def __call__(self, hand):
+        return hand.shape in self
+
     def __add__(self, other):
         table = array(str("b"))
         table.fromlist([x or y for x, y in zip(self.table, other.table)])
@@ -100,8 +103,8 @@ class Shape(object):
         return Shape.from_table(table)
 
 
-Balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
-SemiBalanced = Balanced + Shape("(5422)") + Shape("(6322)")
+balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
+semibalanced = balanced + Shape("(5422)") + Shape("(6322)")
 
 
 class Deal(tuple, object):

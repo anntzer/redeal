@@ -9,7 +9,7 @@ predeal = {"S": H("T8 8762 KT4 KQ52")}
 
 def accept(deal):
     global TABLE
-    if not (15 <= deal.north.hcp <= 17 and deal.north.shape in Balanced):
+    if not (15 <= deal.north.hcp <= 17 and balanced(deal.north)):
         return False
     nttricks = solve_board(deal, "N", "N")
     pass1N = C("1N", True).score(nttricks)

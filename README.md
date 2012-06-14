@@ -194,17 +194,17 @@ efficient:
     from redeal import *
 
     def accept(deal):
-        return deal.north.shape in Balanced
+        return balanced(deal.north)
 
-`Balanced` is defined in `redeal.py` as
+`balanced` is defined in `redeal.py` as
 
-    Balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
+    balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
 
-where the parentheses have the usual meaning.  `SemiBalanced` is available as
+where the parentheses have the usual meaning.  `semibalanced` is available as
 well, and one can define other shapes, possibly using `x` as a generic
 placeholder:
 
-    MajorTwoSuit = Shape("(54)xx") - Shape("(54)(40)")
+    major_two_suited = Shape("(54)xx") - Shape("(54)(40)")
 
 ### Vector additive functions
 
