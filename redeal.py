@@ -6,7 +6,7 @@ from array import array
 from bisect import bisect
 from functools import reduce
 import imp
-from itertools import chain, permutations
+from itertools import permutations
 from os import path
 import random
 
@@ -109,10 +109,8 @@ class Deal(tuple, object):
 
     def __new__(cls, predeal=None):
         """Randomly deal a hand, with map of predealt hands."""
-        predeal = predeal or {}
-        predeal = {seat: reduce(Hand.__add__, pre, ())
-                   for seat, pre in predeal.items()}
-        predealt_cards = reduce(tuple.__add__, predeal.values(), ())
+        predeal = {seat: pre.cards() for seat, pre in (predeal or {}).items()}
+        predealt_cards = reduce(list.__add__, predeal.values(), [])
         predealt_set = set(predealt_cards)
         if len(predealt_set) < len(predealt_cards):
             raise Exception("Same card dealt twice.")
@@ -120,9 +118,9 @@ class Deal(tuple, object):
         random.shuffle(cards)
         hands = []
         for seat in SEATS:
-            pre = predeal.get(seat, ())
+            pre = predeal.get(seat, [])
             to_deal = PER_SUIT - len(pre)
-            hand, cards = pre + tuple(cards[:to_deal]), cards[to_deal:]
+            hand, cards = pre + cards[:to_deal], cards[to_deal:]
             hands.append(Hand(hand))
         return tuple.__new__(cls, hands)
 
@@ -192,16 +190,19 @@ class Hand(tuple, object):
         return cls(cards)
 
     def __str__(self):
-        return "".join(
-            suit_symbol + "".join(RANKS[card.rank] for card in holding)
-            for suit_symbol, holding in zip(SUITS_SYM, self))
+        return "".join(suit_symbol + str(holding)
+                       for suit_symbol, holding in zip(SUITS_SYM, self))
 
     @property
     def _long_str(self):
-        """A pretty-printed version of the hand."""
-        return "\n" + "\n".join(
-            suit_symbol + "".join(RANKS[card.rank] for card in holding)
+        """Return a pretty-printed version of the hand."""
+        return "\n" + "\n".join(suit_symbol + str(holding)
             for suit_symbol, holding in zip(SUITS_SYM, self))
+
+    def cards(self):
+        """Return self as a list of card objects."""
+        return [Card(suit, rank)
+                for suit in range(N_SUITS) for rank in self[suit]]
 
     _S = SUITS.index("S")
     @reify
@@ -237,21 +238,21 @@ class Hand(tuple, object):
 
     @reify
     def _bits(self):
-        """Used for dds interop."""
-        # bit #i (0<=i<=12) set if card i+2 held
-        return [sum(1 << (PER_SUIT - 1 - card.rank) for card in holding)
-                for holding in self]
+        return [holding._bits for holding in self]
 
 
-class Holding(tuple, object):
-    """A one-suit holding, represented as a tuple of cards."""
+class Holding(frozenset, object):
+    """A one-suit holding, represented as a frozenset of card ranks."""
 
     def __new__(cls, cards):
-        return tuple.__new__(cls, tuple(sorted(cards)))
+        return frozenset.__new__(cls, (card.rank for card in cards))
+
+    def __str__(self):
+        return "".join(RANKS[rank] for rank in sorted(self))
 
     @reify
     def hcp(self):
-        return sum(HCP[card.rank] for card in self)
+        return sum(HCP[rank] for rank in self)
 
     _A, _K, _Q, _J, _T = [RANKS.index(rank) for rank in "AKQJT"]
     @reify
@@ -259,17 +260,23 @@ class Holding(tuple, object):
         if len(self) == 0:
             return 0
         losers = 0
-        if not any(card.rank == self._A for card in self):
+        if not any(rank == self._A for rank in self):
             losers += 1
-        if len(self) >= 2 and not any(card.rank == self._K for card in self):
+        if len(self) >= 2 and not any(rank == self._K for rank in self):
             losers += 1
         if len(self) >= 3:
-            if not any(card.rank == self._Q for card in self):
+            if not any(rank == self._Q for rank in self):
                 losers += 1
             elif (losers == 2 and
-                  not any(card.rank in [self._J, self._T] for card in self)):
+                  not any(rank in [self._J, self._T] for rank in self)):
                 losers += 0.5
         return losers
+
+    @reify
+    def _bits(self):
+        """Used for DDS interop."""
+        # bit #i (0 ≤ i ≤ 12) is set if card of rank i+2 (A = 14) is held
+        return sum(1 << (PER_SUIT - 1 - rank) for rank in self)
 
 
 class Contract(object):
@@ -346,7 +353,7 @@ def defvector(*vals):
     `holding`.
     """
     return lambda holding: sum(val for rank, val in enumerate(vals)
-                               if any(card.rank == rank for card in holding))
+                               if any(rank_ == rank for rank_ in holding))
 
 
 def generate(n_hands, max_tries, predeal, accept, verbose=False):
