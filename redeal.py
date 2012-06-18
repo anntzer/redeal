@@ -448,26 +448,33 @@ def imps(my, other):
 
 if __name__ == "__main__":
     parser = ArgumentParser(
-        description="A reimplementation of Thomas Andrews' Deal in Python.",
-        epilog="See script.py for an example")
+        description="A reimplementation of Thomas Andrews' Deal in Python.")
     parser.add_argument("-n", type=int, default=10,
         help="the number of requested hands")
     parser.add_argument("--max", type=int,
-        help="the maximum number of tries (defaults to 1000×n)")
-    parser.add_argument("script", nargs="?",
-        help="path to script")
-    parser.add_argument("-N",
-        help="predealt North hand as string (overrides script)")
-    parser.add_argument("-E",
-        help="predealt East hand as string (overrides script)")
-    parser.add_argument("-S",
-        help="predealt West hand as string (overrides script)")
-    parser.add_argument("-W",
-        help="predealt South hand as string (overrides script)")
+        help="the maximum number of tries (defaults to 1000*n)")
     parser.add_argument("-l", action="store_true",
         help="long output for diagrams")
     parser.add_argument("-v", action="store_true",
         help="be verbose")
+    parser.add_argument("script", nargs="?",
+        help="path to script")
+    override = parser.add_argument_group(
+        "arguments overriding values given in script")
+    override.add_argument("-N",
+        help="predealt North hand as a string")
+    override.add_argument("-E",
+        help="predealt East hand as a string")
+    override.add_argument("-S",
+        help="predealt West hand as a string")
+    override.add_argument("-W",
+        help="predealt South hand as a string")
+    override.add_argument("--initial", type=lambda s: eval("lambda: " + s),
+        help='body of "initial" function: "initial = lambda: <INITIAL>"')
+    override.add_argument("--accept", type=lambda s: eval("lambda deal: " + s),
+        help='body of "accept" function: "accept = lambda deal: <ACCEPT>"')
+    override.add_argument("--final", type=lambda s: eval("lambda n_tries: " + s),
+        help='body of "final" function: "final = lambda n_tries: <FINAL>"')
     args = parser.parse_args()
     if args.script is None:
         module = None
@@ -478,6 +485,9 @@ if __name__ == "__main__":
         file.close()
 
     def verbose_getattr(attr, default):
+        args_attr = getattr(args, attr, None)
+        if args_attr is not None:
+            return args_attr
         if hasattr(module, attr):
             return getattr(module, attr)
         else:

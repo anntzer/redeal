@@ -52,10 +52,20 @@ accepted.  This may not be the case in more complex cases.
 Would you open 2 or 3♡ with ♠-♡KQJT62♢T9876♣84?  Well, let's deal a couple of
 hands to see how this would fare.
 
-    $ python redeal.py -S"- KQJT62 T9876 84" -n25
+    $ python redeal.py -S"- KQJT62 T9876 84"
     ♠AT982♡854♢J42♣KT ♠KQ7♡A973♢AK5♣AQJ ♠♡KQJT62♢T9876♣84 ♠J6543♡♢Q3♣976532
     ♠85♡854♢K4♣JT9752 ♠K97643♡A97♢A♣KQ6 ♠♡KQJT62♢T9876♣84 ♠AQJT2♡3♢QJ532♣A3
-    <... 23 other hands elided>
+    ♠94♡97♢KJ42♣QJ972 ♠KJ852♡A85♢AQ3♣K5 ♠♡KQJT62♢T9876♣84 ♠AQT763♡43♢5♣AT63
+    ♠KJT963♡A954♢K4♣2 ♠AQ82♡7♢5♣AKJT753 ♠♡KQJT62♢T9876♣84 ♠754♡83♢AQJ32♣Q96
+    ♠984♡93♢AJ543♣AK7 ♠AJ52♡A84♢KQ♣JT96 ♠♡KQJT62♢T9876♣84 ♠KQT763♡75♢2♣Q532
+    ♠J974♡53♢QJ43♣T62 ♠AKQ852♡A97♢♣J975 ♠♡KQJT62♢T9876♣84 ♠T63♡84♢AK52♣AKQ3
+    ♠742♡73♢AQ♣AK9763 ♠KJT♡A95♢J542♣J52 ♠♡KQJT62♢T9876♣84 ♠AQ98653♡84♢K3♣QT
+    ♠Q82♡A9♢A42♣AT732 ♠AJ754♡85♢KJ5♣Q95 ♠♡KQJT62♢T9876♣84 ♠KT963♡743♢Q3♣KJ6
+    ♠QJT543♡8♢AJ3♣Q53 ♠K876♡A9743♢K5♣JT ♠♡KQJT62♢T9876♣84 ♠A92♡5♢Q42♣AK9762
+    ♠AQJ8432♡4♢AQ♣KT5 ♠KT96♡A98♢32♣AJ76 ♠♡KQJT62♢T9876♣84 ♠75♡753♢KJ54♣Q932
+    Tries: 10
+
+There are also `-N`, `-E` and `-W` options, with the expected meanings.
 
 ### Formatting output
 
@@ -122,7 +132,7 @@ increment the counter of accepted hands.
 
 Redeal gives more information about its progress when given the `-v` flag:
 
-    ± python redeal.py -v examples/onespade.py
+    $ python redeal.py -v examples/onespade.py
     Using default for initial.
     Using default for predeal.
     Using default for final.
@@ -149,7 +159,33 @@ Redeal gives more information about its progress when given the `-v` flag:
     Tries: 204
 
 This is also a good way to check that it is not the default `accept` function
-(which accepts all hands), but the one you defined, that is used.
+(which accepts all hands), but the one you defined, that is used.  As one can
+see, there are two other functions that can be overriden: `initial`, which is
+called before hand generation starts with no arguments, and by default does
+nothing, and `final`, which is called after hand generation is done with
+a single argument -- the number of generated hands (accepted or not) -- and by
+default prints it.
+
+One can also have specified the `accept` function, as the body of a lambda form
+taking a `deal` argument, from the command line:
+
+    $ ./redeal.py --accept "len(deal.north.spades) >= 5 and \
+        deal.north.hcp >= 12 and (print(deal) or True)"
+    ♠AKJT7♡85♢865♣KQ7 ♠852♡A74♢AQT42♣86 ♠963♡KJ3♢J973♣AT4 ♠Q4♡QT962♢K♣J9532
+    ♠AKT86♡AJ76♢64♣42 ♠J954♡T♢KT752♣KT5 ♠3♡KQ853♢A983♣Q76 ♠Q72♡942♢QJ♣AJ983
+    ♠AQ753♡A96♢A♣AT43 ♠KJT6♡KQ83♢Q753♣8 ♠9♡JT75♢KT42♣KQJ7 ♠842♡42♢J986♣9652
+    ♠A98543♡63♢KQ♣AQ9 ♠J2♡AJT2♢J976♣J63 ♠QT6♡K9874♢T43♣K8 ♠K7♡Q5♢A852♣T7542
+    ♠AK9642♡JT♢J9♣A42 ♠75♡A732♢AKQ84♣Q3 ♠T3♡K54♢T653♣KJT6 ♠QJ8♡Q986♢72♣9875
+    ♠AK832♡3♢32♣AKQT2 ♠964♡J6♢AKJ5♣8765 ♠J7♡AK8542♢6♣J943 ♠QT5♡QT97♢QT9874♣
+    ♠AQ432♡♢KJT43♣Q74 ♠J985♡9765♢A862♣T ♠6♡AKQJ82♢Q7♣AJ32 ♠KT7♡T43♢95♣K9865
+    ♠AJT83♡AJ8♢82♣Q75 ♠Q64♡Q975♢J76♣KJ2 ♠75♡KT4♢KT93♣T943 ♠K92♡632♢AQ54♣A86
+    ♠AJ652♡J2♢A9♣Q953 ♠KQ93♡AKT6♢KQ2♣84 ♠T87♡874♢873♣AT72 ♠4♡Q953♢JT654♣KJ6
+    ♠KQJT9♡98♢KT♣K962 ♠♡J65432♢763♣AJ83 ♠A8652♡AQ7♢A8♣T54 ♠743♡KT♢QJ9542♣Q7
+    Tries: 203
+
+Note the trick of using `(print(deal) or True)`, which is available only when
+using Python 3.  It is also possible to override `initial` and `final` in
+a similar fashion.
 
 ### Predealing and scripting
 
@@ -169,7 +205,7 @@ a forcing NT?  Let's generate a few hands so that we can see how we would fare.
     ♠KJ9863♡♢Q9♣AKJ73 ♠AT75♡QT874♢72♣85 ♠♡96532♢A864♣T962 ♠Q42♡AKJ♢KJT53♣Q4
     Tries: 31
 
-There are also `-N`, `-E` and `-W` switches, with the expected meanings.
+Again, one can also specify the `accept` function from the command line.
 
 Or, one can indicate the predealt cards ("stacked", in Deal jargon) in the
 script, in the `predeal` variable:
