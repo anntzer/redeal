@@ -6,7 +6,7 @@ from array import array
 from bisect import bisect
 from functools import reduce
 import imp
-from itertools import permutations
+from itertools import permutations, product
 from os import path
 import random
 
@@ -17,33 +17,64 @@ try:
 except OSError:
     def solve_board(deal, strain, declarer):
         raise Exception("Unable to load DDS.  `solve_board` is unavailable.")
+from smartstack import SmartStack, _SmartStack
 
 
 __all__ = ["solve_board", "Shape", "balanced", "semibalanced",
-           "Deal", "Hand", "Holding", "Contract", "H", "C",
-           "defvector", "matchpoints", "imps"]
+           "Deal", "Hand", "Holding", "Contract", "SmartStack", "H", "C",
+           "defvector", "matchpoints", "imps",
+           "RANKS"]
 
 
 class Shape(object):
-    """A shape specification, represented as a 0-1 table."""
+    """A shape specification, represented as a 0-1 table.
+    
+    {min,max}_ls are hints for smartstacking, guaranteed to be correct but not
+    necessarily optimal.
+    """
 
     JOKER = "x"
     TABLE = {JOKER: -1, "t": 10, "j": 11, "q": 12, "k": 13, "(": "(", ")": ")"}
-    TABLE.update({str(n): n for n in range(2, 10)})
+    TABLE.update({str(n): n for n in range(10)})
 
     def __init__(self, init=None):
         """Initialize with a string."""
         self.table = array(str("b"))
         self.table.fromlist([0] * (PER_SUIT + 1) ** N_SUITS)
+        self.min_ls = [PER_SUIT for _ in range(N_SUITS)]
+        self.max_ls = [0 for _ in range(N_SUITS)]
         if init:
             self.insert([self.TABLE[char.lower()] for char in init])
 
     @classmethod
-    def from_table(cls, table):
+    def from_table(cls, table, min_max_hint=None):
         """Initialize from a table."""
         self = cls()
         self.table = array(str("b"))
         self.table.fromlist(list(table))
+        if min_max_hint is not None:
+            self.min_ls, self.max_ls = min_max_hint
+        else:
+            self.min_ls = [PER_SUIT for _ in range(N_SUITS)]
+            self.max_ls = [0 for _ in range(N_SUITS)]
+            for nonflat in product(*[range(PER_SUIT + 1)
+                                     for _ in range(N_SUITS)]):
+                if self.table[self.flatten(nonflat)]:
+                    for dim, coord in enumerate(nonflat):
+                        self.min_ls[dim] = min(self.min_ls[dim], coord)
+                        self.max_ls[dim] = max(self.max_ls[dim], coord)
+        return self
+
+    @classmethod
+    def from_cond(cls, func):
+        self = cls()
+        for nonflat in product(*[range(PER_SUIT + 1)
+                                 for _ in range(N_SUITS)]):
+            if sum(nonflat) == PER_SUIT and func(*nonflat):
+                self.table[self.flatten(nonflat)] = True
+                for dim, coord in enumerate(nonflat):
+                    self.min_ls[dim] = min(self.min_ls[dim], coord)
+                    self.max_ls[dim] = max(self.max_ls[dim], coord)
         return self
 
     @staticmethod
@@ -59,6 +90,9 @@ class Shape(object):
         if not jokers:
             if pre_set == PER_SUIT:
                 self.table[self.flatten(shape)] = 1
+                for suit in range(N_SUITS):
+                    self.min_ls[suit] = min(self.min_ls[suit], shape[suit])
+                    self.max_ls[suit] = max(self.max_ls[suit], shape[suit])
             elif safe:
                 raise Exception("Wrong number of cards in shape.")
         else:
@@ -95,12 +129,16 @@ class Shape(object):
     def __add__(self, other):
         table = array(str("b"))
         table.fromlist([x or y for x, y in zip(self.table, other.table)])
-        return Shape.from_table(table)
+        min_ls = [min(self.min_ls[suit], other.min_ls[suit])
+                  for suit in range(N_SUITS)]
+        max_ls = [max(self.max_ls[suit], other.max_ls[suit])
+                  for suit in range(N_SUITS)]
+        return Shape.from_table(table, (min_ls, max_ls))
 
     def __sub__(self, other):
         table = array("b")
         table.fromlist([x and not y for x, y in zip(self.table, other.table)])
-        return Shape.from_table(table)
+        return Shape.from_table(table, (self.min_ls, self.max_ls))
 
 
 balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
@@ -110,18 +148,41 @@ semibalanced = balanced + Shape("(5422)") + Shape("(6322)")
 class Deal(tuple, object):
     """A deal, represented as a tuple of hands."""
 
-    def __new__(cls, predeal=None):
-        """Randomly deal a hand, with map of predealt hands."""
-        predeal = {seat: pre.cards() for seat, pre in (predeal or {}).items()}
-        predealt_cards = reduce(list.__add__, predeal.values(), [])
-        predealt_set = set(predealt_cards)
-        if len(predealt_set) < len(predealt_cards):
+    @staticmethod
+    def prepare(predeal):
+        """Prepare a seat -> [Hand | SmartStack] map into a dealer.
+        
+        There can be at most one SmartStack entry."""
+        predeal = predeal or {}
+        smartstacks = [(k, v) for k, v in predeal.items()
+                       if isinstance(v, SmartStack)]
+        predeal = {seat: getattr(predeal.get(seat), "cards", lambda: [])
+                   for seat in SEATS}
+        predealt = reduce(list.__add__, (predeal[seat]() for seat in SEATS), [])
+        predealt_set = set(predealt)
+        if len(predealt_set) < len(predealt):
             raise Exception("Same card dealt twice.")
-        cards = [card for card in FULL_DECK if card not in predealt_set]
+        if smartstacks:
+            try:
+                (seat, smartstack), = smartstacks
+            except ValueError:
+                raise Exception("Only one SmartStack allowed.")
+            predealt_by_suit = {
+                suit: {card.rank for card in predealt_set if card.suit == suit}
+                for suit in range(N_SUITS)}
+            predeal[seat] = _SmartStack.from_predealt(smartstack,
+                                                      predealt_by_suit)
+        predeal["_remaining"] = [card for card in FULL_DECK
+                                 if card not in predealt_set]
+        return predeal
+
+    def __new__(cls, dealer):
+        """Randomly deal a hand from a prepared dealer."""
+        cards = dealer["_remaining"]
         random.shuffle(cards)
         hands = []
         for seat in SEATS:
-            pre = predeal.get(seat, [])
+            pre = dealer[seat]()
             to_deal = PER_SUIT - len(pre)
             hand, cards = pre + cards[:to_deal], cards[to_deal:]
             hands.append(Hand(hand))
@@ -363,8 +424,9 @@ def generate(n_hands, max_tries, predeal, accept, verbose=False):
     """Repeatedly pass hands to an `accept` function until enough are accepted.
     """
     found = 0
+    dealer = Deal.prepare(predeal)
     for i in range(max_tries):
-        deal = Deal(predeal)
+        deal = Deal(dealer)
         if accept(deal):
             found += 1
             if verbose:

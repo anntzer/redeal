@@ -222,4 +222,29 @@ Now you can test the quality of a suit with, for example,
 `top3(deal.north.spades) >= 2` (this may be relevant when generating weak two
 hands).
 
+### Smartstacking
+
+For some rare hand types, Deal and Redeal provide an alternative hand dealing
+technique: smartstacking.  Smartstacking works for only one of the four seats,
+and can only take two sorts of constraints: a Shape object, and a bounds on the
+total value of a vector additive function (i.e. summed over the four suits).
+For example, the following example finds hands where North is 4-4 in the major,
+has a short minor and 11-15HCP.
+
+    from redeal import *
+
+    Roman = Shape("44(41)") + Shape("44(50)")
+    predeal = {"N": SmartStack(Roman, defvector(4, 3, 2, 1), 11, 15)}
+
+When smartstacking is used, Redeal starts by computing the relative
+probabilities that each holding appears in a hand that satisfies the given
+condition, which takes some time.  This then allows it to generate deals very
+quickly, much faster than by generating random deals and checking whether they
+pass an `accept` function.  For the given example, as long as one requests
+a couple of dozen of hands, smartstacking is faster than direct dealing.
+
+Smartstacking will take into account other (normally) predealt hands, and an
+`accept` function can still be used, e.g. to still throw away some of the
+hands.  See `examples/deal_gambling.py` for a complete example.
+
 // vim: fileencoding=utf-8
