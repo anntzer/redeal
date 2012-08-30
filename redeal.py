@@ -27,24 +27,34 @@ __all__ = ["solve_board", "Shape", "balanced", "semibalanced",
 
 
 class Shape(object):
-    """A shape specification, represented as a 0-1 table.
+    """A shape specification, as a 0-1 table, intended as immutable.
     
     {min,max}_ls are hints for smartstacking, guaranteed to be correct but not
-    necessarily optimal.
+    necessarily optimal. _cls_cache and _op_cache cache Shape instantiations
+    and additions/substractions -- useful if the accept function is given as a
+    lambda form, for example.
     """
 
     JOKER = "x"
     TABLE = {JOKER: -1, "t": 10, "j": 11, "q": 12, "k": 13, "(": "(", ")": ")"}
     TABLE.update({str(n): n for n in range(10)})
+    _cls_cache = {}
 
-    def __init__(self, init=None):
+    def __new__(cls, init=None):
         """Initialize with a string."""
-        self.table = array(str("b"))
-        self.table.fromlist([0] * (PER_SUIT + 1) ** N_SUITS)
-        self.min_ls = [PER_SUIT for _ in range(N_SUITS)]
-        self.max_ls = [0 for _ in range(N_SUITS)]
-        if init:
-            self.insert([self.TABLE[char.lower()] for char in init])
+        try:
+            return cls._cls_cache[init]
+        except KeyError:
+            self = object.__new__(cls)
+            self.table = array(str("b"))
+            self.table.fromlist([0] * (PER_SUIT + 1) ** N_SUITS)
+            self.min_ls = [PER_SUIT for _ in range(N_SUITS)]
+            self.max_ls = [0 for _ in range(N_SUITS)]
+            self._op_cache = {}
+            if init:
+                self.insert([self.TABLE[char.lower()] for char in init])
+                cls._cls_cache[init] = self
+            return self
 
     @classmethod
     def from_table(cls, table, min_max_hint=None):
@@ -127,18 +137,28 @@ class Shape(object):
         return hand.shape in self
 
     def __add__(self, other):
-        table = array(str("b"))
-        table.fromlist([x or y for x, y in zip(self.table, other.table)])
-        min_ls = [min(self.min_ls[suit], other.min_ls[suit])
-                  for suit in range(N_SUITS)]
-        max_ls = [max(self.max_ls[suit], other.max_ls[suit])
-                  for suit in range(N_SUITS)]
-        return Shape.from_table(table, (min_ls, max_ls))
+        try:
+            return self._op_cache["+", other]
+        except KeyError:
+            table = array(str("b"))
+            table.fromlist([x or y for x, y in zip(self.table, other.table)])
+            min_ls = [min(self.min_ls[suit], other.min_ls[suit])
+                      for suit in range(N_SUITS)]
+            max_ls = [max(self.max_ls[suit], other.max_ls[suit])
+                      for suit in range(N_SUITS)]
+            result = Shape.from_table(table, (min_ls, max_ls))
+            self._op_cache["+", other] = result
+            return result
 
     def __sub__(self, other):
-        table = array("b")
-        table.fromlist([x and not y for x, y in zip(self.table, other.table)])
-        return Shape.from_table(table, (self.min_ls, self.max_ls))
+        try:
+            return self._op_cache["-", other]
+        except KeyError:
+            table = array("b")
+            table.fromlist([x and not y for x, y in zip(self.table, other.table)])
+            result = Shape.from_table(table, (self.min_ls, self.max_ls))
+            self._op_cache["-", other] = result
+            return result
 
 
 balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
