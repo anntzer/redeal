@@ -15,7 +15,6 @@ The following names will be imported from the simulation module: `predeal`,
 `initial`, `accept` and `final`.
 """
 
-from __future__ import division, print_function, unicode_literals
 from collections import Counter
 from redeal import *
 
@@ -77,7 +76,7 @@ def accept(deal):
 def final(n_tries):
     global TABLE
     for line in TABLE:
-        print("\t".join("+{} ={} -{}".format(counter[0], counter[1/2], counter[1])
+        print("\t".join("+{} ={} -{}".format(counter[0], counter[0.5], counter[1])
                         for counter in line))
     print("Tries: {}".format(n_tries))
 
@@ -94,8 +93,8 @@ def final1(n_tries):
 
 # An alternative simulation, where we only want to compute how often there is a
 # making game, regardless of whether it is reasonably easy to find (for
-# example, it will had to choose between a 4-3 S fit -- 7% of the hands! -- and
-# a more normal contract -- which is more frequently the best choice).
+# example, we will have to choose between a 4-3 S fit -- 7% of the hands! --
+# and a more normal contract -- which is more frequently the best choice).
 def initial2():
     global TABLE
     TABLE = [0, 0]

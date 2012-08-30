@@ -5,14 +5,13 @@ hand.
 
 To test the implementation, run
 
-    ./redeal.py -n1000 examples/deal_gambling.py | sort | uniq -c | sort -nr
+    ./redeal.py -n10000 examples/deal_gambling.py | sort | uniq -c | sort -nr
 
 and compare to the output of deal's
 
     deal -i ex/3nt-stack.tcl 10000 | sort | uniq -c | sort -nr
 """
 
-from __future__ import division, print_function, unicode_literals
 from redeal import *
 
 Gambling = Shape.from_cond(lambda s, h, d, c: s <= 3 and h <= 3 and

@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
-from __future__ import division, print_function, unicode_literals
+from __future__ import division
+
 from collections import Counter
 from redeal import *
 

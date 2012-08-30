@@ -3,7 +3,6 @@
 North is 44 in the majors, short in a minor, and has 11-15HCP.
 """
 
-from __future__ import division, print_function, unicode_literals
 from redeal import *
 
 Roman = Shape("44(41)") + Shape("44(50)")

@@ -41,8 +41,8 @@ redeal.py -n N` to deal N hands.
     Tries: 2
 
 Note that if your terminal does not support UTF-8 (e.g. Windows' Command
-Prompt, or possibly Mac's Terminal.app), suit symbols will be replaced by
-letters -- but the rest should work fine.
+Prompt, or possibly Mac's Terminal.app), or if using Python 2, suit symbols
+will be replaced by letters -- but the rest should work fine.
 
 Here, the number of tries is the same as the number of hands, as any hand is
 accepted.  This may not be the case in more complex cases.
@@ -101,7 +101,7 @@ Here is the script we write (to a file we'll call onespade.py):
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
-            print(deal) # use print(unicode(deal)) if using Python2 on Linux
+            print(deal)
             return True
 
 and run it as follows:
@@ -170,7 +170,7 @@ One can also have specified the `accept` function, as the body of a lambda form
 taking a `deal` argument, from the command line:
 
     $ ./redeal.py --accept "len(deal.north.spades) >= 5 and \
-        deal.north.hcp >= 12 and (print(deal) or True)"
+        deal.north.hcp >= 12 and deal.print()"
     ♠AKJT7♡85♢865♣KQ7 ♠852♡A74♢AQT42♣86 ♠963♡KJ3♢J973♣AT4 ♠Q4♡QT962♢K♣J9532
     ♠AKT86♡AJ76♢64♣42 ♠J954♡T♢KT752♣KT5 ♠3♡KQ853♢A983♣Q76 ♠Q72♡942♢QJ♣AJ983
     ♠AQ753♡A96♢A♣AT43 ♠KJT6♡KQ83♢Q753♣8 ♠9♡JT75♢KT42♣KQJ7 ♠842♡42♢J986♣9652
@@ -183,9 +183,9 @@ taking a `deal` argument, from the command line:
     ♠KQJT9♡98♢KT♣K962 ♠♡J65432♢763♣AJ83 ♠A8652♡AQ7♢A8♣T54 ♠743♡KT♢QJ9542♣Q7
     Tries: 203
 
-Note the trick of using `(print(deal) or True)`, which is available only when
-using Python 3.  It is also possible to override `initial` and `final` in
-a similar fashion.
+The `print` method prints the deal and returns True, which is handy in this
+case.  It is also possible to override `initial` and `final` in a similar
+fashion.
 
 ### Predealing and scripting
 
@@ -216,7 +216,7 @@ script, in the `predeal` variable:
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
-            print(deal) # use print(unicode(deal)) if using Python2
+            print(deal)
             return True
 
 Note that the predealing occurs outside of the `accept` function.

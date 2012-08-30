@@ -13,7 +13,6 @@ other words, for Blue-clubbers, if the auction starts:
 there is a 50% chance that a slam should be bid...
 """
 
-from __future__ import division, print_function, unicode_literals
 from redeal import *
 
 controls = defvector(2, 1)
@@ -22,5 +21,5 @@ def accept(deal):
     if (sum(map(controls, deal.north)) >= 3 and deal.south.hcp >= 17 and
         (not balanced(deal.south) or
          deal.south.hcp != 17 and not (22 <= deal.south.hcp <= 24))):
-        print("{}".format(deal)) # dirty trick to work both in Python 2 and 3
+        print(deal)
         return True

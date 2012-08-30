@@ -152,7 +152,8 @@ class Deal(tuple, object):
     def prepare(predeal):
         """Prepare a seat -> [Hand | SmartStack] map into a dealer.
         
-        There can be at most one SmartStack entry."""
+        There can be at most one SmartStack entry.
+        """
         predeal = predeal or {}
         smartstacks = [(k, v) for k, v in predeal.items()
                        if isinstance(v, SmartStack)]
@@ -206,6 +207,10 @@ class Deal(tuple, object):
         for line in self.south._long_str.split("\n"):
             s += " " * 7 + line + "\n"
         return s
+
+    def print(self):
+        print(self)
+        return True
 
     _N = SEATS.index("N")
     @property
@@ -290,7 +295,7 @@ class Hand(tuple, object):
 
     @reify
     def shape(self):
-        return map(len, self)
+        return list(map(len, self))
 
     @reify
     def hcp(self):
@@ -354,14 +359,8 @@ class Contract(object):
     def from_str(cls, s, vul=False):
         """Initialize with a string, e.g. "7NXX".  Vulnerability still a kwarg.
         """
-        s = s.upper()
-        if s.endswith("XX"):
-            doubled = 2
-        elif s.endswith("X"):
-            doubled = 1
-        else:
-            doubled = 0
-        return cls(int(s[0]), s[1], doubled=doubled, vul=vul)
+        doubled = len(s) - len(s.lstrip("xX"))
+        return cls(int(s[0]), s[1].upper(), doubled=doubled, vul=vul)
 
     def score(self, tricks):
         """Score for a contract for a given number of tricks taken."""

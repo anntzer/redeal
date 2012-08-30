@@ -11,7 +11,6 @@ and hence, that he doesn't hold one, and also that east does not have spade
 support.
 """
 
-from __future__ import division, print_function, unicode_literals
 from redeal import *
 
 predeal = {"S": H("764 J4 J753 AQJ2")}
@@ -22,5 +21,5 @@ def accept(deal):
         len(deal.west.clubs) <= 3 and 6 <= deal.east.hcp <= 11 and
         len(deal.east.hearts) <= 4 and len(deal.east.spades) <= 2 and
         deal.east.losers >= 3):
-        print("{}".format(deal)) # dirty trick to work both in Python 2 and 3
+        print(deal)
         return True
