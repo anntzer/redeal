@@ -8,6 +8,11 @@ from redeal import *
 predeal = {"S": H("T8 8762 KT4 KQ52")}
 
 
+def initial():
+    global TABLE
+    TABLE = [[Counter() for _ in range(3)] for _ in range(3)]
+
+
 def accept(deal):
     global TABLE
     if not (15 <= deal.north.hcp <= 17 and balanced(deal.north)):
@@ -38,11 +43,6 @@ def accept(deal):
             s16 = C("3H", True).score(hetricks)
     scores = [pass1N, s16, s17]
     print("{} {}".format(deal, " ".join(map(str, scores))))
-    global TABLE
-    try:
-        TABLE
-    except NameError:
-        TABLE = [[Counter() for _ in scores] for _ in scores]
     for i, scorei in enumerate(scores):
         for j, scorej in enumerate(scores):
             TABLE[i][j][imps(scorei, scorej)] += 1

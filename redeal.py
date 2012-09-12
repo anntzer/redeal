@@ -228,10 +228,6 @@ class Deal(tuple, object):
             s += " " * 7 + line + "\n"
         return s
 
-    def print(self):
-        print(self)
-        return True
-
     _N = SEATS.index("N")
     @property
     def north(self):
@@ -488,13 +484,20 @@ if __name__ == "__main__":
         help="predealt West hand as a string")
     override.add_argument("-W",
         help="predealt South hand as a string")
-    override.add_argument("--initial", type=lambda s: eval("lambda: " + s),
+    my_globals = dict(
+        globals(),
+        print=lambda *args, **kwargs: print(*args, **kwargs) or True)
+    override.add_argument("--initial",
+        type=lambda s: eval("lambda: " + s, my_globals),
         help='body of "initial" function: "initial = lambda: <INITIAL>"')
-    override.add_argument("--accept", type=lambda s: eval("lambda deal: " + s),
+    override.add_argument("--accept",
+        type=lambda s: eval("lambda deal: " + s, my_globals),
         help='body of "accept" function: "accept = lambda deal: <ACCEPT>"')
-    override.add_argument("--final", type=lambda s: eval("lambda n_tries: " + s),
+    override.add_argument("--final",
+        type=lambda s: eval("lambda n_tries: " + s, my_globals),
         help='body of "final" function: "final = lambda n_tries: <FINAL>"')
     args = parser.parse_args()
+
     if args.script is None:
         module = None
     else:

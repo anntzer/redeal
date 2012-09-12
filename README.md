@@ -170,7 +170,7 @@ One can also have specified the `accept` function, as the body of a lambda form
 taking a `deal` argument, from the command line:
 
     $ ./redeal.py --accept "len(deal.north.spades) >= 5 and \
-        deal.north.hcp >= 12 and deal.print()"
+        deal.north.hcp >= 12 and print(deal)"
     ♠AKJT7♡85♢865♣KQ7 ♠852♡A74♢AQT42♣86 ♠963♡KJ3♢J973♣AT4 ♠Q4♡QT962♢K♣J9532
     ♠AKT86♡AJ76♢64♣42 ♠J954♡T♢KT752♣KT5 ♠3♡KQ853♢A983♣Q76 ♠Q72♡942♢QJ♣AJ983
     ♠AQ753♡A96♢A♣AT43 ♠KJT6♡KQ83♢Q753♣8 ♠9♡JT75♢KT42♣KQJ7 ♠842♡42♢J986♣9652
@@ -183,9 +183,10 @@ taking a `deal` argument, from the command line:
     ♠KQJT9♡98♢KT♣K962 ♠♡J65432♢763♣AJ83 ♠A8652♡AQ7♢A8♣T54 ♠743♡KT♢QJ9542♣Q7
     Tries: 203
 
-The `print` method prints the deal and returns True, which is handy in this
-case.  It is also possible to override `initial` and `final` in a similar
-fashion.
+There is some magic going on here: the `print` function is overriden while the
+lambda form is evaluated (and *only* at that time), so that it always return
+True instead of None.  It is also possible to override `initial` (taking no
+argument) and `final` (taking a `n_tries` argument) in a similar fashion.
 
 ### Predealing and scripting
 
