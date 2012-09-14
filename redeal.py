@@ -11,6 +11,7 @@ from os import path
 import random
 
 from globals import *
+from mutable import ref
 from util import reify
 try:
     from dds import solve_board
@@ -468,9 +469,9 @@ if __name__ == "__main__":
         help="the number of requested hands")
     parser.add_argument("--max", type=int,
         help="the maximum number of tries (defaults to 1000*n)")
-    parser.add_argument("-l", action="store_true",
+    parser.add_argument("-l", "--long", action="store_true",
         help="long output for diagrams")
-    parser.add_argument("-v", action="store_true",
+    parser.add_argument("-v", "--verbose", action="store_true",
         help="be verbose")
     parser.add_argument("script", nargs="?",
         help="path to script")
@@ -496,7 +497,14 @@ if __name__ == "__main__":
     override.add_argument("--final",
         type=lambda s: eval("lambda n_tries: " + s, my_globals),
         help='body of "final" function: "final = lambda n_tries: <FINAL>"')
+    override.add_argument("-g", "--global",
+        nargs=2, dest="globals", default=[], action="append",
+        help="global, '<<'-mutable variable for functions given in the "
+        "command-line", metavar=("NAME", "INIT"))
     args = parser.parse_args()
+
+    for name, init in args.globals:
+        my_globals[name] = ref(eval(init))
 
     if args.script is None:
         module = None
@@ -513,7 +521,7 @@ if __name__ == "__main__":
         if hasattr(module, attr):
             return getattr(module, attr)
         else:
-            if args.v:
+            if args.verbose:
                 print("Using default for {}.".format(attr))
             return default
     initial = verbose_getattr("initial", lambda: None)
@@ -525,12 +533,11 @@ if __name__ == "__main__":
         lambda deal: print("{}".format(deal)) or True)
     final = verbose_getattr("final",
                             lambda tries: print("Tries: {}".format(tries)))
-    if args.l:
+    if args.long:
         Deal.__str__ = lambda self: self._long_str
         Deal.__unicode__ = lambda self: self._long_str
 
     initial()
     tries = generate(args.n, args.max or 1000 * args.n, predeal, accept,
-                     verbose=args.v)
+                     verbose=args.verbose)
     final(tries)
-
