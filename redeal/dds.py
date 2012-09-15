@@ -1,11 +1,12 @@
 # vim: set fileencoding=utf-8
 from __future__ import division, print_function, unicode_literals
 from ctypes import *
+from os import path
 
-from globals import *
+from .globals import *
 
 
-dll = CDLL("dds-1.1.9/libdds.so.1.1.9")
+dll = CDLL(path.join(path.dirname(__file__), "dds-1.1.9/libdds.so.1.1.9"))
 dll.DDSInitStart()
 
 

@@ -22,8 +22,9 @@ will be unavailable.
 Download everything, open a terminal (a.k.a. Command Prompt in Windows), `cd`
 to the directory where you downloaded the code and run `python redeal.py
 --help`, or `python redeal.py` to get a few hands, or `python redeal.py
-examples/deal1.py` for an example simulation.  `./run_all_examples.sh` (or
-`run_all_examples.bat` on Windows) will go through all the examples.
+examples/deal1.py` for an example simulation.  In the `examples` folder,
+`./run_all_examples.sh` (or `run_all_examples.bat` on Windows) will go through
+all the examples.
 
 An introductory tutorial
 ------------------------

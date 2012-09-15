@@ -1,3 +1,4 @@
+# vim: set fileencoding=utf-8
 from bisect import bisect
 from collections import Counter
 from functools import reduce
@@ -5,7 +6,7 @@ from itertools import combinations, product
 import operator
 import random
 
-from globals import *
+from .globals import *
 
 
 class _SmartStack(object):
