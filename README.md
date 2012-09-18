@@ -22,8 +22,9 @@ will be unavailable.
 Download everything, open a terminal (a.k.a. Command Prompt in Windows), `cd`
 to the directory where you downloaded the code and run `python redeal.py
 --help`, or `python redeal.py` to get a few hands, or `python redeal.py
-examples/deal1.py` for an example simulation.  `./run_all_examples.sh` (or
-`run_all_examples.bat` on Windows) will go through all the examples.
+examples/deal1.py` for an example simulation.  In the `examples` folder,
+`./run_all_examples.sh` (or `run_all_examples.bat` on Windows) will go through
+all the examples.
 
 An introductory tutorial
 ------------------------
@@ -97,7 +98,7 @@ Let's say we want a selection of deals in which north holds a one spade opener.
 For now, we will use a crude definition for an opening 1♠ call -- we will
 require North to have 5 or more spades and 12 or more points.
 
-Here is the script we write (to a file we'll call onespade.py):
+Here is the script we write (to a file we'll call `onespade.py`):
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
@@ -160,11 +161,16 @@ Redeal gives more information about its progress when given the `-v` flag:
 
 This is also a good way to check that it is not the default `accept` function
 (which accepts all hands), but the one you defined, that is used.  As one can
-see, there are two other functions that can be overriden: `initial`, which is
-called before hand generation starts with no arguments, and by default does
-nothing, and `final`, which is called after hand generation is done with
-a single argument -- the number of generated hands (accepted or not) -- and by
-default prints it.
+see, there are in total, four functions that can be overriden:
+
+- `initial` (taking no argument) is called when the simulation begins
+  (defaults to doing nothing)
+- `accept` (taking a `deal` argument) should return True or False depending
+  on whether the deal is accepted -- defaults to always True,
+- `do` (taking a `deal` argument) is called on each accepted deal --
+  defaults to printing the deal,
+- `final` (taking a `n_tries` argument) is called when the simulation ends
+  (defaults to printing the number of tries).
 
 One can also have specified the `accept` function, as the body of a function
 taking a `deal` argument, from the command line:
@@ -183,13 +189,6 @@ taking a `deal` argument, from the command line:
     ♠KQJT9♡98♢KT♣K962 ♠♡J65432♢763♣AJ83 ♠A8652♡AQ7♢A8♣T54 ♠743♡KT♢QJ9542♣Q7
     Tries: 203
 
-There are, in total, four functions that can be overriden:
-    - `initial` (taking no argument) is called when the simulation begins,
-    - `accept` (taking a `deal` argument) should return True or False depending
-      on whether the deal is accepted -- defaults to always True,
-    - `do` (taking a `deal` argument) is called on each accepted deal --
-      defaults to printing the deal,
-    - `final` (taking a `n_tries` argument) is called when the simulation ends.
 
 ### Predealing and scripting
 
