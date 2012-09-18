@@ -436,7 +436,7 @@ def defvector(*vals):
                                if any(rank_ == rank for rank_ in holding))
 
 
-def generate(n_hands, max_tries, predeal, accept, verbose=False):
+def generate(n_hands, max_tries, predeal, accept, do, verbose=False):
     """Repeatedly pass hands to an `accept` function until enough are accepted.
     """
     found = 0
@@ -445,6 +445,7 @@ def generate(n_hands, max_tries, predeal, accept, verbose=False):
         deal = Deal(dealer)
         if accept(deal):
             found += 1
+            do(deal)
             if verbose:
                 print("(hand #{}, found after {} tries)".format(found, i + 1))
         if found >= n_hands:
@@ -485,26 +486,19 @@ if __name__ == "__main__":
         help="predealt West hand as a string")
     override.add_argument("-W",
         help="predealt South hand as a string")
-    my_globals = dict(
-        globals(),
-        print=lambda *args, **kwargs: print(*args, **kwargs) or True)
-    override.add_argument("--initial",
-        type=lambda s: eval("lambda: " + s, my_globals),
-        help='body of "initial" function: "initial = lambda: <INITIAL>"')
-    override.add_argument("--accept",
-        type=lambda s: eval("lambda deal: " + s, my_globals),
-        help='body of "accept" function: "accept = lambda deal: <ACCEPT>"')
-    override.add_argument("--final",
-        type=lambda s: eval("lambda n_tries: " + s, my_globals),
-        help='body of "final" function: "final = lambda n_tries: <FINAL>"')
     override.add_argument("-g", "--global",
-        nargs=2, dest="globals", default=[], action="append",
-        help="global, '<<'-mutable variable for functions given in the "
-        "command-line", metavar=("NAME", "INIT"))
+        dest="globals", default=[], action="append",
+        help="variable implicitly global in the following functions",
+        metavar=("NAME", "INIT"))
+    override.add_argument("--initial",
+        help='body of "initial" function: "def initial(): <INITIAL>"')
+    override.add_argument("--accept",
+        help='body of "accept" function: "def accept(deal): <ACCEPT>"')
+    override.add_argument("--do",
+        help='body of "do" function: "def do(deal): <ACCEPT>"')
+    override.add_argument("--final",
+        help='body of "final" function: "def final(n_tries): <FINAL>"')
     args = parser.parse_args()
-
-    for name, init in args.globals:
-        my_globals[name] = ref(eval(init))
 
     if args.script is None:
         module = None
@@ -514,30 +508,50 @@ if __name__ == "__main__":
         module = imp.load_module(name, file, pathname, description)
         file.close()
 
-    def verbose_getattr(attr, default):
+    def verbose_getattr(attr, default, transform=lambda x: x):
         args_attr = getattr(args, attr, None)
         if args_attr is not None:
-            return args_attr
+            return transform(args_attr)
         if hasattr(module, attr):
             return getattr(module, attr)
         else:
             if args.verbose:
                 print("Using default for {}.".format(attr))
             return default
-    initial = verbose_getattr("initial", lambda: None)
+
+    def create_func(name, args, body, declared=args.globals, g=globals()):
+        if body is None:
+            return body
+        d = {}
+        exec("def {name}({args}): {declared} {body}".format(
+            name=name, args=", ".join(args),
+            declared="global {};".format(", ".join(declared)) if declared else "",
+            body=body),
+            g, d)
+        return d[name]
+
     predeal = verbose_getattr("predeal", {})
     for seat in SEATS:
         if getattr(args, seat):
             predeal[seat] = H(getattr(args, seat))
+    initial = verbose_getattr("initial",
+                              lambda: None,
+                              lambda body: create_func("initial", (), body))
     accept = verbose_getattr("accept",
-        lambda deal: print("{}".format(deal)) or True)
+                             lambda deal: True,
+                             lambda body: create_func("accept", ("deal",), body))
+    do = verbose_getattr("do",
+                         lambda deal: print("{}".format(deal)),
+                         lambda body: create_func("do", ("deal",), body))
     final = verbose_getattr("final",
-                            lambda tries: print("Tries: {}".format(tries)))
+                            lambda n_tries: print("Tries: {}".format(n_tries)),
+                            lambda body: create_func("final", ("n_tries",), body))
+
     if args.long:
         Deal.__str__ = lambda self: self._long_str
         Deal.__unicode__ = lambda self: self._long_str
 
     initial()
-    tries = generate(args.n, args.max or 1000 * args.n, predeal, accept,
+    tries = generate(args.n, args.max or 1000 * args.n, predeal, accept, do,
                      verbose=args.verbose)
     final(tries)

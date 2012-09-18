@@ -101,7 +101,6 @@ Here is the script we write (to a file we'll call onespade.py):
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
-            print(deal)
             return True
 
 and run it as follows:
@@ -125,16 +124,17 @@ The `accept` function is called after each deal is dealt.  It can either return
 counted towards the goal of 10 deals.  Note that at the end, redeal also gives
 us the total number of hands it had to deal in order to get 10 accepted hands.
 
-In our case, `deal.north` represents North's hand, `deal.north.spades` is
-a list of North's spade holding, and `deal.north.hcp` is North's number of HCP.
-If the conditions are satisfied, we print the hand and return `True`, which
-increment the counter of accepted hands.
+In our case, `deal.north` represents North's hand, `deal.north.spades` is a
+list of North's spade holding, and `deal.north.hcp` is North's number of HCP.
+If the conditions are satisfied, we return `True`.  This prints the hand and
+increments the counter of accepted hands.
 
 Redeal gives more information about its progress when given the `-v` flag:
 
     $ python redeal.py -v examples/onespade.py
-    Using default for initial.
     Using default for predeal.
+    Using default for initial.
+    Using default for do.
     Using default for final.
     ♠KT8754♡5♢AKQ76♣J ♠QJ♡AQ94♢T542♣972 ♠9632♡JT32♢J8♣864 ♠A♡K876♢93♣AKQT53
     (hand #1, found after 9 tries)
@@ -166,11 +166,11 @@ nothing, and `final`, which is called after hand generation is done with
 a single argument -- the number of generated hands (accepted or not) -- and by
 default prints it.
 
-One can also have specified the `accept` function, as the body of a lambda form
+One can also have specified the `accept` function, as the body of a function
 taking a `deal` argument, from the command line:
 
-    $ ./redeal.py --accept "len(deal.north.spades) >= 5 and \
-        deal.north.hcp >= 12 and print(deal)"
+    $ ./redeal.py --accept "return len(deal.north.spades) >= 5 and \
+        deal.north.hcp >= 12"
     ♠AKJT7♡85♢865♣KQ7 ♠852♡A74♢AQT42♣86 ♠963♡KJ3♢J973♣AT4 ♠Q4♡QT962♢K♣J9532
     ♠AKT86♡AJ76♢64♣42 ♠J954♡T♢KT752♣KT5 ♠3♡KQ853♢A983♣Q76 ♠Q72♡942♢QJ♣AJ983
     ♠AQ753♡A96♢A♣AT43 ♠KJT6♡KQ83♢Q753♣8 ♠9♡JT75♢KT42♣KQJ7 ♠842♡42♢J986♣9652
@@ -183,10 +183,13 @@ taking a `deal` argument, from the command line:
     ♠KQJT9♡98♢KT♣K962 ♠♡J65432♢763♣AJ83 ♠A8652♡AQ7♢A8♣T54 ♠743♡KT♢QJ9542♣Q7
     Tries: 203
 
-There is some magic going on here: the `print` function is overriden while the
-lambda form is evaluated (and *only* at that time), so that it always return
-True instead of None.  It is also possible to override `initial` (taking no
-argument) and `final` (taking a `n_tries` argument) in a similar fashion.
+There are, in total, four functions that can be overriden:
+    - `initial` (taking no argument) is called when the simulation begins,
+    - `accept` (taking a `deal` argument) should return True or False depending
+      on whether the deal is accepted -- defaults to always True,
+    - `do` (taking a `deal` argument) is called on each accepted deal --
+      defaults to printing the deal,
+    - `final` (taking a `n_tries` argument) is called when the simulation ends.
 
 ### Predealing and scripting
 
@@ -217,7 +220,6 @@ script, in the `predeal` variable:
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
-            print(deal)
             return True
 
 Note that the predealing occurs outside of the `accept` function.

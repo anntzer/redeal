@@ -14,9 +14,10 @@ def initial():
 
 
 def accept(deal):
-    global TABLE
-    if not (15 <= deal.north.hcp <= 17 and balanced(deal.north)):
-        return False
+    return 15 <= deal.north.hcp <= 17 and balanced(deal.north)
+
+
+def do(deal):
     nttricks = solve_board(deal, "N", "N")
     pass1N = C("1N", True).score(nttricks)
     if len(deal.north.hearts) < 4:
@@ -46,14 +47,11 @@ def accept(deal):
     for i, scorei in enumerate(scores):
         for j, scorej in enumerate(scores):
             TABLE[i][j][imps(scorei, scorej)] += 1
-    return True
 
 
 def final(n_tries):
-    global TABLE
     for line in TABLE:
         print("\t".join(str(sum(list(counter.elements())) /
                             len(list(counter.elements())))
                         for counter in line))
     print("Tries: {}".format(n_tries))
-

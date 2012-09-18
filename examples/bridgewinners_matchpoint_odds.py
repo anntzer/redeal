@@ -34,7 +34,6 @@ def initial():
 # `accept` is called for each hand with the currently dealt hand as argument.
 # It must return True if the hand is accepted, or False if not.
 def accept(deal):
-    global TABLE
     # Deals have four properties: north, south, east, west.  Each of them is a
     # hand object, with properties spades, hearts, diamonds, clubs (that are
     # themselves hand objects, with fewer cards), shape (a list of lengths),
@@ -42,8 +41,11 @@ def accept(deal):
     # Shape can also be tested by an expression such as `shape in
     # Shape("(4333)")+Shape("22(54)")` which behaves as expected. The
     # `balanced` and `semibalanced` shapes are predefined.
-    if not (22 <= deal.north.hcp <= 24 and balanced(deal.north)):
-        return False
+    return 22 <= deal.north.hcp <= 24 and balanced(deal.north)
+
+
+# `do` is called for each accepted hand.
+def do(deal):
     # `solve_board(deal, strain, declarer)` returns the DD number of tricks.
     nttricks = solve_board(deal, "N", "N")
     sptricks = solve_board(deal, "S", "N")
@@ -68,13 +70,11 @@ def accept(deal):
             # Update the cross-matchpoint table.  `imp(my_score, their_score)`
             # is also available for IMP comparisons.
             TABLE[i][j][matchpoints(scorei, scorej)] += 1
-    return True
 
 
 # `final` is called at the end of the sim with the number of tries as an
 # argument.  Here it outputs the cross-matchpoint table.
 def final(n_tries):
-    global TABLE
     for line in TABLE:
         print("\t".join("+{} ={} -{}".format(counter[0], counter[0.5], counter[1])
                         for counter in line))
@@ -84,7 +84,6 @@ def final(n_tries):
 # An alternative `final` which only outputs the average score for each
 # comparison (useful for IMPs, for example).
 def final1(n_tries):
-    global TABLE
     for line in TABLE:
         print("\t".join(str(np.mean(list(counter.elements())))
                         for counter in line))
@@ -100,19 +99,14 @@ def initial2():
     TABLE = [0, 0]
 
 
-def accept2(found, deal):
-    global TABLE
-    if not (22 <= deal.north.hcp <= 24 and balanced(deal.north.shape)):
-        return False
+def do2(found, deal):
     if (solve_board(deal, "H", "N") >= 10 or solve_board(deal, "S", "N") >= 10
         or solve_board(deal, "N", "N") >= 9):
         TABLE[True] += 1
     else:
         TABLE[False] += 1
     print("{}: {}".format(found + 1, deal))
-    return True
 
 
 def final2(n_tries):
     print(TABLE)
-

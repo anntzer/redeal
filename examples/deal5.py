@@ -18,8 +18,6 @@ from redeal import *
 controls = defvector(2, 1)
 
 def accept(deal):
-    if (sum(map(controls, deal.north)) >= 3 and deal.south.hcp >= 17 and
-        (not balanced(deal.south) or
-         deal.south.hcp != 17 and not (22 <= deal.south.hcp <= 24))):
-        print(deal)
-        return True
+    return (sum(map(controls, deal.north)) >= 3 and deal.south.hcp >= 17 and
+            (not balanced(deal.south) or
+             deal.south.hcp != 17 and not (22 <= deal.south.hcp <= 24)))

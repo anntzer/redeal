@@ -10,6 +10,4 @@ from redeal import *
 predeal = {"S": H("Q86432 T2 932 83")}
 
 def accept(deal):
-    if deal.east.hcp > 18 and (deal.east.hcp > 22 or deal.east.losers < 2):
-        print(deal)
-        return True
+    return deal.east.hcp > 18 and (deal.east.hcp > 22 or deal.east.losers < 2)

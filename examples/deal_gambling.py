@@ -27,7 +27,5 @@ def gambling(holding):
 predeal = {"S": H("AK K52 98765 962"),
            "N": SmartStack(Gambling, gambling, 4)} # (max defaults to min)
 
-def accept(deal):
+def do(deal):
     print("-- " + " ".join(map(str, deal.north.shape)))
-    return True
-
