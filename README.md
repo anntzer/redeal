@@ -15,9 +15,9 @@ A double-dummy solver function is also available through Bo Haglund's DDS
 v.1.1.9 (the latest version I could find that can easily be built on Linux --
 extracted and slightly modified from the source of Thomas Andrews' Deal), but
 you will need a C++ compiler.  If you have g++ and make, simply run `make` in
-the dds-1.1.9 folder; otherwise use the compiler of your choice.  If you cannot
-compile the DDS library, Redeal will work fine but the `solve_board` function
-will be unavailable.
+the `dds-1.1.9` folder; otherwise use the compiler of your choice.  If you
+cannot compile the DDS library, Redeal will work fine but the `solve_board`
+function will be unavailable.
 
 Installation
 ------------
@@ -41,8 +41,8 @@ A note on the GUI
 -----------------
 
 Redeal provides a GUI, `redeal-gui`, if you are not comfortable using the
-command line.  I have not written GUI-specific documentation but it should
-still be reasonably simple to use once you have read the tutorial.
+command line.  Some GUI-specific information is scattered in the tutorial so
+read on!
 
 An introductory tutorial
 ------------------------
@@ -66,12 +66,15 @@ will be replaced by letters -- but the rest should work fine.
 Here, the number of tries is the same as the number of hands, as any hand is
 accepted.  This may not be the case in more complex cases.
 
+Using the GUI, just keep click `Run` to go!  The number of requested deals can
+be set at the top of the window.
+
 ### Stacking a hand
 
 Would you open 2 or 3♡ with ♠-♡KQJT62♢T9876♣84?  Well, let's deal a couple of
 hands to see how this would fare.
 
-    $ redeal -S"- KQJT62 T9876 84"
+    $ redeal -S '- KQJT62 T9876 84'
     ♠AT982♡854♢J42♣KT ♠KQ7♡A973♢AK5♣AQJ ♠♡KQJT62♢T9876♣84 ♠J6543♡♢Q3♣976532
     ♠85♡854♢K4♣JT9752 ♠K97643♡A97♢A♣KQ6 ♠♡KQJT62♢T9876♣84 ♠AQJT2♡3♢QJ532♣A3
     ♠94♡97♢KJ42♣QJ972 ♠KJ852♡A85♢AQ3♣K5 ♠♡KQJT62♢T9876♣84 ♠AQT763♡43♢5♣AT63
@@ -84,12 +87,19 @@ hands to see how this would fare.
     ♠AQJ8432♡4♢AQ♣KT5 ♠KT96♡A98♢32♣AJ76 ♠♡KQJT62♢T9876♣84 ♠75♡753♢KJ54♣Q932
     Tries: 10
 
-There are also `-N`, `-E` and `-W` options, with the expected meanings.
+There are also `-N`, `-E` and `-W` options, with the expected meanings.  Note
+that you do not have to indicate 13 cards for a hand, but you always have to
+specify the four suits.  For example, you can select hands where North holds
+the heart ace with `redeal -S '- A - -'`.
+
+Using the GUI, input the hands (using the same format) in the boxes labeled
+"North", "South", "East" and "West".
 
 ### Formatting output
 
 The default output is compact, but not very friendly.  What about more classic
-diagrams?  The `-l` flag is there for that!
+diagrams?  The `-l` flag (or the GUI's "long output for diagrams" option) is
+there for that!
 
     $ redeal -l -n1
            
@@ -116,7 +126,8 @@ Let's say we want a selection of deals in which north holds a one spade opener.
 For now, we will use a crude definition for an opening 1♠ call -- we will
 require North to have 5 or more spades and 12 or more points.
 
-Here is the script we write (to a file we'll call `onespade.py`):
+Here is the script we write, to a file we'll call `onespade.py`, or in the
+`accept` box of the GUI:
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
@@ -148,7 +159,8 @@ list of North's spade holding, and `deal.north.hcp` is North's number of HCP.
 If the conditions are satisfied, we return `True`.  This prints the hand and
 increments the counter of accepted hands.
 
-Redeal gives more information about its progress when given the `-v` flag:
+Redeal gives more information about its progress when given the `-v` flag (or
+when the "be verbose" box of the GUI is ticked):
 
     $ redeal -v examples/onespade.py
     Using default for predeal.
@@ -190,11 +202,11 @@ see, there are in total, four functions that can be overriden:
 - `final` (taking a `n_tries` argument) is called when the simulation ends
   (defaults to printing the number of tries).
 
-One can also have specified the `accept` function, as the body of a function
-taking a `deal` argument, from the command line:
+One can also give the `accept` function, as the body of a function taking a
+`deal` argument, at the command line:
 
-    $ ./redeal.py --accept "return len(deal.north.spades) >= 5 and \
-        deal.north.hcp >= 12"
+    $ ./redeal.py --accept 'return len(deal.north.spades) >= 5 and \
+        deal.north.hcp >= 12'
     ♠AKJT7♡85♢865♣KQ7 ♠852♡A74♢AQT42♣86 ♠963♡KJ3♢J973♣AT4 ♠Q4♡QT962♢K♣J9532
     ♠AKT86♡AJ76♢64♣42 ♠J954♡T♢KT752♣KT5 ♠3♡KQ853♢A983♣Q76 ♠Q72♡942♢QJ♣AJ983
     ♠AQ753♡A96♢A♣AT43 ♠KJT6♡KQ83♢Q753♣8 ♠9♡JT75♢KT42♣KQJ7 ♠842♡42♢J986♣9652
@@ -213,7 +225,7 @@ taking a `deal` argument, from the command line:
 Your partner opens 1♠ and you hold ♠-♡96532♢A864♣T962... do you pass or bid
 a forcing NT?  Let's generate a few hands so that we can see how we would fare.
 
-    $ redeal -S"- 96532 A864 T962" examples/onespade.py
+    $ redeal -S '- 96532 A864 T962' examples/onespade.py
     ♠A8643♡A8♢QT72♣Q8 ♠QT972♡Q♢K95♣K754 ♠♡96532♢A864♣T962 ♠KJ5♡KJT74♢J3♣AJ3
     ♠AQ864♡4♢KJT72♣QJ ♠JT7♡AJT8♢Q3♣A743 ♠♡96532♢A864♣T962 ♠K9532♡KQ7♢95♣K85
     ♠AQT765♡7♢J72♣KQ8 ♠K9832♡AKT♢K953♣5 ♠♡96532♢A864♣T962 ♠J4♡QJ84♢QT♣AJ743
@@ -226,7 +238,7 @@ a forcing NT?  Let's generate a few hands so that we can see how we would fare.
     ♠KJ9863♡♢Q9♣AKJ73 ♠AT75♡QT874♢72♣85 ♠♡96532♢A864♣T962 ♠Q42♡AKJ♢KJT53♣Q4
     Tries: 31
 
-Again, one can also specify the `accept` function from the command line.
+Again, one can also give the `accept` function at the command line.
 
 Or, one can indicate the predealt cards ("stacked", in Deal jargon) in the
 script, in the `predeal` variable:
@@ -239,7 +251,9 @@ script, in the `predeal` variable:
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
             return True
 
-Note that the predealing occurs outside of the `accept` function.
+Note that the predealing occurs outside of the `accept` function.  Also, the
+`redeal` module has to be imported only for scripts in their own files; this is
+done implicitely for the GUI and for functions given at the command line.
 
 ### Shape
 
@@ -302,5 +316,8 @@ a couple of dozen of hands, smartstacking is faster than direct dealing.
 Smartstacking will take into account other (normally) predealt hands, and an
 `accept` function can still be used, e.g. to still throw away some of the
 hands.  See `examples/deal_gambling.py` for a complete example.
+
+Finally, please note that smartstacking is only available for scripts in their
+own files, not at the command line nor in the GUI.
 
 // vim: fileencoding=utf-8
