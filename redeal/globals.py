@@ -5,9 +5,17 @@ from itertools import product as _product
 import sys as _sys
 
 
+__author__ = "Antony Lee"
+__name__ = "redeal"
+__version__ = "0.2"
+__title__ = "{} v. {}".format(__name__, __version__)
+__copyright__ = "{}, (c) {}".format(__title__, __author__)
+
 SEATS = list("NESW")
+LONG_SEATS = ["North", "South", "East", "West"]
 SUITS = list("SHDC")
 STRAINS = SUITS + ["N"]
+SUITS_SYM_UNICODE = list("♠♡♢♣")
 SUITS_SYM = (list("♠♡♢♣") if _sys.getdefaultencoding() == "utf-8"
              else [" S", " H", " D", " C"])
 N_SUITS = len(SUITS)

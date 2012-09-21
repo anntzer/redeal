@@ -1,51 +1,31 @@
 # vim: set fileencoding=utf-8
 from __future__ import division, print_function, unicode_literals
-from argparse import ArgumentParser
+import argparse
 import imp
 from os import path
 import sys
 
-from .globals import *
-from .redeal import *
+from . import globals
+from . import gui
+from . import redeal
+redeal_star = {name: getattr(redeal, name) for name in redeal.__all__}
 
 
-def generate(n_hands, max_tries, predeal, accept, do, verbose=False):
-    """Repeatedly pass hands to an `accept` function until enough are accepted.
-    """
-    found = 0
-    dealer = Deal.prepare(predeal)
-    for i in range(max_tries):
-        deal = Deal(dealer)
-        if accept(deal):
-            found += 1
-            do(deal)
-            if verbose:
-                print("(hand #{}, found after {} tries)".format(found, i + 1))
-        if found >= n_hands:
-            break
-    return i + 1
-
-
-def create_func(name, args, declared, body, g=globals()):
-    if body is None:
-        return body
-    d = {}
-    defstr = "def {name}({args}): {declared} {body}".format(
-        name=name, args=", ".join(args),
-        declared="global {};".format(", ".join(declared)) if declared else "",
-        body=body)
+def exec_(stmt, globals, locals):
+    """The exec function/statement, as implemented by six."""
     if sys.version_info.major < 3:
-        exec("exec {} in g, d".format(defstr))
+        exec("exec {!r} in globals, locals".format(stmt))
     else:
-        exec("exec({!r}, g, d)".format(defstr))
-    return d[name]
+        exec("exec({!r}, globals, locals)".format(stmt))
 
 
-def main():
-    parser = ArgumentParser(
+class Main(object):
+    parser = argparse.ArgumentParser(
         description="A reimplementation of Thomas Andrews' Deal in Python.")
+    parser.add_argument("--gui", action="store_true",
+        help="start the GUI")
     parser.add_argument("-n", type=int, default=10,
-        help="the number of requested hands")
+        help="the number of requested deals")
     parser.add_argument("--max", type=int,
         help="the maximum number of tries (defaults to 1000*n)")
     parser.add_argument("-l", "--long", action="store_true",
@@ -55,7 +35,8 @@ def main():
     parser.add_argument("script", nargs="?",
         help="path to script")
     override = parser.add_argument_group(
-        "arguments overriding values given in script")
+        "arguments overriding values given in script",
+        argument_default=argparse.SUPPRESS)
     override.add_argument("-N",
         help="predealt North hand as a string")
     override.add_argument("-E",
@@ -76,53 +57,118 @@ def main():
         help='body of "do" function: "def do(deal): <ACCEPT>"')
     override.add_argument("--final",
         help='body of "final" function: "def final(n_tries): <FINAL>"')
-    args = parser.parse_args()
 
-    if args.script is None:
-        module = None
-    else:
-        folder, name = path.split(path.splitext(args.script)[0])
-        file, pathname, description = imp.find_module(name, [folder])
-        module = imp.load_module(name, file, pathname, description)
-        file.close()
+    func_defaults = [
+        ("initial", (), "pass"),
+        ("accept", ("deal",), "return True"),
+        ("do", ("deal",), 'print("{}".format(deal))'),
+        ("final", ("n_tries",), 'print("Tries: {}".format(n_tries))')]
 
-    def verbose_getattr(attr, default, transform=lambda x: x):
-        args_attr = getattr(args, attr, None)
-        if args_attr is not None:
-            return transform(args_attr)
-        if hasattr(module, attr):
-            return getattr(module, attr)
+    def __init__(self):
+        self.args = self.parser.parse_args()
+
+        if self.args.script is None:
+            self.module = None
         else:
-            if args.verbose:
-                print("Using default for {}.".format(attr))
-            return default
+            folder, name = path.split(path.splitext(self.args.script)[0])
+            file, pathname, description = imp.find_module(name, [folder])
+            self.module = imp.load_module(name, file, pathname, description)
+            file.close()
 
-    predeal = verbose_getattr("predeal", {})
-    for seat in SEATS:
-        if getattr(args, seat):
-            predeal[seat] = H(getattr(args, seat))
-    initial = verbose_getattr("initial",
-        lambda: None,
-        lambda body: create_func("initial", (), args.globals, body))
-    accept = verbose_getattr("accept",
-        lambda deal: True,
-        lambda body: create_func("accept", ("deal",), args.globals, body))
-    do = verbose_getattr("do",
-        lambda deal: print("{}".format(deal)),
-        lambda body: create_func("do", ("deal",), args.globals, body))
-    final = verbose_getattr("final",
-        lambda n_tries: print("Tries: {}".format(n_tries)),
-        lambda body: create_func("final", ("n_tries",), args.globals, body))
+        self.given_funcs = [(name, signature, self.verbose_getattr(name, body))
+                            for name, signature, body in self.func_defaults]
+        self.predeal = self.verbose_getattr("predeal", {})
+        for seat in globals.SEATS:
+            try:
+                hand = getattr(self.args, seat)
+            except AttributeError:
+                continue
+            self.predeal[seat] = redeal.H(hand)
 
-    if args.long:
-        Deal.__str__ = lambda self: self._long_str
-        Deal.__unicode__ = lambda self: self._long_str
+        self.stop_flag = False
 
-    initial()
-    tries = generate(args.n, args.max or 1000 * args.n, predeal, accept, do,
-                     verbose=args.verbose)
-    final(tries)
+    def verbose_getattr(self, attr, default):
+        """Try to get an attribute:
+
+        Query `self.args` first, then `self.module`, then uses `default`;
+        report if `self.verbose is set`."""
+        try:
+            value = getattr(self.args, attr)
+        except AttributeError:
+            try:
+                value = getattr(self.module, attr)
+            except AttributeError:
+                if self.args.verbose:
+                    print("Using default for {}.".format(attr))
+                return default
+        return value
+
+    def create_func(self, name, signature, body, add_globals=False, indent=True):
+        """Create a function with the given name, arguments, globals and body."""
+        if isinstance(body, type(lambda: None)):
+            return body
+        d = {}
+        if indent:
+            format_str = "def {name}({signature}):\n{declared}\n{body}"
+        else:
+            format_str = "def {name}({signature}): {declared} {body}"
+        defstr = format_str.format(
+            name=name,
+            signature=", ".join(signature),
+            declared="    global {};".format(", ".join(self.args.globals))
+                     if add_globals and self.args.globals else "",
+            body=body)
+        try:
+            exec_(defstr, redeal_star, d)
+        except:
+            print("An invalid function definition raised:\n", file=sys.stderr)
+            raise
+        return d[name]
+
+    def generate(self, funcs):
+        """Repeatedly pass deals to `accept` until enough are accepted.
+        """
+        funcs["initial"]()
+        found = 0
+        dealer = redeal.Deal.prepare(self.predeal)
+        for i in range(self.args.max or 1000 * self.args.n):
+            if self.stop_flag:
+                break
+            deal = redeal.Deal(dealer)
+            if funcs["accept"](deal):
+                found += 1
+                funcs["do"](deal)
+                if self.args.verbose:
+                    print("(hand #{}, found after {} tries)".
+                          format(found, i + 1))
+            if found >= self.args.n:
+                break
+        funcs["final"](i + 1)
+        return i + 1
+
+    def run(self):
+        if self.args.gui:
+            gui.run_gui(self)
+        else:
+            funcs = {name: self.create_func(name, signature, body,
+                                            add_globals=True, indent=False)
+                     for name, signature, body in self.given_funcs}
+            redeal.Hand.set_str_style(
+                redeal.Hand.LONG if self.long.get_value() else redeal.Hand.SHORT)
+            redeal.Deal.set_str_style(
+                redeal.Deal.LONG if self.long.get_value() else redeal.Deal.SHORT)
+            self.generate(funcs)
+
+
+def console_entry():
+    return Main().run()
+
+
+def gui_entry():
+    main = Main()
+    main.args.gui = True
+    main.run()
 
 
 if __name__ == "__main__":
-    main()
+    console_entry()

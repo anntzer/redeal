@@ -6,6 +6,7 @@ from functools import reduce
 from itertools import permutations, product
 import random
 
+from . import globals
 from .globals import *
 from .util import reify
 try:
@@ -164,6 +165,8 @@ semibalanced = balanced + Shape("(5422)") + Shape("(6322)")
 class Deal(tuple, object):
     """A deal, represented as a tuple of hands."""
 
+    LONG, SHORT = range(2)
+
     @staticmethod
     def prepare(predeal):
         """Prepare a seat -> [Hand | SmartStack] map into a dealer.
@@ -205,24 +208,27 @@ class Deal(tuple, object):
             hands.append(Hand(hand))
         return tuple.__new__(cls, hands)
 
-    def __str__(self):
-        return " ".join(map(str, self))
+    def _short_str(self):
+        return " ".join(hand._short_str() for hand in self)
 
-    def __unicode__(self):
-        return " ".join(map(unicode, self))
-
-    @property
     def _long_str(self):
         """A pretty-printed version of the deal."""
         s = ""
-        for line in self.north._long_str.split("\n"):
+        for line in self.north._long_str().split("\n"):
             s += " " * 7 + line + "\n"
-        for line_w, line_e in zip(self.west._long_str.split("\n"),
-                                  self.east._long_str.split("\n")):
+        for line_w, line_e in zip(self.west._long_str().split("\n"),
+                                  self.east._long_str().split("\n")):
             s += line_w.ljust(14) + line_e + "\n"
-        for line in self.south._long_str.split("\n"):
+        for line in self.south._long_str().split("\n"):
             s += " " * 7 + line + "\n"
         return s
+
+    __str__ = _short_str
+
+    @classmethod
+    def set_str_style(cls, style):
+        cls.__str__ = {cls.SHORT: cls._short_str,
+                       cls.LONG: cls._long_str}[style]
 
     _N = SEATS.index("N")
     @property
@@ -252,6 +258,8 @@ class Deal(tuple, object):
 class Hand(tuple, object):
     """A hand, represented as a tuple of holdings."""
 
+    LONG, SHORT = range(2)
+
     def __new__(cls, cards):
         """Initialize with a list of cards, or with another hand."""
         return tuple.__new__(
@@ -270,15 +278,25 @@ class Hand(tuple, object):
                  for suit, holding in enumerate(suits) for rank in holding]
         return cls(cards)
 
-    def __str__(self):
-        return "".join(suit_symbol + str(holding)
-                       for suit_symbol, holding in zip(SUITS_SYM, self))
+    def to_str(self):
+        """Inverse of from_str."""
+        return " ".join(str(holding) if holding else "-" for holding in self)
 
-    @property
+    def _short_str(self):
+        return "".join(suit_symbol + str(holding)
+                       for suit_symbol, holding in zip(globals.SUITS_SYM, self))
+
     def _long_str(self):
         """Return a pretty-printed version of the hand."""
         return "\n" + "\n".join(suit_symbol + str(holding)
-            for suit_symbol, holding in zip(SUITS_SYM, self))
+            for suit_symbol, holding in zip(globals.SUITS_SYM, self))
+
+    __str__ = _short_str
+
+    @classmethod
+    def set_str_style(cls, style):
+        cls.__str__ = {cls.SHORT: cls._short_str,
+                       cls.LONG: cls._long_str}[style]
 
     def cards(self):
         """Return self as a list of card objects."""

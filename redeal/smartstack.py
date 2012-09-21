@@ -67,4 +67,3 @@ class SmartStack(object):
         self.eval_holding = eval_holding
         self.emin = emin
         self.emax = emax if emax is not None else emin
-
