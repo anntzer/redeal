@@ -250,10 +250,6 @@ class Deal(tuple, object):
     def west(self):
         return self[self._W]
 
-    @property
-    def _bits(self):
-        return [hand._bits for hand in self]
-
 
 class Hand(tuple, object):
     """A hand, represented as a tuple of holdings."""
@@ -335,10 +331,6 @@ class Hand(tuple, object):
     def losers(self):
         return sum(holding.losers for holding in self)
 
-    @reify
-    def _bits(self):
-        return [holding._bits for holding in self]
-
 
 class Holding(frozenset, object):
     """A one-suit holding, represented as a frozenset of card ranks."""
@@ -370,12 +362,6 @@ class Holding(frozenset, object):
                   not any(rank in [self._J, self._T] for rank in self)):
                 losers += 0.5
         return losers
-
-    @reify
-    def _bits(self):
-        """Used for DDS interop."""
-        # bit #i (0 ≤ i ≤ 12) is set if card of rank i+2 (A = 14) is held
-        return sum(1 << (PER_SUIT - 1 - rank) for rank in self)
 
 
 class Contract(object):

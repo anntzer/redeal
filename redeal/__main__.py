@@ -153,10 +153,10 @@ class Main(object):
             funcs = {name: self.create_func(name, signature, body,
                                             add_globals=True, indent=False)
                      for name, signature, body in self.given_funcs}
-            redeal.Hand.set_str_style(
-                redeal.Hand.LONG if self.long.get_value() else redeal.Hand.SHORT)
-            redeal.Deal.set_str_style(
-                redeal.Deal.LONG if self.long.get_value() else redeal.Deal.SHORT)
+            redeal.Hand.set_str_style(redeal.Hand.LONG if self.args.long
+                                      else redeal.Hand.SHORT)
+            redeal.Deal.set_str_style(redeal.Deal.LONG if self.args.long
+                                      else redeal.Deal.SHORT)
             self.generate(funcs)
 
 

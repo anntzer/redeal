@@ -7,7 +7,7 @@ import subprocess
 
 class make_build(build_clib):
     def run(self):
-        os.chdir("redeal/dds-1.1.9")
+        os.chdir("redeal/dds-1.1.15")
         subprocess.call("make")
         os.chdir("../..")
 
@@ -20,7 +20,7 @@ setup(
     author_email="anntzer.lee@gmail.com",
     libraries=[("dds", {"sources": []})],
     packages=["redeal"],
-    package_data={"redeal": ["dds-1.1.9/libdds.so.1.1.9"]},
+    package_data={"redeal": ["dds-1.1.15/libdds.so.1.1.15"]},
     entry_points={"console_scripts": ["redeal = redeal.__main__:console_entry"],
                   "gui_scripts": ["redeal-gui = redeal.__main__:gui_entry"]},
     url="http://github.com/anntzer/redeal",
