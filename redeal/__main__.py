@@ -3,6 +3,7 @@ from __future__ import division, print_function, unicode_literals
 import argparse
 import imp
 from os import path
+import random
 import sys
 
 from . import globals
@@ -32,6 +33,8 @@ class Main(object):
         help="long output for diagrams")
     parser.add_argument("-v", "--verbose", action="store_true",
         help="be verbose")
+    parser.add_argument("--seed", type=int,
+        help="random number generator seed")
     parser.add_argument("script", nargs="?",
         help="path to script")
     override = parser.add_argument_group(
@@ -66,6 +69,7 @@ class Main(object):
 
     def __init__(self):
         self.args = self.parser.parse_args()
+        random.seed(self.args.seed)
 
         if self.args.script is None:
             self.module = None

@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from __future__ import division, print_function, unicode_literals
+import random
 import sys
 import threading
 if sys.version_info.major < 3:
@@ -63,6 +64,13 @@ class Application(tk.Frame):
                                     text="be verbose")
         self.verbose.pack(side=tk.LEFT)
         frame.pack(side=tk.TOP)
+        frame = tk.Frame(self)
+        tk.Label(frame, text="RNG seed").pack(side=tk.LEFT)
+        seed = tk.Entry(frame, width=8)
+        seed.pack(side=tk.LEFT)
+        tk.Button(frame, text="Reseed",
+                  command=lambda: random.seed(int(seed.get()))).pack(side=tk.LEFT)
+        frame.pack(side=tk.TOP)
         # configurables, #2
         for dest, text in [("n", "Number of requested deals:"),
                            ("max", "Maximum number of tries:")]:
@@ -98,7 +106,7 @@ class Application(tk.Frame):
                                      state=tk.DISABLED)
         self.stop_button.pack(side=tk.LEFT)
         tk.Button(frame, text="Clear", command=self.clear).pack(side=tk.LEFT)
-        tk.Button(frame, text="Quit", command=self.quit).pack(side=tk.RIGHT)
+        tk.Button(frame, text="Quit", command=self.quit).pack(side=tk.LEFT)
         frame.pack(side=tk.TOP)
         # output
         inner, self.out = scrolled_text(self, height=self.out_text_height)
