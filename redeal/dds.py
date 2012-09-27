@@ -1,13 +1,18 @@
 # vim: set fileencoding=utf-8
 from __future__ import division, print_function, unicode_literals
 from ctypes import *
-from os import path
+import os
 
 from .globals import *
 
 
-dll = CDLL(path.join(path.dirname(__file__), "dds-1.1.15/libdds.so.1.1.15"))
-dll.InitStart(0, 0)
+if os.name == "posix":
+    dll_path = "dds-1.1.15/libdds.so.1.1.15"
+    dll = CDLL(os.path.join(os.path.dirname(__file__), dll_path))
+    dll.InitStart(0, 0)
+elif os.name == "nt":
+    dll_path = "dds-1.1.15/dds.dll"
+    dll = CDLL(os.path.join(os.path.dirname(__file__), dll_path))
 
 
 class _Board(Structure):

@@ -1,15 +1,50 @@
 #!/usr/bin/env python
-from setuptools import setup
 from distutils.command.build_clib import build_clib
+from setuptools import setup
+
+import contextlib
 import os
 import subprocess
+import sys
+if sys.version_info.major < 3:
+    from cStringIO import StringIO as BytesIO
+    from urllib2 import urlopen, URLError
+else:
+    from io import BytesIO
+    from urllib.request import urlopen, URLError
+from zipfile import ZipFile
+
+
+DDS_URL = "http://privat.bahnhof.se/wb758135/dds1115-pbn-dll.zip"
+if os.name == "posix":
+    PACKAGE_DATA = ["dds-1.1.15/libdds.so.1.1.15"]
+elif os.name == "nt":
+    PACKAGE_DATA = ["dds-1.1.15/dds.dll"]
+else:
+    PACKAGE_DATA = []
 
 
 class make_build(build_clib):
     def run(self):
-        os.chdir("redeal/dds-1.1.15")
-        subprocess.call("make")
-        os.chdir("../..")
+        os.chdir(os.path.join(
+            os.path.dirname(__file__), "redeal", "dds-1.1.15"))
+        if os.name == "posix":
+            subprocess.call("make")
+        elif os.name == "nt":
+            try:
+                with contextlib.closing(urlopen(DDS_URL)) as f:
+                    zip_file = ZipFile(BytesIO(f.read()))
+                    if zip_file.testzip() is not None:
+                        print("Corrupted zip file, installation stopped.")
+                        sys.exit(1)
+                    zip_file.extract("dds.dll")
+            except URLError:
+                print("dds will not be available as I cannot download it.")
+        else:
+            print("dds will not be available as I don't know how to build it "
+                  "on {}.  Please contact the author if you can help.".
+                  format(os.name))
+        os.chdir(os.path.dirname(__file__))
 
 
 setup(
@@ -20,7 +55,7 @@ setup(
     author_email="anntzer.lee@gmail.com",
     libraries=[("dds", {"sources": []})],
     packages=["redeal"],
-    package_data={"redeal": ["dds-1.1.15/libdds.so.1.1.15"]},
+    package_data={"redeal": PACKAGE_DATA},
     entry_points={"console_scripts": ["redeal = redeal.__main__:console_entry"],
                   "gui_scripts": ["redeal-gui = redeal.__main__:gui_entry"]},
     url="http://github.com/anntzer/redeal",
