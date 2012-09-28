@@ -7,7 +7,10 @@ import random
 import sys
 
 from . import globals
-from . import gui
+try:
+    from . import gui
+except ImportError:
+    gui = None
 from . import redeal
 redeal_star = {name: getattr(redeal, name) for name in redeal.__all__}
 
@@ -69,7 +72,12 @@ class Main(object):
 
     def __init__(self):
         self.args = self.parser.parse_args()
+        if self.args.gui and not gui:
+            print("tkinter, and thus the GUI, is not available.")
+            sys.exit(1)
+
         random.seed(self.args.seed)
+        self.stop_flag = False
 
         if self.args.script is None:
             self.module = None
@@ -88,8 +96,6 @@ class Main(object):
             except AttributeError:
                 continue
             self.predeal[seat] = redeal.H(hand)
-
-        self.stop_flag = False
 
     def verbose_getattr(self, attr, default):
         """Try to get an attribute:

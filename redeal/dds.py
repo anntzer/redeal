@@ -1,13 +1,10 @@
 # vim: set fileencoding=utf-8
-from __future__ import division, print_function, unicode_literals
+from __future__ import division, print_function
+# for pypy compatibility we do not use unicode_literals in this module
 from ctypes import *
 from os import path
 
 from .globals import *
-
-
-dll = CDLL(path.join(path.dirname(__file__), "dds-1.1.15/libdds.so.1.1.15"))
-dll.InitStart(0, 0)
 
 
 class _Board(Structure):
@@ -32,7 +29,8 @@ class _Board(Structure):
         # bit #i (2 ≤ i ≤ 14) is set if card of rank i (A = 14) is held
         for seat, hand in enumerate(deal):
             for suit, holding in enumerate(hand):
-                self.remaincards[seat][suit] = sum(1 << (PER_SUIT + 1 - rank) for rank in holding)
+                self.remaincards[seat][suit] = sum(1 << (PER_SUIT + 1 - rank)
+                                                   for rank in holding)
         return self
 
 
@@ -65,7 +63,7 @@ SolveBoardStatus = {
 
 def solve_board(deal, strain, declarer):
     """Wrapper for SolveBoard.  Return the number of tricks for declarer."""
-    leader = SEATS[(SEATS.index(declarer) + 1) % N_SUITS]
+    leader = SEATS[(SEATS.index(declarer.upper()) + 1) % N_SUITS]
     _board = _Board.from_deal(deal, strain, leader)
     _futp = _FutureTricks()
     # find one optimal card with its score, even if only one card
@@ -76,3 +74,8 @@ def solve_board(deal, strain, declarer):
     best_score = PER_SUIT - _futp.score[0]
     return best_score
 
+
+dll = CDLL(path.join(path.dirname(__file__), "dds-1.1.15/libdds.so.1.1.15"))
+dll.InitStart.argtypes = [c_int, c_int]
+dll.SolveBoard.argtypes = [_Board, c_int, c_int, c_int, POINTER(_FutureTricks)]
+dll.InitStart(0, 0)
