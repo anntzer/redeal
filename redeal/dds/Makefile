@@ -2,21 +2,22 @@ UNAME := $(shell uname -s)
 SONAME_FLAG := $(shell if [ `uname -s` = Darwin ]; \
     then echo dylib_install_name; else echo soname; fi)
 
-all: libdds.so.1.1.15
+all: libdds.so
 
-libdds.so.1.1.15: dds.o
+libdds.so: dds.o
 	$(CXX) -shared -Wl,-$(SONAME_FLAG),libdds.so.1 -o $@ *.o
 
-dds.o: dds.cpp dll.h patched
-	$(CXX) -O3 -fPIC -c $< -o $@
+dds.o: patched
+	$(CXX) -O3 -fPIC -c dds.cpp -o $@
 
 patched: dds.patch
+	cp ../dds-src/dds.cpp .
+	cp ../dds-src/dll.h .
 	patch -b <dds.patch
 	touch patched
 
 clean:
-	-mv -f dds.cpp.orig dds.cpp
-	-mv -f dll.h.orig dll.h
-	-rm patched *.o libdds.so.1.1.15
+	-rm dds.cpp dds.cpp.orig dll.h dll.h.orig
+	-rm patched dds.o libdds.so
 
 .PHONY: clean

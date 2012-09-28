@@ -1,6 +1,5 @@
 *.o
-*.so.*
+*.so
 *.pyc
 .*.swp
 *.orig
-

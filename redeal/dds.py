@@ -75,7 +75,7 @@ def solve_board(deal, strain, declarer):
     return best_score
 
 
-dll = CDLL(path.join(path.dirname(__file__), "dds-1.1.15/libdds.so.1.1.15"))
+dll = CDLL(path.join(path.dirname(__file__), "dds", "libdds.so"))
 dll.InitStart.argtypes = [c_int, c_int]
 dll.SolveBoard.argtypes = [_Board, c_int, c_int, c_int, POINTER(_FutureTricks)]
 dll.InitStart(0, 0)
