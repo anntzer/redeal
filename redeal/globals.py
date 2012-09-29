@@ -6,10 +6,9 @@ import sys as _sys
 
 
 __author__ = "Antony Lee"
-__name__ = "redeal"
 __version__ = "0.2"
-__title__ = "{} v. {}".format(__name__, __version__)
-__copyright__ = "{}, (c) {}".format(__title__, __author__)
+__fullname__ = "redeal v. {}".format(__version__)
+__copyright__ = "{}, (c) {}".format(__fullname__, __author__)
 
 SEATS = list("NESW")
 LONG_SEATS = ["North", "South", "East", "West"]

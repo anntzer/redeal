@@ -12,6 +12,7 @@ from .util import reify
 try:
     from .dds import solve_board
 except OSError:
+    raise
     def solve_board(deal, strain, declarer):
         raise Exception("Unable to load DDS.  `solve_board` is unavailable.")
 from .smartstack import SmartStack, _SmartStack

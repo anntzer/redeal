@@ -148,13 +148,13 @@ class Application(tk.Frame):
             finally:
                 self.run_button.config(state=tk.NORMAL)
                 self.stop_button.config(state=tk.DISABLED)
+            # reset settings
+            self.main.args.verbose = _verbose
+            self.main.args.n = _n
+            self.main.args.max = _max
+            self.main.predeal = _predeal
+            globals.SUITS_SYM = _globals_SUITS_SYM
         threading.Thread(target=target).start()
-        # reset settings
-        self.main.args.verbose = _verbose
-        self.main.args.n = _n
-        self.main.args.max = _max
-        self.main.predeal = _predeal
-        globals.SUITS_SYM = _globals_SUITS_SYM
 
     def stop(self):
         self.main.stop_flag = True
@@ -165,7 +165,7 @@ class Application(tk.Frame):
 
 def run_gui(main):
     root = tk.Tk()
-    root.title(globals.__title__)
+    root.title(globals.__fullname__)
     app = Application(root, main)
     _stdout = sys.stdout
     _stderr = sys.stderr

@@ -1,8 +1,10 @@
 Copyright (c) 2012, Antony Lee.
 
 Redeal is released under the GNU General Public License v3.0.
-See the file GPL-3.0.txt, for the complete text of the license.
+See the file GPL-3.0.txt for the complete text of the license.
 
-Redeal includes code from DDS 1.1.15, (c) Bo Haglund 2012.
+All the source files in the redeal/dds-src folder, as well as the DDS DLL, are
+from DDS 1.1.15, (c) Bo Haglund 2012.
+
 DDS is released under the GNU General Public License v2.0.
-See the file GPL-2.0.txt, for the complete text of the license.
+See the file GPL-2.0.txt for the complete text of the license.

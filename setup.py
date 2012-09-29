@@ -17,34 +17,36 @@ from zipfile import ZipFile
 
 DDS_URL = "http://privat.bahnhof.se/wb758135/dds1115-pbn-dll.zip"
 if os.name == "posix":
-    PACKAGE_DATA = ["dds-1.1.15/libdds.so.1.1.15"]
+    PACKAGE_DATA = [os.path.join("dds", "libdds.so")]
 elif os.name == "nt":
-    PACKAGE_DATA = ["dds-1.1.15/dds.dll"]
+    PACKAGE_DATA = [os.path.join("dds", "dds.dll")]
 else:
     PACKAGE_DATA = []
 
 
 class make_build(build_clib):
     def run(self):
-        os.chdir(os.path.join(
-            os.path.dirname(__file__), "redeal", "dds-1.1.15"))
+        dirname = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(os.path.join(dirname, "redeal", "dds"))
         if os.name == "posix":
             subprocess.call("make")
         elif os.name == "nt":
-            try:
-                with contextlib.closing(urlopen(DDS_URL)) as f:
-                    zip_file = ZipFile(BytesIO(f.read()))
-                    if zip_file.testzip() is not None:
-                        print("Corrupted zip file, installation stopped.")
-                        sys.exit(1)
-                    zip_file.extract("dds.dll")
-            except URLError:
-                print("dds will not be available as I cannot download it.")
+            if not os.path.exists("dds.dll"):
+                try:
+                    with contextlib.closing(urlopen(DDS_URL)) as f:
+                        zip_file = ZipFile(BytesIO(f.read()))
+                        if zip_file.testzip() is not None:
+                            print("Corrupted zip file, installation stopped.")
+                            sys.exit(1)
+                        zip_file.extract("dds.dll")
+                        print("Successfully extracted dds.dll.")
+                except URLError:
+                    print("dds will not be available as I cannot download it.")
         else:
             print("dds will not be available as I don't know how to build it "
                   "on {}.  Please contact the author if you can help.".
                   format(os.name))
-        os.chdir(os.path.dirname(__file__))
+        os.chdir(dirname)
 
 
 setup(
