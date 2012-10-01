@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-from distutils.command.build_clib import build_clib
-from setuptools import setup
+from distutils.command.build import build
+from distutils.core import setup
 
 import contextlib
 import os
@@ -24,7 +24,7 @@ else:
     PACKAGE_DATA = []
 
 
-class make_build(build_clib):
+class make_build(build):
     def run(self):
         dirname = os.path.dirname(os.path.abspath(__file__))
         os.chdir(os.path.join(dirname, "redeal", "dds"))
@@ -47,10 +47,11 @@ class make_build(build_clib):
                   "on {}.  Please contact the author if you can help.".
                   format(os.name))
         os.chdir(dirname)
+        super(make_build, self).run()
 
 
 setup(
-    cmdclass={"build_clib": make_build},
+    cmdclass={"build": make_build},
     name="redeal",
     version="0.2.0",
     author="Antony Lee",

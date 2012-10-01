@@ -81,8 +81,13 @@ if os.name == "posix":
 else:
     dll_name = "dds.dll"
     DLL = WinDLL
-dll = DLL(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                       "dds", dll_name))
+file_dir = os.path.dirname(os.path.abspath(__file__))
+dll_path = os.path.join(file_dir, "dds", dll_name)
+dll_path2 = os.path.join(file_dir, "..", "..", "redeal", "dds", dll_name)
+try:
+    dll = DLL(dll_path)
+except OSError:
+    dll = DLL(dll_path2)
 dll.SolveBoard.argtypes = [_Board, c_int, c_int, c_int, POINTER(_FutureTricks)]
 if os.name == "posix":
     dll.InitStart.argtypes = [c_int, c_int]
