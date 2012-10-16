@@ -11,7 +11,7 @@ __fullname__ = "redeal v. {}".format(__version__)
 __copyright__ = "{}, (c) {}".format(__fullname__, __author__)
 
 SEATS = list("NESW")
-LONG_SEATS = ["North", "South", "East", "West"]
+LONG_SEATS = ["North", "East", "South", "West"]
 SUITS = list("SHDC")
 STRAINS = SUITS + ["N"]
 SUITS_SYM_UNICODE = list("♠♡♢♣")

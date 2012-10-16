@@ -250,6 +250,11 @@ class Deal(tuple, object):
     def west(self):
         return self[self._W]
 
+    def score(self, contract_declarer, vul=False):
+        contract = Contract.from_str(contract_declarer[:-1], vul=vul)
+        declarer = contract_declarer[-1]
+        return contract.score(solve_board(self, contract.strain, declarer))
+
 
 class Hand(tuple, object):
     """A hand, represented as a tuple of holdings."""
