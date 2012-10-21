@@ -24,7 +24,7 @@ else:
     PACKAGE_DATA = []
 
 
-class make_build(build):
+class make_build(build, object):
     def run(self):
         dirname = os.path.dirname(os.path.abspath(__file__))
         os.chdir(os.path.join(dirname, "redeal", "dds"))
@@ -65,4 +65,5 @@ setup(
     license="LICENSE.txt",
     description="A reimplementation of Thomas Andrews' Deal in Python.",
     long_description=open("README.md").read(),
+    requires=['colorama (>=0.2.4)']
 )

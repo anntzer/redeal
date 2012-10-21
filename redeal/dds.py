@@ -7,7 +7,7 @@ import os
 from .globals import *
 
 
-class _Board(Structure):
+class Board(Structure):
     """The deal struct."""
 
     STRAINS = list("SHDCN")
@@ -34,7 +34,7 @@ class _Board(Structure):
         return self
 
 
-class _FutureTricks(Structure):
+class FutureTricks(Structure):
     """The futureTricks struct."""
 
     _fields_ = [("nodes", c_int),
@@ -61,18 +61,33 @@ SolveBoardStatus = {
     -14: "Wrong number of remaining cards in a hand."}
 
 
-def solve_board(deal, strain, declarer):
+def solve(deal, strain, declarer):
     """Wrapper for SolveBoard.  Return the number of tricks for declarer."""
-    leader = SEATS[(SEATS.index(declarer.upper()) + 1) % N_SUITS]
-    _board = _Board.from_deal(deal, strain, leader)
-    _futp = _FutureTricks()
+    leader = SEATS[(SEATS.index(declarer.upper()) + 1) % N_SEATS]
+    board = Board.from_deal(deal, strain, leader)
+    futp = FutureTricks()
     # find one optimal card with its score, even if only one card
-    status = dll.SolveBoard(_board, -1, 1, 1, byref(_futp))
+    status = dll.SolveBoard(board, -1, 1, 1, byref(futp))
     if status != 1:
         raise Exception("SolveBoard failed with status {} ({}).".
                         format(status, SolveBoardStatus[status]))
-    best_score = PER_SUIT - _futp.score[0]
+    best_score = PER_SUIT - futp.score[0]
     return best_score
+
+
+def valid_cards(deal, strain, leader):
+    board = Board.from_deal(deal, strain, leader)
+    futp = FutureTricks()
+    dll.SolveBoard(board, 0, 2, 1, byref(futp))
+    return [Card(futp.suit[i], 14 - futp.rank[i]) for i in range(futp.cards)]
+
+
+def solve_all(deal, strain, leader):
+    board = Board.from_deal(deal, strain, leader)
+    futp = FutureTricks()
+    dll.SolveBoard(board, -1, 3, 1, byref(futp))
+    return {Card(futp.suit[i], 14 - futp.rank[i]): futp.score[i]
+            for i in range(futp.cards)}
 
 
 if os.name == "posix":
@@ -82,13 +97,24 @@ else:
     dll_name = "dds.dll"
     DLL = WinDLL
 file_dir = os.path.dirname(os.path.abspath(__file__))
-dll_path = os.path.join(file_dir, "dds", dll_name)
-dll_path2 = os.path.join(file_dir, "..", "..", "redeal", "dds", dll_name)
+
 try:
+    dll_path = [path for path in
+                [os.path.join(file_dir, "dds", dll_name),
+                 os.path.join(file_dir, "..", "..", "redeal", "dds", dll_name)]
+                if os.path.exists(path)][0]
+
+except IndexError:
+    def solve(deal, strain, declarer):
+        raise Exception("Unable to load DDS.  `solve` is unavailable.")
+
+    def solve_all(deal, strain, declarer):
+        raise Exception("Unable to load DDS.  `solve_all` is unavailable.")
+
+else:
     dll = DLL(dll_path)
-except OSError:
-    dll = DLL(dll_path2)
-dll.SolveBoard.argtypes = [_Board, c_int, c_int, c_int, POINTER(_FutureTricks)]
-if os.name == "posix":
-    dll.InitStart.argtypes = [c_int, c_int]
-    dll.InitStart(0, 0)
+    dll.SolveBoard.argtypes = [
+        Board, c_int, c_int, c_int, POINTER(FutureTricks)]
+    if os.name == "posix":
+        dll.InitStart.argtypes = [c_int, c_int]
+        dll.InitStart(0, 0)

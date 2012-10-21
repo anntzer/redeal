@@ -18,30 +18,27 @@ def accept(deal):
 
 
 def do(deal):
-    nttricks = solve_board(deal, "N", "N")
-    pass1N = C("1N", True).score(nttricks)
+    pass1N = deal.dd_score("1NN", vul=True)
     if len(deal.north.hearts) < 4:
         if deal.north.hcp >= 17:
-            s17 = C("3N", True).score(nttricks)
+            s17 = deal.dd_score("3NN", vul=True)
         else:
-            s17 = C("2N", True).score(nttricks)
+            s17 = deal.dd_score("2NN", vul=True)
     else:
-        hetricks = solve_board(deal, "H", "N")
         if deal.north.hcp >= 17:
-            s17 = C("4H", True).score(hetricks)
+            s17 = deal.dd_score("4HN", vul=True)
         else:
-            s17 = C("3H", True).score(hetricks)
+            s17 = deal.dd_score("3HN", vul=True)
     if len(deal.north.hearts) < 4:
         if deal.north.hcp >= 16:
-            s16 = C("3N", True).score(nttricks)
+            s16 = deal.dd_score("3NN", vul=True)
         else:
-            s16 = C("2N", True).score(nttricks)
+            s16 = deal.dd_score("2NN", vul=True)
     else:
-        hetricks = solve_board(deal, "H", "N")
         if deal.north.hcp >= 16:
-            s16 = C("4H", True).score(hetricks)
+            s16 = deal.dd_score("4HN", vul=True)
         else:
-            s16 = C("3H", True).score(hetricks)
+            s16 = deal.dd_score("3HN", vul=True)
     scores = [pass1N, s16, s17]
     print("{} {}".format(deal, " ".join(map(str, scores))))
     for i, scorei in enumerate(scores):

@@ -12,10 +12,9 @@ compute a cross-table of how much each strategy would score against each other
 strategy, on average, at BAM scoring.
 
 The following names will be imported from the simulation module: `predeal`,
-`initial`, `accept` and `final`.
+`initial`, `accept` `do` and `final`.
 """
 
-from collections import Counter
 from redeal import *
 
 
@@ -25,10 +24,11 @@ predeal = {"S": H("652 K752 53 9862")}
 
 
 # `initial` is called at the beginning of the sim.  Here it initializes a
-# global table (yes, globals are bad, but well).
+# global matchpoint payoff table (yes, globals are bad, but well).
 def initial():
     global TABLE
-    TABLE = [[Counter() for _ in range(5)] for _ in range(5)]
+    TABLE = Payoff(("pass2N", "bid3N", "stayman", "pstayman", "majorgame"),
+                   matchpoints)
 
 
 # `accept` is called for each hand with the currently dealt hand as argument.
@@ -46,47 +46,30 @@ def accept(deal):
 
 # `do` is called for each accepted hand.
 def do(deal):
-    # `solve_board(deal, strain, declarer)` returns the DD number of tricks.
-    nttricks = solve_board(deal, "N", "N")
-    sptricks = solve_board(deal, "S", "N")
-    hetricks = solve_board(deal, "H", "N")
-    # `C` is the contract constructor.  Non-vulnerable is the default,
-    # vulnerability can be specified as a second (boolean) argument.
-    # Contracts have a `.score` method.
-    pass2N = C("2N").score(nttricks)
-    bid3N = C("3N").score(nttricks)
-    stayman = C("4H").score(hetricks) if len(deal.north.hearts) >= 4 else bid3N
-    pstayman = C("4S").score(sptricks) if len(deal.north.spades) == 5 else stayman
-    majorgame = (C("4S").score(sptricks) if len(deal.north.spades) == 5 else 
-                 (C("4H").score(hetricks) if len(deal.north.hearts) >= 4 else
-                  (C("4S").score(sptricks) if len(deal.north.spades) == 4 else
+    # `deal.dd_score` returns the double dummy score for a contract, assumed
+    # non-vulnerable -- vulnerability can be specified as a second (boolean)
+    # argument.
+    pass2N = deal.dd_score("2NN")
+    bid3N = deal.dd_score("3NN")
+    stayman = deal.dd_score("4HN") if len(deal.north.hearts) >= 4 else bid3N
+    pstayman = deal.dd_score("4SN") if len(deal.north.spades) == 5 else stayman
+    majorgame = (deal.dd_score("4SN") if len(deal.north.spades) == 5 else
+                 (deal.dd_score("4HN") if len(deal.north.hearts) >= 4 else
+                  (deal.dd_score("4SN") if len(deal.north.spades) == 4 else
                    bid3N)))
     # Respectively: pass 2N, bid 3N directly, go through Stayman, go through
     # puppet Stayman, and go through Stayman but prefer a 4-3 S fit to 3N.
-    scores = [pass2N, bid3N, stayman, pstayman, majorgame]
-    print("{} {}".format(deal, " ".join(map(str, scores))))
-    for i, scorei in enumerate(scores):
-        for j, scorej in enumerate(scores):
-            # Update the cross-matchpoint table.  `imp(my_score, their_score)`
-            # is also available for IMP comparisons.
-            TABLE[i][j][matchpoints(scorei, scorej)] += 1
+    scores = dict(pass2N=pass2N, bid3N=bid3N, stayman=stayman,
+                  pstayman=pstayman, majorgame=majorgame)
+    print("{} {}".format(deal, " ".join(str(scores[k]) for k in TABLE.entries)))
+    # Update the cross-matchpoint table.
+    TABLE.add_data(scores)
 
 
 # `final` is called at the end of the sim with the number of tries as an
 # argument.  Here it outputs the cross-matchpoint table.
 def final(n_tries):
-    for line in TABLE:
-        print("\t".join("+{} ={} -{}".format(counter[0], counter[0.5], counter[1])
-                        for counter in line))
-    print("Tries: {}".format(n_tries))
-
-
-# An alternative `final` which only outputs the average score for each
-# comparison (useful for IMPs, for example).
-def final1(n_tries):
-    for line in TABLE:
-        print("\t".join(str(np.mean(list(counter.elements())))
-                        for counter in line))
+    TABLE.report()
     print("Tries: {}".format(n_tries))
 
 
@@ -99,9 +82,10 @@ def initial2():
     TABLE = [0, 0]
 
 
+# `deal.dd_tricks` returns the double-dummy number of tricks for a contract.
 def do2(found, deal):
-    if (solve_board(deal, "H", "N") >= 10 or solve_board(deal, "S", "N") >= 10
-        or solve_board(deal, "N", "N") >= 9):
+    if (deal.dd_overtricks("4HN") >= 10 or deal.dd_overtricks("4SN") >= 10 or
+        deal.dd_overtricks("3NN") >= 9):
         TABLE[True] += 1
     else:
         TABLE[False] += 1

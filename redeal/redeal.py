@@ -3,24 +3,29 @@ from __future__ import division, print_function, unicode_literals
 from array import array
 from bisect import bisect
 from functools import reduce
-from itertools import permutations, product
+from itertools import count, permutations, product
+from math import sqrt
 import random
+import sys
+if sys.version_info.major < 3:
+    from itertools import ifilter as filter
 
-from . import globals
-from .globals import *
-from .util import reify
 try:
-    from .dds import solve_board
-except OSError:
-    def solve_board(deal, strain, declarer):
-        raise Exception("Unable to load DDS.  `solve_board` is unavailable.")
+    from colorama import Fore, Style
+    BRIGHT_RED = Style.BRIGHT + Fore.RED
+    RESET_ALL = Style.RESET_ALL
+except ImportError:
+    BRIGHT_RED = RESET_ALL = ""
+
+from . import globals, dds, util
+from .globals import *
 from .smartstack import SmartStack, _SmartStack
 
 
-__all__ = ["solve_board", "Shape", "balanced", "semibalanced",
+__all__ = ["Shape", "balanced", "semibalanced", "defvector", "RANKS",
            "Deal", "Hand", "Holding", "Contract", "SmartStack", "H", "C",
-           "defvector", "matchpoints", "imps",
-           "RANKS"]
+           "Card", "matchpoints", "imps", "Payoff",
+           "Simulation", "OpeningLeadSim"]
 
 
 class Shape(object):
@@ -66,7 +71,7 @@ class Shape(object):
             self.max_ls = [0 for _ in range(N_SUITS)]
             for nonflat in product(*[range(PER_SUIT + 1)
                                      for _ in range(N_SUITS)]):
-                if self.table[self.flatten(nonflat)]:
+                if self.table[self._flatten(nonflat)]:
                     for dim, coord in enumerate(nonflat):
                         self.min_ls[dim] = min(self.min_ls[dim], coord)
                         self.max_ls[dim] = max(self.max_ls[dim], coord)
@@ -74,29 +79,31 @@ class Shape(object):
 
     @classmethod
     def from_cond(cls, func):
+        """Initialize from a shape-accepting function."""
         self = cls()
         for nonflat in product(*[range(PER_SUIT + 1)
                                  for _ in range(N_SUITS)]):
             if sum(nonflat) == PER_SUIT and func(*nonflat):
-                self.table[self.flatten(nonflat)] = True
+                self.table[self._flatten(nonflat)] = True
                 for dim, coord in enumerate(nonflat):
                     self.min_ls[dim] = min(self.min_ls[dim], coord)
                     self.max_ls[dim] = max(self.max_ls[dim], coord)
         return self
 
     @staticmethod
-    def flatten(index):
+    def _flatten(index):
+        """Transform a 4D index into a 1D index."""
         s, h, d, c = index
         mul = PER_SUIT + 1
         return ((((s * mul + h) * mul) + d) * mul) + c
 
-    def insert1(self, shape, safe=True):
+    def _insert1(self, shape, safe=True):
         """Insert an element, possibly with "x" but no "()" terms."""
         jokers = any(l == -1 for l in shape)
         pre_set = sum(l for l in shape if l >= 0)
         if not jokers:
             if pre_set == PER_SUIT:
-                self.table[self.flatten(shape)] = 1
+                self.table[self._flatten(shape)] = 1
                 for suit in range(N_SUITS):
                     self.min_ls[suit] = min(self.min_ls[suit], shape[suit])
                     self.max_ls[suit] = max(self.max_ls[suit], shape[suit])
@@ -108,13 +115,13 @@ class Shape(object):
             for i, l in enumerate(shape):
                 if l == -1:
                     for ll in range(PER_SUIT - pre_set + 1):
-                        self.insert1(shape[:i] + (ll,) + shape[i+1:],
+                        self._insert1(shape[:i] + (ll,) + shape[i+1:],
                                      safe=False)
 
     def insert(self, it, acc=()):
         """Insert an element, possibly with "()" or "x" terms."""
         if not it:
-            self.insert1(acc, safe=False)
+            self._insert1(acc, safe=False)
             return
         if it[0] == "(":
             try:
@@ -128,12 +135,15 @@ class Shape(object):
             self.insert(it, acc + perm)
 
     def __contains__(self, int_shape):
-        return self.table[self.flatten(int_shape)]
+        """Check if the given shape is included."""
+        return self.table[self._flatten(int_shape)]
 
     def __call__(self, hand):
+        """Check if the shape of the given hand is included."""
         return hand.shape in self
 
     def __add__(self, other):
+        """Return the union of two Shapes."""
         try:
             return self._op_cache["+", other]
         except KeyError:
@@ -148,11 +158,13 @@ class Shape(object):
             return result
 
     def __sub__(self, other):
+        """Remove one Shape from another."""
         try:
             return self._op_cache["-", other]
         except KeyError:
             table = array("b")
-            table.fromlist([x and not y for x, y in zip(self.table, other.table)])
+            table.fromlist(
+                [x and not y for x, y in zip(self.table, other.table)])
             result = Shape.from_table(table, (self.min_ls, self.max_ls))
             self._op_cache["-", other] = result
             return result
@@ -194,7 +206,7 @@ class Deal(tuple, object):
                                                       predealt_by_suit)
         predeal["_remaining"] = [card for card in FULL_DECK
                                  if card not in predealt_set]
-        return predeal
+        return lambda: Deal(predeal)
 
     def __new__(cls, dealer):
         """Randomly deal a hand from a prepared dealer."""
@@ -206,13 +218,16 @@ class Deal(tuple, object):
             to_deal = PER_SUIT - len(pre)
             hand, cards = pre + cards[:to_deal], cards[to_deal:]
             hands.append(Hand(hand))
-        return tuple.__new__(cls, hands)
+        self = tuple.__new__(cls, hands)
+        self._dd_cache = {}
+        return self
 
     def _short_str(self):
+        """Return a one-line version of the deal."""
         return " ".join(hand._short_str() for hand in self)
 
     def _long_str(self):
-        """A pretty-printed version of the deal."""
+        """Return pretty-printed version of the deal."""
         s = ""
         for line in self.north._long_str().split("\n"):
             s += " " * 7 + line + "\n"
@@ -223,37 +238,45 @@ class Deal(tuple, object):
             s += " " * 7 + line + "\n"
         return s
 
+    def _pbn(self):
+        """Return the deal in PBN format."""
+        return "{}:{}".format(
+            SEATS[0], " ".join(".".join(str(holding) for holding in hand)
+                               for hand in self))
+
     __str__ = _short_str
 
     @classmethod
     def set_str_style(cls, style):
+        """Set output style (`Deal.SHORT` or `Deal.LONG`)."""
         cls.__str__ = {cls.SHORT: cls._short_str,
                        cls.LONG: cls._long_str}[style]
 
     _N = SEATS.index("N")
-    @property
-    def north(self):
-        return self[self._N]
-
     _E = SEATS.index("E")
-    @property
-    def east(self):
-        return self[self._E]
-
     _S = SEATS.index("S")
-    @property
-    def south(self):
-        return self[self._S]
-
     _W = SEATS.index("W")
-    @property
-    def west(self):
-        return self[self._W]
+    north = property(lambda self: self[self._N])
+    east = property(lambda self: self[self._E])
+    south = property(lambda self: self[self._S])
+    west = property(lambda self: self[self._W])
 
-    def score(self, contract_declarer, vul=False):
-        contract = Contract.from_str(contract_declarer[:-1], vul=vul)
+    def dd_tricks(self, contract_declarer):
+        """Compute declarer's number of double-dummy tricks in a contract."""
+        strain = Contract.from_str(contract_declarer[:-1]).strain
         declarer = contract_declarer[-1]
-        return contract.score(solve_board(self, contract.strain, declarer))
+        if (strain, declarer) not in self._dd_cache:
+            self._dd_cache[strain, declarer] = dds.solve(self, strain, declarer)
+        return self._dd_cache[strain, declarer]
+
+    def dd_score(self, contract_declarer, vul=False):
+        """Compute declarer's double-dummy score in a contract."""
+        return Contract.from_str(contract_declarer[:-1], vul=vul).score(
+            self.dd_tricks(contract_declarer))
+
+    def dd_all_tricks(self, strain, leader):
+        """Compute declarer's number of double dummy tricks for all leads."""
+        return dds.solve_all(self, strain, leader)
 
 
 class Hand(tuple, object):
@@ -262,7 +285,7 @@ class Hand(tuple, object):
     LONG, SHORT = range(2)
 
     def __new__(cls, cards):
-        """Initialize with a list of cards, or with another hand."""
+        """Initialize with a sequence of Cards."""
         return tuple.__new__(
             cls,
             (Holding(card for card in cards if card.suit == suit)
@@ -284,6 +307,7 @@ class Hand(tuple, object):
         return " ".join(str(holding) if holding else "-" for holding in self)
 
     def _short_str(self):
+        """Return a one-line version of the hand."""
         return "".join(suit_symbol + str(holding)
                        for suit_symbol, holding in zip(globals.SUITS_SYM, self))
 
@@ -296,6 +320,7 @@ class Hand(tuple, object):
 
     @classmethod
     def set_str_style(cls, style):
+        """Set output style (`Hand.SHORT` or `Hand.LONG`)."""
         cls.__str__ = {cls.SHORT: cls._short_str,
                        cls.LONG: cls._long_str}[style]
 
@@ -305,53 +330,33 @@ class Hand(tuple, object):
                 for suit in range(N_SUITS) for rank in self[suit]]
 
     _S = SUITS.index("S")
-    @reify
-    def spades(self):
-        return self[self._S]
-
     _H = SUITS.index("H")
-    @reify
-    def hearts(self):
-        return self[self._H]
-
     _D = SUITS.index("D")
-    @reify
-    def diamonds(self):
-        return self[self._D]
-
     _C = SUITS.index("C")
-    @reify
-    def clubs(self):
-        return self[self._C]
+    spades = util.reify(lambda self: self[self._S])
+    hearts = util.reify(lambda self: self[self._H])
+    diamonds = util.reify(lambda self: self[self._D])
+    clubs = util.reify(lambda self: self[self._C])
 
-    @reify
-    def shape(self):
-        return list(map(len, self))
-
-    @reify
-    def hcp(self):
-        return sum(holding.hcp for holding in self)
-
-    @reify
-    def losers(self):
-        return sum(holding.losers for holding in self)
+    shape = util.reify(lambda self: [len(holding) for holding in self])
+    hcp = util.reify(lambda self: sum(holding.hcp for holding in self))
+    losers = util.reify(lambda self: sum(holding.losers for holding in self))
 
 
 class Holding(frozenset, object):
     """A one-suit holding, represented as a frozenset of card ranks."""
 
     def __new__(cls, cards):
+        """Initialize with a sequence of Cards."""
         return frozenset.__new__(cls, (card.rank for card in cards))
 
     def __str__(self):
         return "".join(RANKS[rank] for rank in sorted(self))
 
-    @reify
-    def hcp(self):
-        return sum(HCP[rank] for rank in self)
+    hcp = util.reify(lambda self: sum(HCP[rank] for rank in self))
 
     _A, _K, _Q, _J, _T = [RANKS.index(rank) for rank in "AKQJT"]
-    @reify
+    @util.reify
     def losers(self):
         if len(self) == 0:
             return 0
@@ -441,10 +446,90 @@ def defvector(*vals):
 
 
 def matchpoints(my, other):
-    return (1 + (my > other) - (my < other)) / 2
+    """Return matchpoints scored (-1 to 1) given our and their result."""
+    return (my > other) - (my < other)
 
 
 def imps(my, other):
+    """Return IMPs scored given our and their results."""
     imp_table = [15, 45, 85, 125, 165, 215, 265, 315, 365, 425, 495, 595,
         745, 895, 1095, 1295, 1495, 1745, 1995, 2245, 2495, 2995, 3495, 3995]
     return bisect(imp_table, abs(my - other)) * (1 if my > other else -1)
+
+
+class Simulation(object):
+    """The default simulation."""
+
+    def initial(self):
+        pass
+
+    def accept(self, deal):
+        return True
+
+    def do(self, deal):
+        print("{}".format(deal))
+
+    def final(self, n_tries):
+        print("Tries: {}".format(n_tries))
+
+
+class OpeningLeadSim(Simulation):
+    def __init__(self, accept, contract_declarer, scoring):
+        self.accept = accept
+        self.leader = SEATS[(SEATS.index(contract_declarer[-1]) + 1) % N_SEATS]
+        contract = Contract.from_str(contract_declarer[:-1])
+        self.strain = contract.strain
+        self.scoring = lambda ti, tj: scoring(contract.score(ti),
+                                              contract.score(tj))
+
+    def initial(self, dealer):
+        deal = next(filter(self.accept, (dealer() for _ in count())))
+        self.payoff = Payoff(
+            sorted(dds.valid_cards(deal, self.strain, self.leader)),
+            self.scoring)
+
+    def do(self, deal):
+        self.payoff.add_data(deal.dd_all_tricks(self.strain, self.leader))
+
+    def final(self, n_tries):
+        self.payoff.report()
+
+
+class Payoff(object):
+    """A payoff table for comparing multiple strategies."""
+
+    def __init__(self, entries, diff):
+        """Initialize with a list of strategy names and a difference function.
+        """
+        self.entries = entries
+        self.diff = diff
+        self.table = [[[] for _0 in entries] for _1 in entries]
+
+    def add_data(self, raw_scores):
+        """Add a realization of the scores as a strategy -> raw scores dict."""
+        for i, ei in enumerate(self.entries):
+            for j, ej in enumerate(self.entries):
+                self.table[i][j].append(
+                    self.diff(raw_scores[ei], raw_scores[ej]))
+
+    def report(self):
+        """Pretty-print a payoff table."""
+        means_stderrs = [[(mean(score), stderr(score)) for score in line]
+                         for line in self.table]
+        print("\t" + "".join("{:.7}\t".format(entry) for entry in self.entries))
+        for i, (entry, line) in enumerate(zip(self.entries, means_stderrs)):
+            print("{:.7}".format(entry),
+                  *("{}{:+.2f}{}".format(
+                      BRIGHT_RED if abs(mean) > stderr else "", mean, RESET_ALL)
+                    if i != j else ""
+                    for j, (mean, stderr) in enumerate(line)),
+                  sep="\t")
+            print("",
+                  *("({:.2f})".format(stderr) if i != j else ""
+                    for j, (mean, stderr) in enumerate(line)),
+                  sep="\t")
+
+
+mean = lambda l: sum(l) / len(l)
+stderr = (lambda l:
+          sqrt((mean([s ** 2 for s in l]) - mean(l) ** 2) / len(l)))

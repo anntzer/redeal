@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
 from __future__ import division, print_function, unicode_literals
+import inspect
 import random
 import sys
 import threading
@@ -8,8 +9,7 @@ if sys.version_info.major < 3:
 else:
     import tkinter as tk
 
-from . import globals
-from . import redeal
+from . import globals, redeal, util
 
 
 def check_button(master, state, **kwargs):
@@ -39,22 +39,7 @@ class Application(tk.Frame):
         tk.Frame.__init__(self, master)
         self.main = main
         self.texts = []
-        self.create_widgets()
-        self.pack()
-
-    def create_text(self, master, name, signature, default, height=None):
-        frame = tk.Frame(master)
-        proto = "def {name}({signature}):".format(
-            name=name, signature=", ".join(signature))
-        tk.Label(frame, text=proto).pack(side=tk.TOP, anchor="w")
-        inner, text = scrolled_text(frame, height=height if height is not None
-                                           else self.func_text_height)
-        inner.pack(side=tk.TOP)
-        text.insert("end", "\t" + default)
-        frame.pack(side=tk.TOP)
-        self.texts.append((name, signature, text))
-
-    def create_widgets(self):
+        # create widgets
         # configurables, #1
         frame = tk.Frame(self)
         self.long = check_button(frame, self.main.args.long,
@@ -96,8 +81,8 @@ class Application(tk.Frame):
             inner.pack(side=tk.LEFT)
         frame.pack(side=tk.TOP)
         # functions
-        for name, signature, body in self.main.given_funcs:
-            self.create_text(self, name, signature, body)
+        for name, argspec, body in self.main.given_funcs:
+            self.create_text(self, name, argspec, body)
         # run & quit
         frame = tk.Frame(self)
         self.run_button = tk.Button(frame, text="Run", command=self.run)
@@ -114,6 +99,20 @@ class Application(tk.Frame):
         # copyright
         (tk.Label(self, text=globals.__copyright__, relief=tk.SUNKEN).
          pack(side=tk.BOTTOM, fill=tk.X))
+        # end of widget creation
+        self.pack()
+
+    def create_text(self, master, name, argspec, default, height=None):
+        frame = tk.Frame(master)
+        proto = "def {name}({spec}):".format(
+            name=name, spec=inspect.formatargspec(*argspec))
+        tk.Label(frame, text=proto).pack(side=tk.TOP, anchor="w")
+        inner, text = scrolled_text(frame, height=height if height is not None
+                                           else self.func_text_height)
+        inner.pack(side=tk.TOP)
+        text.insert("end", "\t" + default)
+        frame.pack(side=tk.TOP)
+        self.texts.append((name, argspec, text))
 
     def run(self):
         _globals_SUITS_SYM = globals.SUITS_SYM
@@ -135,16 +134,18 @@ class Application(tk.Frame):
         for seat in globals.SEATS:
             self.main.predeal[seat] = redeal.H(getattr(self, seat).get())
         # override functions
-        funcs = {name: self.main.create_func(name, signature,
-                                             text.get(1.0, tk.END))
-                 for name, signature, text in self.texts}
+        simulation = type("", (redeal.Simulation,),
+                          {name: util.create_func(
+                              redeal, name, argspec, text.get(1.0, tk.END),
+                              one_line=False)
+                           for name, argspec, text in self.texts})()
         # simulation
         def target():
             self.main.stop_flag = False
             self.run_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
             try:
-                self.main.generate(funcs)
+                self.main.generate(simulation)
             finally:
                 self.run_button.config(state=tk.NORMAL)
                 self.stop_button.config(state=tk.DISABLED)

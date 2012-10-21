@@ -12,6 +12,7 @@ __copyright__ = "{}, (c) {}".format(__fullname__, __author__)
 
 SEATS = list("NESW")
 LONG_SEATS = ["North", "East", "South", "West"]
+N_SEATS = len(SEATS)
 SUITS = list("SHDC")
 STRAINS = SUITS + ["N"]
 SUITS_SYM_UNICODE = list("♠♡♢♣")
