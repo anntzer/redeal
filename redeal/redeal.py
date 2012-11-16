@@ -22,19 +22,21 @@ from .globals import *
 from .smartstack import SmartStack, _SmartStack
 
 
-__all__ = ["Shape", "balanced", "semibalanced", "defvector", "RANKS",
-           "Deal", "Hand", "Holding", "Contract", "SmartStack", "H", "C",
-           "Card", "matchpoints", "imps", "Payoff",
-           "Simulation", "OpeningLeadSim"]
+__all__ = ["Shape", "balanced", "semibalanced", "defvector",
+           "RANKS", "A", "K", "Q", "J", "T",
+           "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
+           "Contract", "C", "matchpoints", "imps", "Payoff",
+           "Simulation", "OpeningLeadSim",]
 
 
 class Shape(object):
     """A shape specification, as a 0-1 table, intended as immutable.
     
-    {min,max}_ls are hints for smartstacking, guaranteed to be correct but not
-    necessarily optimal. _cls_cache and _op_cache cache Shape instantiations
-    and additions/substractions -- useful if the accept function is given as a
-    lambda form, for example.
+    :attr:`min_ls` and :attr:`max_ls` are hints for smartstacking,
+    guaranteed to be correct but not necessarily optimal. :attr:`_cls_cache`
+    and :attr:`_op_cache` cache :class:`Shape` instantiations and
+    additions/substractions -- this avoids repetitive instantations in the
+    ``accept`` function of a simulation, for example..
     """
 
     JOKER = "x"
@@ -143,7 +145,7 @@ class Shape(object):
         return hand.shape in self
 
     def __add__(self, other):
-        """Return the union of two Shapes."""
+        """Return the union of two ``Shapes``."""
         try:
             return self._op_cache["+", other]
         except KeyError:
@@ -158,7 +160,7 @@ class Shape(object):
             return result
 
     def __sub__(self, other):
-        """Remove one Shape from another."""
+        """Remove one ``Shape`` from another."""
         try:
             return self._op_cache["-", other]
         except KeyError:
@@ -181,9 +183,9 @@ class Deal(tuple, object):
 
     @staticmethod
     def prepare(predeal):
-        """Prepare a seat -> [Hand | SmartStack] map into a dealer.
+        """Contruct a dealer from a ``seat -> [Hand | SmartStack]`` dict.
         
-        There can be at most one SmartStack entry.
+        There can be at most one ``SmartStack`` entry.
         """
         predeal = predeal or {}
         smartstacks = [(k, v) for k, v in predeal.items()
@@ -248,7 +250,7 @@ class Deal(tuple, object):
 
     @classmethod
     def set_str_style(cls, style):
-        """Set output style (`Deal.SHORT` or `Deal.LONG`)."""
+        """Set output style (:attr:`Deal.SHORT` or :attr:`Deal.LONG`)."""
         cls.__str__ = {cls.SHORT: cls._short_str,
                        cls.LONG: cls._long_str}[style]
 
@@ -285,7 +287,7 @@ class Hand(tuple, object):
     LONG, SHORT = range(2)
 
     def __new__(cls, cards):
-        """Initialize with a sequence of Cards."""
+        """Initialize with a sequence of :class:`Cards <Card>`."""
         return tuple.__new__(
             cls,
             (Holding(card for card in cards if card.suit == suit)
@@ -303,7 +305,7 @@ class Hand(tuple, object):
         return cls(cards)
 
     def to_str(self):
-        """Inverse of from_str."""
+        """Inverse of :meth:`from_str`."""
         return " ".join(str(holding) if holding else "-" for holding in self)
 
     def _short_str(self):
@@ -320,12 +322,12 @@ class Hand(tuple, object):
 
     @classmethod
     def set_str_style(cls, style):
-        """Set output style (`Hand.SHORT` or `Hand.LONG`)."""
+        """Set output style (:attr:`Hand.SHORT` or :attr:`Hand.LONG`)."""
         cls.__str__ = {cls.SHORT: cls._short_str,
                        cls.LONG: cls._long_str}[style]
 
     def cards(self):
-        """Return self as a list of card objects."""
+        """Return ``self`` as a list of card objects."""
         return [Card(suit, rank)
                 for suit in range(N_SUITS) for rank in self[suit]]
 
@@ -333,43 +335,48 @@ class Hand(tuple, object):
     _H = SUITS.index("H")
     _D = SUITS.index("D")
     _C = SUITS.index("C")
-    spades = util.reify(lambda self: self[self._S])
-    hearts = util.reify(lambda self: self[self._H])
-    diamonds = util.reify(lambda self: self[self._D])
-    clubs = util.reify(lambda self: self[self._C])
+    spades = util.reify(lambda self: self[self._S], "The hand's spades.")
+    hearts = util.reify(lambda self: self[self._H], "The hand's hearts.")
+    diamonds = util.reify(lambda self: self[self._D], "The hand's diamonds.")
+    clubs = util.reify(lambda self: self[self._C], "The hand's clubs.")
 
-    shape = util.reify(lambda self: [len(holding) for holding in self])
-    hcp = util.reify(lambda self: sum(holding.hcp for holding in self))
-    losers = util.reify(lambda self: sum(holding.losers for holding in self))
+    shape = util.reify(lambda self: [len(holding) for holding in self],
+                       "The hand's shape.")
+    hcp = util.reify(lambda self: sum(holding.hcp for holding in self),
+                     "The hand's HCP count.")
+    losers = util.reify(lambda self: sum(holding.losers for holding in self),
+                        "The hand's loser count.")
 
 
+A, K, Q, J, T = [RANKS.index(rank) for rank in "AKQJT"]
 class Holding(frozenset, object):
     """A one-suit holding, represented as a frozenset of card ranks."""
 
     def __new__(cls, cards):
-        """Initialize with a sequence of Cards."""
+        """Initialize with a sequence of :class:`Cards <Card>`."""
         return frozenset.__new__(cls, (card.rank for card in cards))
 
     def __str__(self):
         return "".join(RANKS[rank] for rank in sorted(self))
 
-    hcp = util.reify(lambda self: sum(HCP[rank] for rank in self))
+    hcp = util.reify(lambda self: sum(HCP[rank] for rank in self),
+                     "The holding's HCP.")
 
-    _A, _K, _Q, _J, _T = [RANKS.index(rank) for rank in "AKQJT"]
     @util.reify
     def losers(self):
+        """The holding's loser count."""
         if len(self) == 0:
             return 0
         losers = 0
-        if not any(rank == self._A for rank in self):
+        if not any(rank == A for rank in self):
             losers += 1
-        if len(self) >= 2 and not any(rank == self._K for rank in self):
+        if len(self) >= 2 and not any(rank == K for rank in self):
             losers += 1
         if len(self) >= 3:
-            if not any(rank == self._Q for rank in self):
+            if not any(rank == Q for rank in self):
                 losers += 1
             elif (losers == 2 and
-                  not any(rank in [self._J, self._T] for rank in self)):
+                  not any(rank in [J, T] for rank in self)):
                 losers += 0.5
         return losers
 
@@ -438,8 +445,8 @@ C = Contract.from_str
 def defvector(*vals):
     """Additive holding evaluator.
     
-    For example, `defvector(4, 3, 2, 1)(holding)` returns the HCPs of
-    `holding`.
+    For example, ``defvector(4, 3, 2, 1)(holding)`` returns the HCPs of
+    ``holding``.
     """
     return lambda holding: sum(val for rank, val in enumerate(vals)
                                if any(rank_ == rank for rank_ in holding))

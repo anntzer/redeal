@@ -44,13 +44,13 @@ class Main(object):
     override.add_argument("-W",
         help="predealt South hand as a string")
     override.add_argument("--initial",
-        help='body of "initial" function: "def initial(): <INITIAL>"')
+        help='body of "initial" function: "def initial(self): <INITIAL>"')
     override.add_argument("--accept",
-        help='body of "accept" function: "def accept(deal): <ACCEPT>"')
+        help='body of "accept" function: "def accept(self, deal): <ACCEPT>"')
     override.add_argument("--do",
-        help='body of "do" function: "def do(deal): <ACCEPT>"')
+        help='body of "do" function: "def do(self, deal): <ACCEPT>"')
     override.add_argument("--final",
-        help='body of "final" function: "def final(n_tries): <FINAL>"')
+        help='body of "final" function: "def final(self, n_tries): <FINAL>"')
 
     func_defaults = [
         (func.__name__,
