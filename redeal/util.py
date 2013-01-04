@@ -43,7 +43,7 @@ def create_func(module, name, argspec, body, one_line=True):
         newline=" " if one_line else "\n    ",
         body=body)
     try:
-        exec_(defs, {name: getattr(module, name) for name in module.__all__}, d)
+        exec_(defs, {name: getattr(module, name) for name in dir(module)}, d)
     except:
         print("An invalid function definition raised:\n", file=sys.stderr)
         raise

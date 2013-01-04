@@ -2,7 +2,6 @@
 from __future__ import division, print_function, unicode_literals
 from array import array
 from bisect import bisect
-from functools import reduce
 from itertools import count, permutations, product
 from math import sqrt
 import random
@@ -17,8 +16,8 @@ try:
 except ImportError:
     BRIGHT_RED = RESET_ALL = ""
 
-from . import globals, dds, util
-from .globals import *
+from . import global_defs, dds, util
+from .global_defs import *
 from .smartstack import SmartStack, _SmartStack
 
 
@@ -27,6 +26,12 @@ __all__ = ["Shape", "balanced", "semibalanced", "defvector",
            "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
            "Simulation", "OpeningLeadSim",]
+
+
+for i, suit in enumerate(SUITS):
+    for j, rank in enumerate(RANKS):
+        globals()[suit + rank] = Card(i, j)
+del i, j, suit, rank
 
 
 class Shape(object):
@@ -188,27 +193,27 @@ class Deal(tuple, object):
         There can be at most one ``SmartStack`` entry.
         """
         predeal = predeal or {}
-        smartstacks = [(k, v) for k, v in predeal.items()
-                       if isinstance(v, SmartStack)]
-        predeal = {seat: getattr(predeal.get(seat), "cards", lambda: [])
-                   for seat in SEATS}
-        predealt = reduce(list.__add__, (predeal[seat]() for seat in SEATS), [])
+        dealer = {}
+        seat_smartstack = None
+        for seat in SEATS:
+            pre = predeal.get(seat, Hand(()))
+            if isinstance(pre, SmartStack):
+                if seat_smartstack:
+                    raise Exception("Only one Smartstack allowed.")
+                seat_smartstack = seat, pre
+            else:
+                dealer[seat] = pre.cards
+        predealt = [card for hand_cards in dealer.values()
+                    for card in hand_cards()]
         predealt_set = set(predealt)
         if len(predealt_set) < len(predealt):
             raise Exception("Same card dealt twice.")
-        if smartstacks:
-            try:
-                (seat, smartstack), = smartstacks
-            except ValueError:
-                raise Exception("Only one SmartStack allowed.")
-            predealt_by_suit = {
-                suit: {card.rank for card in predealt_set if card.suit == suit}
-                for suit in range(N_SUITS)}
-            predeal[seat] = _SmartStack.from_predealt(smartstack,
-                                                      predealt_by_suit)
-        predeal["_remaining"] = [card for card in FULL_DECK
-                                 if card not in predealt_set]
-        return lambda: Deal(predeal)
+        if seat_smartstack:
+            seat, smartstack = seat_smartstack
+            dealer[seat] = _SmartStack.from_predealt(smartstack, predealt)
+        dealer["_remaining"] = [card for card in FULL_DECK
+                                if card not in predealt_set]
+        return lambda: Deal(dealer)
 
     def __new__(cls, dealer):
         """Randomly deal a hand from a prepared dealer."""
@@ -311,12 +316,13 @@ class Hand(tuple, object):
     def _short_str(self):
         """Return a one-line version of the hand."""
         return "".join(suit_symbol + str(holding)
-                       for suit_symbol, holding in zip(globals.SUITS_SYM, self))
+                       for suit_symbol, holding
+                       in zip(global_defs.SUITS_SYM, self))
 
     def _long_str(self):
         """Return a pretty-printed version of the hand."""
         return "\n" + "\n".join(suit_symbol + str(holding)
-            for suit_symbol, holding in zip(globals.SUITS_SYM, self))
+            for suit_symbol, holding in zip(global_defs.SUITS_SYM, self))
 
     __str__ = _short_str
 
@@ -330,6 +336,13 @@ class Hand(tuple, object):
         """Return ``self`` as a list of card objects."""
         return [Card(suit, rank)
                 for suit in range(N_SUITS) for rank in self[suit]]
+
+    def __contains__(self, other):
+        """Specialize the case of checking for containing a :class:`Card`."""
+        if isinstance(other, Card):
+            return other.rank in self[other.suit]
+        else:
+            return tuple.__contains__(self, other)
 
     _S = SUITS.index("S")
     _H = SUITS.index("H")

@@ -9,7 +9,7 @@ if sys.version_info.major < 3:
 else:
     import tkinter as tk
 
-from . import globals, redeal, util
+from . import global_defs, redeal, util
 
 
 def check_button(master, state, **kwargs):
@@ -70,7 +70,7 @@ class Application(tk.Frame):
             frame.pack(side=tk.TOP)
         # hands
         frame = tk.Frame(self)
-        for seat, long_seat in zip(globals.SEATS, globals.LONG_SEATS):
+        for seat, long_seat in zip(global_defs.SEATS, global_defs.LONG_SEATS):
             inner = tk.Frame(frame)
             tk.Label(inner, text=long_seat).pack(side=tk.TOP)
             seat_entry = tk.Entry(inner, width=16)
@@ -97,7 +97,7 @@ class Application(tk.Frame):
         inner, self.out = scrolled_text(self, height=self.out_text_height)
         inner.pack(side=tk.TOP)
         # copyright
-        (tk.Label(self, text=globals.__copyright__, relief=tk.SUNKEN).
+        (tk.Label(self, text=global_defs.__copyright__, relief=tk.SUNKEN).
          pack(side=tk.BOTTOM, fill=tk.X))
         # end of widget creation
         self.pack()
@@ -115,8 +115,8 @@ class Application(tk.Frame):
         self.texts.append((name, argspec, text))
 
     def run(self):
-        _globals_SUITS_SYM = globals.SUITS_SYM
-        globals.SUITS_SYM = globals.SUITS_SYM_UNICODE
+        _global_defs_SUITS_SYM = global_defs.SUITS_SYM
+        global_defs.SUITS_SYM = global_defs.SUITS_SYM_UNICODE
         # override configurables #1
         redeal.Hand.set_str_style(
             redeal.Hand.LONG if self.long.get_value() else redeal.Hand.SHORT)
@@ -131,7 +131,7 @@ class Application(tk.Frame):
         self.main.args.max = eval(self.max.get())
         # override hands
         _predeal = self.main.predeal.copy()
-        for seat in globals.SEATS:
+        for seat in global_defs.SEATS:
             self.main.predeal[seat] = redeal.H(getattr(self, seat).get())
         # override functions
         simulation = type("", (redeal.Simulation,),
@@ -154,7 +154,7 @@ class Application(tk.Frame):
             self.main.args.n = _n
             self.main.args.max = _max
             self.main.predeal = _predeal
-            globals.SUITS_SYM = _globals_SUITS_SYM
+            global_defs.SUITS_SYM = _global_defs_SUITS_SYM
         threading.Thread(target=target).start()
 
     def stop(self):
@@ -166,7 +166,7 @@ class Application(tk.Frame):
 
 def run_gui(main):
     root = tk.Tk()
-    root.title(globals.__fullname__)
+    root.title(global_defs.__fullname__)
     app = Application(root, main)
     _stdout = sys.stdout
     _stderr = sys.stderr

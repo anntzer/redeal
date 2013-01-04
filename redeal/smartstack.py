@@ -6,7 +6,7 @@ from itertools import combinations, product
 import operator
 import random
 
-from .globals import *
+from .global_defs import *
 
 
 class _SmartStack(object):
@@ -44,10 +44,12 @@ class _SmartStack(object):
 
     @classmethod
     def from_predealt(cls, smartstack, predealt):
+        by_suit = {suit: {card.rank for card in predealt if card.suit == suit}
+                   for suit in range(N_SUITS)}
         oks = [(lambda holding, suit=suit:
                 smartstack.shape.min_ls[suit] <= len(holding) <=
                     smartstack.shape.max_ls[suit] and
-                not any(holding & predealt[suit] for seat in SEATS))
+                not any(holding & by_suit[suit] for seat in SEATS))
                for suit in range(N_SUITS)]
         return cls(smartstack.shape, oks,
                    smartstack.eval_holding, smartstack.emin, smartstack.emax)

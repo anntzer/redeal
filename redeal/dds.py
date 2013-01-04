@@ -4,7 +4,7 @@ from __future__ import division, print_function
 from ctypes import *
 import os
 
-from .globals import *
+from .global_defs import *
 
 
 class Board(Structure):
@@ -107,6 +107,9 @@ try:
 except IndexError:
     def solve(deal, strain, declarer):
         raise Exception("Unable to load DDS.  `solve` is unavailable.")
+
+    def valid_cards(deal, strain, leader):
+        raise Exception("Unable to load DDS.  `valid_cards` is unavailable.")
 
     def solve_all(deal, strain, declarer):
         raise Exception("Unable to load DDS.  `solve_all` is unavailable.")

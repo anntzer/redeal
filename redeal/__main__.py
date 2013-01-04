@@ -7,7 +7,7 @@ import inspect
 from os import path
 import random
 
-from . import globals, util
+from . import global_defs, util
 try:
     from . import gui
 except ImportError:
@@ -80,7 +80,7 @@ class Main(object):
         self.given_funcs = [(name, argspec, self.verbose_getattr(name, body))
                             for name, argspec, body in self.func_defaults]
         self.predeal = self.verbose_getattr("predeal", {})
-        for seat in globals.SEATS:
+        for seat in global_defs.SEATS:
             try:
                 hand = getattr(self.args, seat)
             except AttributeError:
