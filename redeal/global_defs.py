@@ -21,6 +21,7 @@ SUITS_SYM = (list("♠♡♢♣") if _sys.getdefaultencoding() == "utf-8"
 N_SUITS = len(SUITS)
 RANKS = list("AKQJT98765432")
 HCP = list(map(int, "4321000000000"))
+QP = list(map(int, "3210000000000"))
 PER_SUIT = 13
 Card = _namedtuple("Card", ["suit", "rank"])
 Card.from_str = lambda s: Card(SUITS.index(s[0].upper()),

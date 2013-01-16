@@ -357,6 +357,8 @@ class Hand(tuple, object):
                        "The hand's shape.")
     hcp = util.reify(lambda self: sum(holding.hcp for holding in self),
                      "The hand's HCP count.")
+    qp = util.reify(lambda self: sum(holding.qp for holding in self),
+                    "The hand's QP count.")
     losers = util.reify(lambda self: sum(holding.losers for holding in self),
                         "The hand's loser count.")
 
@@ -374,6 +376,8 @@ class Holding(frozenset, object):
 
     hcp = util.reify(lambda self: sum(HCP[rank] for rank in self),
                      "The holding's HCP.")
+    qp = util.reify(lambda self: sum(QP[rank] for rank in self),
+                    "The holding's QP.")
 
     @util.reify
     def losers(self):
