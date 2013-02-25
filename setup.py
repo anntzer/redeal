@@ -15,7 +15,7 @@ else:
 from zipfile import ZipFile
 
 
-DDS_URL = "http://privat.bahnhof.se/wb758135/dds1115-pbn-dll.zip"
+DDS_URL = "http://privat.bahnhof.se/wb758135/dds1118-pbn-dll.zip"
 if os.name == "posix":
     PACKAGE_DATA = [os.path.join("dds", "libdds.so")]
 elif os.name == "nt":
@@ -65,5 +65,5 @@ setup(
     license="LICENSE.txt",
     description="A reimplementation of Thomas Andrews' Deal in Python.",
     long_description=open("README.md").read(),
-    requires=['colorama (>=0.2.4)']
+    requires=["colorama (>=0.2.4)"]
 )

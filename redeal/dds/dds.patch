@@ -1,6 +1,6 @@
---- dll.h	2012-08-25 12:45:40.000000000 -0700
-+++ dll.h	2012-09-21 23:29:27.326533260 -0700
-@@ -336,7 +336,7 @@
+--- dll.h	2013-02-23 12:04:44.000000000 -0800
++++ dll.h	2013-02-25 13:47:57.701585127 -0800
+@@ -342,7 +342,7 @@
  #endif
  
  
@@ -9,35 +9,3 @@
  void InitGame(int gameNo, int moveTreeFlag, int first, int handRelFirst);
  void InitSearch(struct pos * posPoint, int depth,
    struct moveType startMoves[], int first, int mtd);
---- dds.cpp	2012-08-25 12:46:10.000000000 -0700
-+++ dds.cpp	2012-09-21 23:29:22.566559047 -0700
-@@ -840,7 +840,7 @@
-   if (ttStore==NULL)
-     exit(1);
- 
--  if ((gb_ram==0)||(ncores==0)) {		/* Autoconfig */
-+  if (gb_ram==0) {		/* Autoconfig */
- 
- #ifdef _WIN32
-   
-@@ -857,6 +857,11 @@
-     GetSystemInfo(&temp);
- 
- #endif
-+#ifdef __linux__
-+    FILE* fifo = popen("free -k | tail -n+3 | head -n1 | awk '{print $NF}'", "r");
-+    fscanf(fifo, "%ld", &pcmem);
-+    fclose(fifo);
-+#endif
- 
-   }
-   else {
-@@ -872,7 +876,7 @@
- 		   25000001*sizeof(struct winCardType)+
- 		   400001*sizeof(struct posSearchType)));
-   else {
--    maxmem = (unsigned long long)(pcmem-32678) * 700;  
-+    maxmem = (unsigned long long)(pcmem-32768) * 700;  
- 	  /* Linear calculation of maximum memory, formula by Michiel de Bondt */
- 
-     if (maxmem < 10485760) exit (1);

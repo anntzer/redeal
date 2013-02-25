@@ -1,6 +1,8 @@
 build/
 dist/
 doc/
+redeal.egg-info/
+setup.cfg
 *.o
 *.so
 *.pyc

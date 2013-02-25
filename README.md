@@ -12,20 +12,20 @@ Redeal runs under Python 2.7 or higher.  See the `examples/` folder for some
 example simulations.
 
 A double-dummy solver function is also available through Bo Haglund's DDS
-v.1.1.9 (the latest version I could find that can easily be built on Linux --
-extracted and slightly modified from the source of Thomas Andrews' Deal), but
-you will need a C++ compiler.  If you have g++ and make, simply run `make` in
-the `dds-1.1.9` folder; otherwise use the compiler of your choice.  If you
-cannot compile the DDS library, Redeal will work fine but the `solve_board`
-function will be unavailable.
+1.1.18, which is distributed with Redeal.  For Unix systems, DDS will be built
+upon package installation if you use `pip`; otherwise you can just run `make`
+in the `dds` folder.  For Windows, the DDS DLL is distributed with Redeal.  In
+any case, if you cannot compile the DDS library, Redeal will work fine but the
+`dd_tricks`, `dd_score` and `dd_all_tricks` methods will be unavailable.
 
 Installation
 ------------
 
 Download everything, open a terminal (a.k.a. Command Prompt in Windows), `cd`
-to the directory where you downloaded the code and run `python setup.py
-install` (if using a Unix system, either use `sudo`, or pass the `--user` flag,
-too).  This will create two executable, `redeal` and `redeal-gui`.
+to the directory where you downloaded the code and run `easy-install .` or `pip
+install .` (if using a Unix system, you will need to either use `sudo`, or
+pass the `--user` flag, too).  This will create two executable, `redeal` and
+`redeal-gui`.
 
 Note that you do not actually need to install anything, if you do not wish
 to.  Instead, you can also `cd` to the folder containing this `README` and run
