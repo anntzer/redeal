@@ -70,9 +70,11 @@ class Application(tk.Frame):
             frame.pack(side=tk.TOP)
         # hands
         frame = tk.Frame(self)
+        self.seats = {}
         for seat, long_seat in zip(global_defs.SEATS, global_defs.LONG_SEATS):
             inner = tk.Frame(frame)
-            tk.Label(inner, text=long_seat).pack(side=tk.TOP)
+            self.seats[seat] = check_button(inner, True, text=long_seat)
+            self.seats[seat].pack(side=tk.TOP)
             seat_entry = tk.Entry(inner, width=16)
             seat_entry.insert(tk.END,
                 self.main.predeal.get(seat, redeal.H("- - - -")).to_str())
@@ -104,7 +106,7 @@ class Application(tk.Frame):
 
     def create_text(self, master, name, argspec, default, height=None):
         frame = tk.Frame(master)
-        proto = "def {name}({spec}):".format(
+        proto = "def {name}{spec}:".format(
             name=name, spec=inspect.formatargspec(*argspec))
         tk.Label(frame, text=proto).pack(side=tk.TOP, anchor="w")
         inner, text = scrolled_text(frame, height=height if height is not None
@@ -122,6 +124,8 @@ class Application(tk.Frame):
             redeal.Hand.LONG if self.long.get_value() else redeal.Hand.SHORT)
         redeal.Deal.set_str_style(
             redeal.Deal.LONG if self.long.get_value() else redeal.Deal.SHORT)
+        redeal.Deal.set_print_only([seat for seat in global_defs.SEATS
+                                    if self.seats[seat].get_value()])
         _verbose = self.main.args.verbose
         self.main.args.verbose = self.verbose.get_value()
         # override configurables #1

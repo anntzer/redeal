@@ -231,18 +231,22 @@ class Deal(tuple, object):
 
     def _short_str(self):
         """Return a one-line version of the deal."""
-        return " ".join(hand._short_str() for hand in self)
+        return " ".join(self[SEATS.index(hand)]._short_str()
+                        for hand in self._print_only)
 
     def _long_str(self):
         """Return pretty-printed version of the deal."""
         s = ""
-        for line in self.north._long_str().split("\n"):
-            s += " " * 7 + line + "\n"
+        if "N" in self._print_only:
+            for line in self.north._long_str().split("\n"):
+                s += " " * 7 + line + "\n"
         for line_w, line_e in zip(self.west._long_str().split("\n"),
                                   self.east._long_str().split("\n")):
-            s += line_w.ljust(14) + line_e + "\n"
-        for line in self.south._long_str().split("\n"):
-            s += " " * 7 + line + "\n"
+            s += ((line_w if "W" in self._print_only else "").ljust(14) +
+                  (line_e if "E" in self._print_only else "") + "\n")
+        if "S" in self._print_only:
+            for line in self.south._long_str().split("\n"):
+                s += " " * 7 + line + "\n"
         return s
 
     def _pbn(self):
@@ -258,6 +262,11 @@ class Deal(tuple, object):
         """Set output style (:attr:`Deal.SHORT` or :attr:`Deal.LONG`)."""
         cls.__str__ = {cls.SHORT: cls._short_str,
                        cls.LONG: cls._long_str}[style]
+
+    @classmethod
+    def set_print_only(cls, hands):
+        assert all(hand in SEATS for hand in hands)
+        cls._print_only = hands
 
     _N = SEATS.index("N")
     _E = SEATS.index("E")
@@ -293,6 +302,8 @@ class Hand(tuple, object):
 
     def __new__(cls, cards):
         """Initialize with a sequence of :class:`Cards <Card>`."""
+        if len(cards) > PER_SUIT:
+            raise ValueError("More than {} cards in a hand".format(PER_SUIT))
         return tuple.__new__(
             cls,
             (Holding(card for card in cards if card.suit == suit)

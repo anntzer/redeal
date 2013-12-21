@@ -26,6 +26,8 @@ class Main(object):
         help="the maximum number of tries (defaults to 1000*n)")
     parser.add_argument("-l", "--long", action="store_true",
         help="long output for diagrams")
+    parser.add_argument("-o", "--only", default=global_defs.SEATS,
+        help="hands to print")
     parser.add_argument("-v", "--verbose", action="store_true",
         help="be verbose")
     parser.add_argument("--seed", type=int,
@@ -146,6 +148,8 @@ class Main(object):
                                       else redeal.Hand.SHORT)
             redeal.Deal.set_str_style(redeal.Deal.LONG if self.args.long
                                       else redeal.Deal.SHORT)
+            redeal.Deal.set_print_only(
+                [seat.upper() for seat in self.args.only])
             self.generate(simulation)
 
 
