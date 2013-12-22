@@ -58,7 +58,9 @@ SolveBoardStatus = {
     -10: "> 52 cards",
     -12: "Invalid deal.currentTrick{Suit,Rank}",
     -13: "Card played in current trick is also remaining",
-    -14: "Wrong number of remaining cards in a hand."}
+    -14: "Wrong number of remaining cards in a hand",
+    -15: "threadIndex < 0 or >=noOfThreads, noOfThreads is the configured "
+         "maximum number of threads"}
 
 
 def solve(deal, strain, declarer):
@@ -67,7 +69,7 @@ def solve(deal, strain, declarer):
     board = Board.from_deal(deal, strain, leader)
     futp = FutureTricks()
     # find one optimal card with its score, even if only one card
-    status = dll.SolveBoard(board, -1, 1, 1, byref(futp))
+    status = dll.SolveBoard(board, -1, 1, 1, byref(futp), 0)
     if status != 1:
         raise Exception("SolveBoard failed with status {} ({}).".
                         format(status, SolveBoardStatus[status]))
@@ -78,14 +80,14 @@ def solve(deal, strain, declarer):
 def valid_cards(deal, strain, leader):
     board = Board.from_deal(deal, strain, leader)
     futp = FutureTricks()
-    dll.SolveBoard(board, 0, 2, 1, byref(futp))
+    dll.SolveBoard(board, 0, 2, 1, byref(futp), 0)
     return [Card(futp.suit[i], 14 - futp.rank[i]) for i in range(futp.cards)]
 
 
 def solve_all(deal, strain, leader):
     board = Board.from_deal(deal, strain, leader)
     futp = FutureTricks()
-    dll.SolveBoard(board, -1, 3, 1, byref(futp))
+    dll.SolveBoard(board, -1, 3, 1, byref(futp), 0)
     return {Card(futp.suit[i], 14 - futp.rank[i]): futp.score[i]
             for i in range(futp.cards)}
 

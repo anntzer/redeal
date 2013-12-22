@@ -12,7 +12,7 @@ Redeal runs under Python 2.7 or higher.  See the `examples/` folder for some
 example simulations.
 
 A double-dummy solver function is also available through Bo Haglund's DDS
-1.1.18, which is distributed with Redeal.  For Unix systems, DDS will be built
+2.3.0, which is distributed with Redeal.  For Unix systems, DDS will be built
 upon package installation if you use `pip`; otherwise you can just run `make`
 in the `dds` folder.  For Windows, the DDS DLL is distributed with Redeal.  In
 any case, if you cannot compile the DDS library, Redeal will work fine but the

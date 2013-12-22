@@ -5,19 +5,12 @@ SONAME_FLAG := $(shell if [ `uname -s` = Darwin ]; \
 all: libdds.so
 
 libdds.so: dds.o
-	$(CXX) -shared -Wl,-$(SONAME_FLAG),libdds.so.1 -o $@ *.o
+	$(CXX) -shared -Wl,-$(SONAME_FLAG),libdds.so.1 -lgomp -o $@ *.o
 
-dds.o: patched
-	$(CXX) -O3 -fPIC -c dds.cpp -o $@
-
-patched: dds.patch
-	cp ../dds-src/dds.cpp .
-	cp ../dds-src/dll.h .
-	patch -b <dds.patch
-	touch patched
+dds.o: dll.h dds.cpp
+	$(CXX) -O3 -fPIC -D'itoa(value, str, base)=sprintf(str, "%d", value)' -c dds.cpp -o $@
 
 clean:
-	-rm dds.cpp dds.cpp.orig dll.h dll.h.orig
-	-rm patched dds.o libdds.so
+	-rm dds.o libdds.so
 
 .PHONY: clean

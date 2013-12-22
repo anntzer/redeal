@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-from distutils.command.build import build
-from distutils.core import setup
+from distutils.command.build_clib import build_clib
+from setuptools import setup
 
 import contextlib
 import os
@@ -15,7 +15,7 @@ else:
 from zipfile import ZipFile
 
 
-DDS_URL = "http://privat.bahnhof.se/wb758135/dds1118-pbn-dll.zip"
+DDS_URL = "http://privat.bahnhof.se/wb758135/dds230-pbn-dll.zip"
 if os.name == "posix":
     PACKAGE_DATA = [os.path.join("dds", "libdds.so")]
 elif os.name == "nt":
@@ -24,7 +24,7 @@ else:
     PACKAGE_DATA = []
 
 
-class make_build(build, object):
+class make_build(build_clib):
     def run(self):
         dirname = os.path.dirname(os.path.abspath(__file__))
         os.chdir(os.path.join(dirname, "redeal", "dds"))
@@ -47,11 +47,10 @@ class make_build(build, object):
                   "on {}.  Please contact the author if you can help.".
                   format(os.name))
         os.chdir(dirname)
-        super(make_build, self).run()
 
 
 setup(
-    cmdclass={"build": make_build},
+    cmdclass={"build_clib": make_build},
     name="redeal",
     version="0.2.0",
     author="Antony Lee",
