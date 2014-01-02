@@ -7,8 +7,9 @@ import os
 from .global_defs import *
 
 
-class Board(Structure):
-    """The deal struct."""
+class Deal(Structure):
+    """The deal struct.
+    """
 
     STRAINS = list("SHDCN")
     SEATS = list("NESW")
@@ -17,8 +18,8 @@ class Board(Structure):
                 ("first", c_int), # leader: 0=N, 1=E, 2=S, 3=W
                 ("currentTrickSuit", c_int * 3),
                 ("currentTrickRank", c_int * 3), # 2-14, up to 3 cards; 0=unplayed
-                # remaincards[hand][suit] is a bit-array (2->2^2, ..., A->2^14)
-                ("remaincards", c_uint * 4 * 4)]
+                # remainCards[hand][suit] is a bit-array (2->2^2, ..., A->2^14)
+                ("remainCards", c_uint * 4 * 4)]
 
     @classmethod
     def from_deal(cls, deal, strain, leader):
@@ -29,13 +30,34 @@ class Board(Structure):
         # bit #i (2 ≤ i ≤ 14) is set if card of rank i (A = 14) is held
         for seat, hand in enumerate(deal):
             for suit, holding in enumerate(hand):
-                self.remaincards[seat][suit] = sum(1 << (PER_SUIT + 1 - rank)
+                self.remainCards[seat][suit] = sum(1 << (PER_SUIT + 1 - rank)
                                                    for rank in holding)
         return self
 
 
+class DealPBN(Structure):
+    """The dealPBN struct.
+    """
+
+    _fields_ = [("trump", c_int), # 0=S, 1=H, 2=D, 3=C, 4=NT
+                ("first", c_int), # leader: 0=N, 1=E, 2=S, 3=W
+                ("currentTrickSuit", c_int * 3),
+                ("currentTrickRank", c_int * 3), # 2-14, up to 3 cards; 0=unplayed
+                ("remainCards", c_char * 80)] # PBN-like format
+
+    @classmethod
+    def from_deal(cls, deal, strain, leader):
+        return cls(trump=STRAINS.index(strain.upper()),
+                   first=SEATS.index(leader.upper()),
+                   currentTrickSuit=(c_int * 3)(0, 0, 0),
+                   currentTrickRank=(c_int * 3)(0, 0, 0),
+                   remainCards=b"N:" + " ".join(
+                       ".".join(str(holding) for holding in hand)
+                       for hand in deal).encode("ascii"))
+
 class FutureTricks(Structure):
-    """The futureTricks struct."""
+    """The futureTricks struct.
+    """
 
     _fields_ = [("nodes", c_int),
                 ("cards", c_int),
@@ -64,12 +86,26 @@ SolveBoardStatus = {
 
 
 def solve(deal, strain, declarer):
-    """Wrapper for SolveBoard.  Return the number of tricks for declarer."""
+    """Return the number of tricks for declarer; wraps SolveBoard.
+    """
     leader = SEATS[(SEATS.index(declarer.upper()) + 1) % N_SEATS]
-    board = Board.from_deal(deal, strain, leader)
+    c_deal = Deal.from_deal(deal, strain, leader)
     futp = FutureTricks()
     # find one optimal card with its score, even if only one card
-    status = dll.SolveBoard(board, -1, 1, 1, byref(futp), 0)
+    status = dll.SolveBoard(c_deal, -1, 1, 1, byref(futp), 0)
+    if status != 1:
+        raise Exception("SolveBoard failed with status {} ({}).".
+                        format(status, SolveBoardStatus[status]))
+    best_score = PER_SUIT - futp.score[0]
+    return best_score
+
+
+def solve_pbn(deal, strain, declarer):
+    """Return the number of tricks for declarer; wraps SolveBoardPBN.
+    """
+    leader = SEATS[(SEATS.index(declarer.upper()) + 1) % N_SEATS]
+    c_deal_pbn = DealPBN.from_deal(deal, strain, leader)
+    status = dll.SolveBoardPBN(c_deal_pbn, -1, 1, 1, byref(futp), 0)
     if status != 1:
         raise Exception("SolveBoard failed with status {} ({}).".
                         format(status, SolveBoardStatus[status]))
@@ -78,16 +114,20 @@ def solve(deal, strain, declarer):
 
 
 def valid_cards(deal, strain, leader):
-    board = Board.from_deal(deal, strain, leader)
+    """Return all cards that can be played.
+    """
+    c_deal = Deal.from_deal(deal, strain, leader)
     futp = FutureTricks()
-    dll.SolveBoard(board, 0, 2, 1, byref(futp), 0)
+    dll.SolveBoard(c_deal, 0, 2, 1, byref(futp), 0)
     return [Card(futp.suit[i], 14 - futp.rank[i]) for i in range(futp.cards)]
 
 
 def solve_all(deal, strain, leader):
-    board = Board.from_deal(deal, strain, leader)
+    """Return the number of tricks for declarer for each lead; wraps SolveBoard.
+    """
+    c_deal = Deal.from_deal(deal, strain, leader)
     futp = FutureTricks()
-    dll.SolveBoard(board, -1, 3, 1, byref(futp), 0)
+    dll.SolveBoard(c_deal, -1, 3, 1, byref(futp), 0)
     return {Card(futp.suit[i], 14 - futp.rank[i]): futp.score[i]
             for i in range(futp.cards)}
 
@@ -119,7 +159,9 @@ except IndexError:
 else:
     dll = DLL(dll_path)
     dll.SolveBoard.argtypes = [
-        Board, c_int, c_int, c_int, POINTER(FutureTricks)]
+        Deal, c_int, c_int, c_int, POINTER(FutureTricks)]
+    dll.SolveBoardPBN.argtypes = [
+        DealPBN, c_int, c_int, c_int, POINTER(FutureTricks)]
     if os.name == "posix":
         dll.InitStart.argtypes = [c_int, c_int]
         dll.InitStart(0, 0)

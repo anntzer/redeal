@@ -5,7 +5,8 @@ import sys
 
 
 class reify(object):
-    """Auto-destructing property, from Pyramid code."""
+    """Auto-destructing property, from Pyramid code.
+    """
 
     def __init__(self, wrapped, doc=None):
         self.wrapped = wrapped
@@ -21,7 +22,8 @@ class reify(object):
 
 
 def exec_(stmt, globals, locals):
-    """The exec function/statement, as implemented by six."""
+    """The exec function/statement, as implemented by six.
+    """
     if sys.version_info.major < 3:
         exec("exec {!r} in globals, locals".format(stmt))
     else:

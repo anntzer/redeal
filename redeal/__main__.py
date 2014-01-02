@@ -66,7 +66,8 @@ class Main(object):
         self.args = Namespace(n=10, max=None, verbose=False)
 
     def parse_args(self):
-        """Parse command line args."""
+        """Parse command line args.
+        """
         self.args = self.parser.parse_args()
 
         random.seed(self.args.seed)
@@ -94,7 +95,8 @@ class Main(object):
         """Try to get an attribute:
 
         Query `self.args` first, then `self.module`, then uses `default`;
-        report if `self.verbose is set`."""
+        report if `self.verbose is set`.
+        """
         try:
             value = getattr(self.args, attr)
         except AttributeError:
@@ -110,7 +112,8 @@ class Main(object):
         return value
 
     def generate(self, simulation):
-        """Repeatedly generate and process deals until enough are accepted."""
+        """Repeatedly generate and process deals until enough are accepted.
+        """
         found = 0
         dealer = redeal.Deal.prepare(self.predeal)
         if util.n_args(simulation.initial) == 1:
@@ -132,7 +135,8 @@ class Main(object):
         simulation.final(i + 1)
 
     def run(self):
-        """Start a GUI or run a simulation."""
+        """Start a GUI or run a simulation.
+        """
         if self.args.gui:
             gui.run_gui(self)
         else:

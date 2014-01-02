@@ -29,4 +29,3 @@ Card.from_str = lambda s: Card(SUITS.index(s[0].upper()),
 Card.__str__ = lambda self: SUITS_SYM[self.suit] + RANKS[self.rank]
 FULL_DECK = {Card(suit=suit, rank=rank)
              for suit, rank in _product(range(N_SUITS), range(PER_SUIT))}
-

@@ -11,6 +11,9 @@ Here, for each simulated hand, we compute the result of each strategy, and
 compute a cross-table of how much each strategy would score against each other
 strategy, on average, at BAM scoring.
 
+We also keep track of how often at least one game makes, regardless of whether
+it is reasonably easy to find.
+
 The following names will be imported from the simulation module: `predeal`,
 `initial`, `accept` `do` and `final`.
 """
@@ -24,11 +27,13 @@ predeal = {"S": H("652 K752 53 9862")}
 
 
 # `initial` is called at the beginning of the sim.  Here it initializes a
-# global matchpoint payoff table (yes, globals are bad, but well).
+# global matchpoint payoff table (yes, globals are bad, but well) and another
+# table that keeps track of how often at least one game that makes.
 def initial():
-    global TABLE
+    global TABLE, TABLE2
     TABLE = Payoff(("pass2N", "bid3N", "stayman", "pstayman", "majorgame"),
                    matchpoints)
+    TABLE2 = [0, 0]
 
 
 # `accept` is called for each hand with the currently dealt hand as argument.
@@ -64,33 +69,18 @@ def do(deal):
     print("{} {}".format(deal, " ".join(str(scores[k]) for k in TABLE.entries)))
     # Update the cross-matchpoint table.
     TABLE.add_data(scores)
+    # Keep track of how often at least one game makes.
+    if (deal.dd_tricks("4HN") >= 10 or deal.dd_tricks("4SN") >= 10 or
+        deal.dd_tricks("3NN") >= 9):
+        TABLE2[True] += 1
+    else:
+        TABLE2[False] += 1
 
 
 # `final` is called at the end of the sim with the number of tries as an
-# argument.  Here it outputs the cross-matchpoint table.
+# argument.  Here it outputs the cross-matchpoint table and how often at least
+# one game makes.
 def final(n_tries):
     TABLE.report()
+    print(TABLE2)
     print("Tries: {}".format(n_tries))
-
-
-# An alternative simulation, where we only want to compute how often there is a
-# making game, regardless of whether it is reasonably easy to find (for
-# example, we will have to choose between a 4-3 S fit -- 7% of the hands! --
-# and a more normal contract -- which is more frequently the best choice).
-def initial2():
-    global TABLE
-    TABLE = [0, 0]
-
-
-# `deal.dd_tricks` returns the double-dummy number of tricks for a contract.
-def do2(found, deal):
-    if (deal.dd_overtricks("4HN") >= 10 or deal.dd_overtricks("4SN") >= 10 or
-        deal.dd_overtricks("3NN") >= 9):
-        TABLE[True] += 1
-    else:
-        TABLE[False] += 1
-    print("{}: {}".format(found + 1, deal))
-
-
-def final2(n_tries):
-    print(TABLE)

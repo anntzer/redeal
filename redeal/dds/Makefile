@@ -8,7 +8,9 @@ libdds.so: dds.o
 	$(CXX) -shared -Wl,-$(SONAME_FLAG),libdds.so.1 -lgomp -o $@ *.o
 
 dds.o: dll.h dds.cpp
-	$(CXX) -O3 -fPIC -D'itoa(value, str, base)=sprintf(str, "%d", value)' -c dds.cpp -o $@
+	$(CXX) -O3 -fPIC -DPBN -DPBN_PLUS \
+	    -D'itoa(value, str, base)=(base == 10 ? sprintf(str, "%d", value) : (exit(1), 0))' \
+	    -c dds.cpp -o $@
 
 clean:
 	-rm dds.o libdds.so

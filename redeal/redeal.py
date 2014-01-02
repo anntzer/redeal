@@ -36,7 +36,7 @@ del i, j, suit, rank
 
 class Shape(object):
     """A shape specification, as a 0-1 table, intended as immutable.
-    
+
     :attr:`min_ls` and :attr:`max_ls` are hints for smartstacking,
     guaranteed to be correct but not necessarily optimal. :attr:`_cls_cache`
     and :attr:`_op_cache` cache :class:`Shape` instantiations and
@@ -50,7 +50,8 @@ class Shape(object):
     _cls_cache = {}
 
     def __new__(cls, init=None):
-        """Initialize with a string."""
+        """Initialize with a string.
+        """
         try:
             return cls._cls_cache[init]
         except KeyError:
@@ -67,7 +68,8 @@ class Shape(object):
 
     @classmethod
     def from_table(cls, table, min_max_hint=None):
-        """Initialize from a table."""
+        """Initialize from a table.
+        """
         self = cls()
         self.table = array(str("b"))
         self.table.fromlist(list(table))
@@ -86,7 +88,8 @@ class Shape(object):
 
     @classmethod
     def from_cond(cls, func):
-        """Initialize from a shape-accepting function."""
+        """Initialize from a shape-accepting function.
+        """
         self = cls()
         for nonflat in product(*[range(PER_SUIT + 1)
                                  for _ in range(N_SUITS)]):
@@ -99,13 +102,15 @@ class Shape(object):
 
     @staticmethod
     def _flatten(index):
-        """Transform a 4D index into a 1D index."""
+        """Transform a 4D index into a 1D index.
+        """
         s, h, d, c = index
         mul = PER_SUIT + 1
         return ((((s * mul + h) * mul) + d) * mul) + c
 
     def _insert1(self, shape, safe=True):
-        """Insert an element, possibly with "x" but no "()" terms."""
+        """Insert an element, possibly with "x" but no "()" terms.
+        """
         jokers = any(l == -1 for l in shape)
         pre_set = sum(l for l in shape if l >= 0)
         if not jokers:
@@ -126,7 +131,8 @@ class Shape(object):
                                      safe=False)
 
     def insert(self, it, acc=()):
-        """Insert an element, possibly with "()" or "x" terms."""
+        """Insert an element, possibly with "()" or "x" terms.
+        """
         if not it:
             self._insert1(acc, safe=False)
             return
@@ -142,15 +148,18 @@ class Shape(object):
             self.insert(it, acc + perm)
 
     def __contains__(self, int_shape):
-        """Check if the given shape is included."""
+        """Check if the given shape is included.
+        """
         return self.table[self._flatten(int_shape)]
 
     def __call__(self, hand):
-        """Check if the shape of the given hand is included."""
+        """Check if the shape of the given hand is included.
+        """
         return hand.shape in self
 
     def __add__(self, other):
-        """Return the union of two ``Shapes``."""
+        """Return the union of two ``Shapes``.
+        """
         try:
             return self._op_cache["+", other]
         except KeyError:
@@ -165,7 +174,8 @@ class Shape(object):
             return result
 
     def __sub__(self, other):
-        """Remove one ``Shape`` from another."""
+        """Remove one ``Shape`` from another.
+        """
         try:
             return self._op_cache["-", other]
         except KeyError:
@@ -182,14 +192,15 @@ semibalanced = balanced + Shape("(5422)") + Shape("(6322)")
 
 
 class Deal(tuple, object):
-    """A deal, represented as a tuple of hands."""
+    """A deal, represented as a tuple of hands.
+    """
 
     LONG, SHORT = range(2)
 
     @staticmethod
     def prepare(predeal):
         """Contruct a dealer from a ``seat -> [Hand | SmartStack]`` dict.
-        
+
         There can be at most one ``SmartStack`` entry.
         """
         predeal = predeal or {}
@@ -216,7 +227,8 @@ class Deal(tuple, object):
         return lambda: Deal(dealer)
 
     def __new__(cls, dealer):
-        """Randomly deal a hand from a prepared dealer."""
+        """Randomly deal a hand from a prepared dealer.
+        """
         cards = dealer["_remaining"]
         random.shuffle(cards)
         hands = []
@@ -230,12 +242,14 @@ class Deal(tuple, object):
         return self
 
     def _short_str(self):
-        """Return a one-line version of the deal."""
+        """Return a one-line version of the deal.
+        """
         return " ".join(self[SEATS.index(hand)]._short_str()
                         for hand in self._print_only)
 
     def _long_str(self):
-        """Return pretty-printed version of the deal."""
+        """Return pretty-printed version of the deal.
+        """
         s = ""
         if "N" in self._print_only:
             for line in self.north._long_str().split("\n"):
@@ -250,7 +264,8 @@ class Deal(tuple, object):
         return s
 
     def _pbn(self):
-        """Return the deal in PBN format."""
+        """Return the deal in PBN format.
+        """
         return "{}:{}".format(
             SEATS[0], " ".join(".".join(str(holding) for holding in hand)
                                for hand in self))
@@ -259,7 +274,8 @@ class Deal(tuple, object):
 
     @classmethod
     def set_str_style(cls, style):
-        """Set output style (:attr:`Deal.SHORT` or :attr:`Deal.LONG`)."""
+        """Set output style (:attr:`Deal.SHORT` or :attr:`Deal.LONG`).
+        """
         cls.__str__ = {cls.SHORT: cls._short_str,
                        cls.LONG: cls._long_str}[style]
 
@@ -278,7 +294,8 @@ class Deal(tuple, object):
     west = property(lambda self: self[self._W])
 
     def dd_tricks(self, contract_declarer):
-        """Compute declarer's number of double-dummy tricks in a contract."""
+        """Compute declarer's number of double-dummy tricks in a contract.
+        """
         strain = Contract.from_str(contract_declarer[:-1]).strain
         declarer = contract_declarer[-1]
         if (strain, declarer) not in self._dd_cache:
@@ -286,22 +303,26 @@ class Deal(tuple, object):
         return self._dd_cache[strain, declarer]
 
     def dd_score(self, contract_declarer, vul=False):
-        """Compute declarer's double-dummy score in a contract."""
+        """Compute declarer's double-dummy score in a contract.
+        """
         return Contract.from_str(contract_declarer[:-1], vul=vul).score(
             self.dd_tricks(contract_declarer))
 
     def dd_all_tricks(self, strain, leader):
-        """Compute declarer's number of double dummy tricks for all leads."""
+        """Compute declarer's number of double dummy tricks for all leads.
+        """
         return dds.solve_all(self, strain, leader)
 
 
 class Hand(tuple, object):
-    """A hand, represented as a tuple of holdings."""
+    """A hand, represented as a tuple of holdings.
+    """
 
     LONG, SHORT = range(2)
 
     def __new__(cls, cards):
-        """Initialize with a sequence of :class:`Cards <Card>`."""
+        """Initialize with a sequence of :class:`Cards <Card>`.
+        """
         if len(cards) > PER_SUIT:
             raise ValueError("More than {} cards in a hand".format(PER_SUIT))
         return tuple.__new__(
@@ -311,7 +332,8 @@ class Hand(tuple, object):
 
     @classmethod
     def from_str(cls, init):
-        """Initialize with a string, e.g. "AK432 K87 QJT54 -"."""
+        """Initialize with a string, e.g. "AK432 K87 QJT54 -".
+        """
         suits = [holding if holding != "-" else "" for holding in init.split()]
         if (len(suits) != N_SUITS or
             not all(rank in RANKS for holding in suits for rank in holding)):
@@ -321,17 +343,20 @@ class Hand(tuple, object):
         return cls(cards)
 
     def to_str(self):
-        """Inverse of :meth:`from_str`."""
+        """Inverse of :meth:`from_str`.
+        """
         return " ".join(str(holding) if holding else "-" for holding in self)
 
     def _short_str(self):
-        """Return a one-line version of the hand."""
+        """Return a one-line version of the hand.
+        """
         return "".join(suit_symbol + str(holding)
                        for suit_symbol, holding
                        in zip(global_defs.SUITS_SYM, self))
 
     def _long_str(self):
-        """Return a pretty-printed version of the hand."""
+        """Return a pretty-printed version of the hand.
+        """
         return "\n" + "\n".join(suit_symbol + str(holding)
             for suit_symbol, holding in zip(global_defs.SUITS_SYM, self))
 
@@ -339,17 +364,20 @@ class Hand(tuple, object):
 
     @classmethod
     def set_str_style(cls, style):
-        """Set output style (:attr:`Hand.SHORT` or :attr:`Hand.LONG`)."""
+        """Set output style (:attr:`Hand.SHORT` or :attr:`Hand.LONG`).
+        """
         cls.__str__ = {cls.SHORT: cls._short_str,
                        cls.LONG: cls._long_str}[style]
 
     def cards(self):
-        """Return ``self`` as a list of card objects."""
+        """Return ``self`` as a list of card objects.
+        """
         return [Card(suit, rank)
                 for suit in range(N_SUITS) for rank in self[suit]]
 
     def __contains__(self, other):
-        """Specialize the case of checking for containing a :class:`Card`."""
+        """Specialize the case of checking for containing a :class:`Card`.
+        """
         if isinstance(other, Card):
             return other.rank in self[other.suit]
         else:
@@ -376,10 +404,12 @@ class Hand(tuple, object):
 
 A, K, Q, J, T = [RANKS.index(rank) for rank in "AKQJT"]
 class Holding(frozenset, object):
-    """A one-suit holding, represented as a frozenset of card ranks."""
+    """A one-suit holding, represented as a frozenset of card ranks.
+    """
 
     def __new__(cls, cards):
-        """Initialize with a sequence of :class:`Cards <Card>`."""
+        """Initialize with a sequence of :class:`Cards <Card>`.
+        """
         return frozenset.__new__(cls, (card.rank for card in cards))
 
     def __str__(self):
@@ -392,7 +422,8 @@ class Holding(frozenset, object):
 
     @util.reify
     def losers(self):
-        """The holding's loser count."""
+        """The holding's loser count.
+        """
         if len(self) == 0:
             return 0
         losers = 0
@@ -424,7 +455,8 @@ class Contract(object):
         return cls(int(s[0]), s[1].upper(), doubled=doubled, vul=vul)
 
     def score(self, tricks):
-        """Score for a contract for a given number of tricks taken."""
+        """Score for a contract for a given number of tricks taken.
+        """
         target = self.level + 6
         overtricks = tricks - target
         if overtricks >= 0:
@@ -472,7 +504,7 @@ C = Contract.from_str
 
 def defvector(*vals):
     """Additive holding evaluator.
-    
+
     For example, ``defvector(4, 3, 2, 1)(holding)`` returns the HCPs of
     ``holding``.
     """
@@ -481,19 +513,22 @@ def defvector(*vals):
 
 
 def matchpoints(my, other):
-    """Return matchpoints scored (-1 to 1) given our and their result."""
+    """Return matchpoints scored (-1 to 1) given our and their result.
+    """
     return (my > other) - (my < other)
 
 
 def imps(my, other):
-    """Return IMPs scored given our and their results."""
+    """Return IMPs scored given our and their results.
+    """
     imp_table = [15, 45, 85, 125, 165, 215, 265, 315, 365, 425, 495, 595,
         745, 895, 1095, 1295, 1495, 1745, 1995, 2245, 2495, 2995, 3495, 3995]
     return bisect(imp_table, abs(my - other)) * (1 if my > other else -1)
 
 
 class Simulation(object):
-    """The default simulation."""
+    """The default simulation.
+    """
 
     def initial(self):
         pass
@@ -531,7 +566,8 @@ class OpeningLeadSim(Simulation):
 
 
 class Payoff(object):
-    """A payoff table for comparing multiple strategies."""
+    """A payoff table for comparing multiple strategies.
+    """
 
     def __init__(self, entries, diff):
         """Initialize with a list of strategy names and a difference function.
@@ -541,14 +577,16 @@ class Payoff(object):
         self.table = [[[] for _0 in entries] for _1 in entries]
 
     def add_data(self, raw_scores):
-        """Add a realization of the scores as a strategy -> raw scores dict."""
+        """Add a realization of the scores as a strategy -> raw scores dict.
+        """
         for i, ei in enumerate(self.entries):
             for j, ej in enumerate(self.entries):
                 self.table[i][j].append(
                     self.diff(raw_scores[ei], raw_scores[ej]))
 
     def report(self):
-        """Pretty-print a payoff table."""
+        """Pretty-print a payoff table.
+        """
         means_stderrs = [[(mean(score), stderr(score)) for score in line]
                          for line in self.table]
         print("\t" + "".join("{:.7}\t".format(entry) for entry in self.entries))
