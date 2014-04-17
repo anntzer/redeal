@@ -38,18 +38,23 @@ def create_func(module, name, argspec, body, one_line=True):
             return body
         else:
             return staticmethod(body)
-    d = {}
     defs = "def {name}{spec}:{newline}{body}".format(
         name=name,
         spec=inspect.formatargspec(*argspec),
         newline=" " if one_line else "\n    ",
         body=body)
+    if module not in create_func.globals:
+        # This allows us to share globals between callbacks.
+        create_func.globals[module] = {
+            name: getattr(module, name) for name in dir(module)}
+    d = {}
     try:
-        exec_(defs, {name: getattr(module, name) for name in dir(module)}, d)
+        exec_(defs, create_func.globals[module], d)
     except:
         print("An invalid function definition raised:\n", file=sys.stderr)
         raise
     return d[name]
+create_func.globals = {}
 
 
 def n_args(func):
