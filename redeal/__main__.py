@@ -145,8 +145,7 @@ class Main(object):
             except AttributeError:
                 simulation = type(
                     str(), (redeal.Simulation,),
-                    {name: util.create_func(
-                        redeal, name, argspec, body, one_line=False)
+                    {name: util.create_func(redeal, name, argspec, body)
                      for name, argspec, body in self.given_funcs})()
             redeal.Hand.set_str_style(redeal.Hand.LONG if self.args.long
                                       else redeal.Hand.SHORT)

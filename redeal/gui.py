@@ -140,8 +140,7 @@ class Application(tk.Frame):
         # override functions
         simulation = type("", (redeal.Simulation,),
                           {name: util.create_func(
-                              redeal, name, argspec, text.get(1.0, tk.END),
-                              one_line=False)
+                              redeal, name, argspec, text.get(1.0, tk.END))
                            for name, argspec, text in self.texts})()
         # simulation
         def target():

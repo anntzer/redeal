@@ -2,6 +2,7 @@
 from __future__ import division, print_function, unicode_literals
 import inspect
 import sys
+import textwrap
 
 
 class reify(object):
@@ -30,7 +31,7 @@ def exec_(stmt, globals, locals):
         exec("exec({!r}, globals, locals)".format(stmt))
 
 
-def create_func(module, name, argspec, body, one_line=True):
+def create_func(module, name, argspec, body):
     """Create a method with the given module dict, name, arguments and body.
     """
     if isinstance(body, type(lambda: None)):
@@ -38,11 +39,10 @@ def create_func(module, name, argspec, body, one_line=True):
             return body
         else:
             return staticmethod(body)
-    defs = "def {name}{spec}:{newline}{body}".format(
+    defs = "def {name}{spec}:\n{body}".format(
         name=name,
         spec=inspect.formatargspec(*argspec),
-        newline=" " if one_line else "\n    ",
-        body=body)
+        body=textwrap.indent(body, "    "))
     if module not in create_func.globals:
         # This allows us to share globals between callbacks.
         create_func.globals[module] = {
