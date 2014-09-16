@@ -2,7 +2,64 @@
 from __future__ import division, print_function, unicode_literals
 import inspect
 import sys
-import textwrap
+
+
+def create_func(module, name, argspec, body):
+    """Create a method with the given module dict, name, arguments and body.
+    """
+    if isinstance(body, type(lambda: None)):
+        if inspect.ismethod(body):
+            return body
+        else:
+            return staticmethod(body)
+    defs = "def {name}{spec}:\n{body}".format(
+        name=name,
+        spec=inspect.formatargspec(*argspec),
+        body=indent(body, "    "))
+    if module not in create_func.globals:
+        # This allows us to share globals between callbacks.
+        create_func.globals[module] = {
+            name: getattr(module, name) for name in dir(module)}
+    d = {}
+    try:
+        exec_(defs, create_func.globals[module], d)
+    except:
+        print("An invalid function definition raised:\n", file=sys.stderr)
+        raise
+    return d[name]
+create_func.globals = {}
+
+
+def exec_(stmt, globals, locals):
+    """The exec function/statement, as implemented by six.
+    """
+    if sys.version_info.major < 3:
+        exec("exec {!r} in globals, locals".format(stmt))
+    else:
+        exec("exec({!r}, globals, locals)".format(stmt))
+
+
+# Backported from Python 3.
+def indent(text, prefix, predicate=None):
+    """Adds 'prefix' to the beginning of selected lines in 'text'.
+
+    If 'predicate' is provided, 'prefix' will only be added to the lines
+    where 'predicate(line)' is True. If 'predicate' is not provided,
+    it will default to adding 'prefix' to all non-empty lines that do not
+    consist solely of whitespace characters.
+    """
+    if predicate is None:
+        def predicate(line):
+            return line.strip()
+
+    def prefixed_lines():
+        for line in text.splitlines(True):
+            yield (prefix + line if predicate(line) else line)
+    return ''.join(prefixed_lines())
+
+
+def n_args(func):
+    return len(inspect.getargspec(func).args) - inspect.ismethod(func)
 
 
 class reify(object):
@@ -20,42 +77,3 @@ class reify(object):
         value = self.wrapped(inst)
         setattr(inst, self.wrapped.__name__, value)
         return value
-
-
-def exec_(stmt, globals, locals):
-    """The exec function/statement, as implemented by six.
-    """
-    if sys.version_info.major < 3:
-        exec("exec {!r} in globals, locals".format(stmt))
-    else:
-        exec("exec({!r}, globals, locals)".format(stmt))
-
-
-def create_func(module, name, argspec, body):
-    """Create a method with the given module dict, name, arguments and body.
-    """
-    if isinstance(body, type(lambda: None)):
-        if inspect.ismethod(body):
-            return body
-        else:
-            return staticmethod(body)
-    defs = "def {name}{spec}:\n{body}".format(
-        name=name,
-        spec=inspect.formatargspec(*argspec),
-        body=textwrap.indent(body, "    "))
-    if module not in create_func.globals:
-        # This allows us to share globals between callbacks.
-        create_func.globals[module] = {
-            name: getattr(module, name) for name in dir(module)}
-    d = {}
-    try:
-        exec_(defs, create_func.globals[module], d)
-    except:
-        print("An invalid function definition raised:\n", file=sys.stderr)
-        raise
-    return d[name]
-create_func.globals = {}
-
-
-def n_args(func):
-    return len(inspect.getargspec(func).args) - inspect.ismethod(func)
