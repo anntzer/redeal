@@ -442,6 +442,8 @@ class Holding(frozenset, object):
 
 class Contract(object):
     def __init__(self, level, strain, doubled=0, vul=False):
+        if not (1 <= level <= 7 and strain in STRAINS and 0 <= doubled <= 2):
+            raise ValueError("Invalid contract")
         self.level = level
         self.strain = strain
         self.doubled = doubled
@@ -451,7 +453,7 @@ class Contract(object):
     def from_str(cls, s, vul=False):
         """Initialize with a string, e.g. "7NXX".  Vulnerability still a kwarg.
         """
-        doubled = len(s) - len(s.lstrip("xX"))
+        doubled = len(s) - len(s.rstrip("xX"))
         return cls(int(s[0]), s[1].upper(), doubled=doubled, vul=vul)
 
     def score(self, tricks):
@@ -492,7 +494,7 @@ class Contract(object):
                 elif overtricks == -2:
                     score = [-300, -500][self.vul]
                 else:
-                    score = -300 * overtricks + [400, 100][self.vul]
+                    score = 300 * overtricks + [400, 100][self.vul]
             if self.doubled == 2:
                 score *= 2
             return score
