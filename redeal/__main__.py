@@ -115,6 +115,7 @@ class Main(object):
         """Repeatedly generate and process deals until enough are accepted.
         """
         found = 0
+        progress = ""
         dealer = redeal.Deal.prepare(self.predeal)
         if util.n_args(simulation.initial) == 1:
             simulation.initial(dealer)
@@ -128,10 +129,13 @@ class Main(object):
                 found += 1
                 simulation.do(deal)
                 if self.args.verbose:
-                    print("(hand #{}, found after {} tries)".
-                          format(found, i + 1))
+                    progress = (
+                        "\b" * len(progress) +
+                        "(hand #{}, found after {} tries)".format(found, i + 1))
+                    print(progress, end="", flush=True)
             if found >= self.args.n:
                 break
+        print()
         simulation.final(i + 1)
 
     def run(self):
