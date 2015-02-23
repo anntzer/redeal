@@ -280,13 +280,13 @@ placeholder:
 
 Quite a few hand evaluation techniques (HCP, controls, suit quality) look at
 one suit at a time, and attribute some value to each card.  Just like `deal`,
-`redeal` provides `defvector` for creating such evaluation functions:
+`redeal` provides `Evaluator` for creating such evaluation functions:
 
     from redeal import *
 
-    hcp = defvector(4, 3, 2, 1)
-    controls = defvector(2, 1)
-    top3 = defvector(1, 1, 1)
+    hcp = Evaluator(4, 3, 2, 1)
+    controls = Evaluator(2, 1)
+    top3 = Evaluator(1, 1, 1)
 
 Now you can test the quality of a suit with, for example,
 `top3(deal.north.spades) >= 2` (this may be relevant when generating weak two
@@ -296,7 +296,7 @@ hands).
 
 For some rare hand types, Deal and Redeal provide an alternative hand dealing
 technique: smartstacking.  Smartstacking works for only one of the four seats,
-and can only take two sorts of constraints: a Shape object, and a bounds on the
+and can only take two sorts of constraints: a Shape object, and bounds on the
 total value of a vector additive function (i.e. summed over the four suits).
 For example, the following example finds hands where North is 4-4 in the major,
 has a short minor and 11-15HCP.
@@ -304,7 +304,8 @@ has a short minor and 11-15HCP.
     from redeal import *
 
     Roman = Shape("44(41)") + Shape("44(50)")
-    predeal = {"N": SmartStack(Roman, defvector(4, 3, 2, 1), 11, 15)}
+    predeal = {"N": SmartStack(Roman, (11 <= Evaluator(4, 3, 2, 1)) <= 15)}
+    # Note the use of parentheses, which is *required*.
 
 When smartstacking is used, Redeal starts by computing the relative
 probabilities that each holding appears in a hand that satisfies the given

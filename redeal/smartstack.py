@@ -10,19 +10,17 @@ from .global_defs import *
 
 
 class _SmartStack(object):
-    def __init__(self, shape, oks, eval_holding, emin, emax):
+    def __init__(self, shape, oks, bound_eval):
         # shape: Shape object
         # oks[i]: holding acceptance function for suit i
-        # eval_holding: one-suit evaluator
-        # emin, emax: we want emin <= sum(evals) <= emax
+        # bound_eval: bound evaluator
 
         # holdings[i][l, v]:
         #     OK holdings for suit #i such that len(h) = l, eval_holding(h) = v
         holdings = [{} for _ in range(N_SUITS)]
         for l in range(PER_SUIT):
-            for holding in combinations(range(PER_SUIT), l):
-                holding = set(holding)
-                v = eval_holding(holding)
+            for holding in map(frozenset, combinations(range(PER_SUIT), l)):
+                v = bound_eval(holding)
                 for suit in range(N_SUITS):
                     if oks[suit](holding):
                         holdings[suit].setdefault((l, v), []).append(holding)
@@ -31,7 +29,7 @@ class _SmartStack(object):
                                 for suit in range(N_SUITS)]):
             lvs, hs = zip(*lvs_hs)
             ls, vs = zip(*lvs)
-            if ls in shape and emin <= sum(vs) <= emax:
+            if ls in shape and bound_eval.contains(sum(vs)):
                 counter[ls, vs] += reduce(operator.mul, map(len, hs))
         patterns, cumsum = zip(*counter.items())
         cumsum = list(cumsum)
@@ -49,10 +47,9 @@ class _SmartStack(object):
         oks = [(lambda holding, suit=suit:
                 smartstack.shape.min_ls[suit] <= len(holding) <=
                     smartstack.shape.max_ls[suit] and
-                not any(holding & by_suit[suit] for seat in SEATS))
+                not holding & by_suit[suit])
                for suit in range(N_SUITS)]
-        return cls(smartstack.shape, oks,
-                   smartstack.eval_holding, smartstack.emin, smartstack.emax)
+        return cls(smartstack.shape, oks, smartstack.bound_eval)
 
     def __call__(self):
         lvs = zip(*self.patterns[bisect(self.cumsum,
@@ -64,8 +61,6 @@ class _SmartStack(object):
 
 
 class SmartStack(object):
-    def __init__(self, shape, eval_holding, emin, emax=None):
+    def __init__(self, shape, bound_eval):
         self.shape = shape
-        self.eval_holding = eval_holding
-        self.emin = emin
-        self.emax = emax if emax is not None else emin
+        self.bound_eval = bound_eval

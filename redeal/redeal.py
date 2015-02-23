@@ -11,17 +11,19 @@ if sys.version_info.major < 3:
 
 try:
     from colorama import Fore, Style
+    BRIGHT_GREEN = Style.BRIGHT + Fore.GREEN
     BRIGHT_RED = Style.BRIGHT + Fore.RED
     RESET_ALL = Style.RESET_ALL
 except ImportError:
-    BRIGHT_RED = RESET_ALL = ""
+    BRIGHT_GREEN = BRIGHT_RED = RESET_ALL = ""
 
 from . import global_defs, dds, util
 from .global_defs import *
 from .smartstack import SmartStack, _SmartStack
 
 
-__all__ = ["Shape", "balanced", "semibalanced", "defvector",
+__all__ = ["Shape", "balanced", "semibalanced",
+           "Evaluator", "hcp", "qp", "controls",
            "RANKS", "A", "K", "Q", "J", "T",
            "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
@@ -191,6 +193,54 @@ balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
 semibalanced = balanced + Shape("(5422)") + Shape("(6322)")
 
 
+class Evaluator(object):
+    """Additive holding evaluator.
+
+    For example, ``Evaluator(4, 3, 2, 1)(holding)`` returns the HCPs of
+    ``holding``.
+    """
+
+    def __init__(self, *vals, **kwargs):
+        self._vals = vals + (0,) * (PER_SUIT - len(vals))
+        self._le = kwargs.pop("le", None)
+        self._ge = kwargs.pop("ge", None)
+
+    def __call__(self, arg):
+        if isinstance(arg, frozenset): # Holding
+            return sum(self._vals[rank] for rank in arg)
+        elif isinstance(arg, tuple): # Hand
+            return sum(self(holding) for holding in arg)
+        else:
+            raise TypeError("Cannot evaluate {}".format(arg))
+
+    def __eq__(self, value):
+        if self._le is not None or self._ge is not None:
+            raise Exception("Already bound")
+        return type(self)(*self._vals, le=value, ge=value)
+
+    def __le__(self, value):
+        if self._le is not None:
+            raise Exception("Already bound by {}".format(self._le))
+        return type(self)(*self._vals, le=value, ge=self._ge)
+
+    def __ge__(self, value):
+        if self._ge is not None:
+            raise Exception("Already bound by {}".format(self._ge))
+        return type(self)(*self._vals, le=self._le, ge=value)
+
+    def contains(self, value):
+        return ((self._le is None or value <= self._le) and
+                (self._ge is None or value >= self._ge))
+
+
+hcp = Evaluator(4, 3, 2, 1)
+hcp.__name__ = "hcp"
+qp = Evaluator(3, 2, 1)
+qp.__name__ = "qp"
+controls = Evaluator(2, 1)
+controls.__name__ = "controls"
+
+
 class Deal(tuple, object):
     """A deal, represented as a tuple of hands.
     """
@@ -222,6 +272,7 @@ class Deal(tuple, object):
         if seat_smartstack:
             seat, smartstack = seat_smartstack
             dealer[seat] = _SmartStack.from_predealt(smartstack, predealt)
+            dealer["_smartstack"] = seat
         dealer["_remaining"] = [card for card in FULL_DECK
                                 if card not in predealt_set]
         return lambda: Deal(dealer)
@@ -229,14 +280,23 @@ class Deal(tuple, object):
     def __new__(cls, dealer):
         """Randomly deal a hand from a prepared dealer.
         """
+        hands = [None] * N_SEATS
         cards = dealer["_remaining"]
+        try:
+            seat = dealer["_smartstack"]
+        except KeyError:
+            pass
+        else:
+            hands[SEATS.index(seat)] = hand = Hand(dealer[seat]())
+            cards = list(set(cards).difference(hand.cards()))
         random.shuffle(cards)
-        hands = []
         for seat in SEATS:
+            if hands[SEATS.index(seat)]:
+                continue
             pre = dealer[seat]()
             to_deal = PER_SUIT - len(pre)
             hand, cards = pre + cards[:to_deal], cards[to_deal:]
-            hands.append(Hand(hand))
+            hands[SEATS.index(seat)] = Hand(hand)
         self = tuple.__new__(cls, hands)
         self._dd_cache = {}
         return self
@@ -415,10 +475,8 @@ class Holding(frozenset, object):
     def __str__(self):
         return "".join(RANKS[rank] for rank in sorted(self))
 
-    hcp = util.reify(lambda self: sum(HCP[rank] for rank in self),
-                     "The holding's HCP.")
-    qp = util.reify(lambda self: sum(QP[rank] for rank in self),
-                    "The holding's QP.")
+    hcp = util.reify(hcp, "The holding's HCP.")
+    qp = util.reify(qp, "The holding's QP.")
 
     @util.reify
     def losers(self):
@@ -504,16 +562,6 @@ H = Hand.from_str
 C = Contract.from_str
 
 
-def defvector(*vals):
-    """Additive holding evaluator.
-
-    For example, ``defvector(4, 3, 2, 1)(holding)`` returns the HCPs of
-    ``holding``.
-    """
-    return lambda holding: sum(val for rank, val in enumerate(vals)
-                               if any(rank_ == rank for rank_ in holding))
-
-
 def matchpoints(my, other):
     """Return matchpoints scored (-1 to 1) given our and their result.
     """
@@ -539,7 +587,7 @@ class Simulation(object):
         return True
 
     def do(self, deal):
-        print("{}".format(deal))
+        print(format(deal, "")) # Unicode on Python 2.
 
     def final(self, n_tries):
         print("Tries: {}".format(n_tries))
@@ -595,7 +643,10 @@ class Payoff(object):
         for i, (entry, line) in enumerate(zip(self.entries, means_stderrs)):
             print("{:.7}".format(entry),
                   *("{}{:+.2f}{}".format(
-                      BRIGHT_RED if abs(mean) > stderr else "", mean, RESET_ALL)
+                      BRIGHT_GREEN if mean > stderr
+                      else BRIGHT_RED if mean < -stderr
+                      else "",
+                      mean, RESET_ALL)
                     if i != j else ""
                     for j, (mean, stderr) in enumerate(line)),
                   sep="\t")

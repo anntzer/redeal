@@ -7,7 +7,7 @@ top 5 in your suit.
 
 from redeal import *
 
-w2q = defvector(2, 2, 1, 1, 1)
+w2q = Evaluator(2, 2, 1, 1, 1)
 
 def accept(deal):
     s = deal.south

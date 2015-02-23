@@ -15,9 +15,7 @@ there is a 50% chance that a slam should be bid...
 
 from redeal import *
 
-controls = defvector(2, 1)
-
 def accept(deal):
-    return (sum(map(controls, deal.north)) >= 3 and deal.south.hcp >= 17 and
+    return (controls(deal.north) >= 3 and deal.south.hcp >= 17 and
             (not balanced(deal.south) or
              deal.south.hcp != 17 and not (22 <= deal.south.hcp <= 24)))

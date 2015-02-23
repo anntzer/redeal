@@ -55,6 +55,7 @@ class DealPBN(Structure):
                        ".".join(str(holding) for holding in hand)
                        for hand in deal).encode("ascii"))
 
+
 class FutureTricks(Structure):
     """The futureTricks struct.
     """
@@ -85,17 +86,22 @@ SolveBoardStatus = {
          "maximum number of threads"}
 
 
+def _solve_board(deal, strain, leader, target, sol, mode):
+    c_deal = Deal.from_deal(deal, strain, leader)
+    futp = FutureTricks()
+    status = dll.SolveBoard(c_deal, target, sol, mode, byref(futp), 0)
+    if status != 1:
+        raise Exception("SolveBoard({}, ...) failed with status {} ({}).".
+                        format(deal, status, SolveBoardStatus[status]))
+    return futp
+
+
 def solve(deal, strain, declarer):
     """Return the number of tricks for declarer; wraps SolveBoard.
     """
     leader = SEATS[(SEATS.index(declarer.upper()) + 1) % N_SEATS]
-    c_deal = Deal.from_deal(deal, strain, leader)
-    futp = FutureTricks()
     # find one optimal card with its score, even if only one card
-    status = dll.SolveBoard(c_deal, -1, 1, 1, byref(futp), 0)
-    if status != 1:
-        raise Exception("SolveBoard failed with status {} ({}).".
-                        format(status, SolveBoardStatus[status]))
+    futp = _solve_board(deal, strain, leader, -1, 1, 1)
     best_score = PER_SUIT - futp.score[0]
     return best_score
 
@@ -107,8 +113,8 @@ def solve_pbn(deal, strain, declarer):
     c_deal_pbn = DealPBN.from_deal(deal, strain, leader)
     status = dll.SolveBoardPBN(c_deal_pbn, -1, 1, 1, byref(futp), 0)
     if status != 1:
-        raise Exception("SolveBoard failed with status {} ({}).".
-                        format(status, SolveBoardStatus[status]))
+        raise Exception("SolveBoardPBN({}, ...) failed with status {} ({}).".
+                        format(deal, status, SolveBoardStatus[status]))
     best_score = PER_SUIT - futp.score[0]
     return best_score
 
@@ -116,18 +122,14 @@ def solve_pbn(deal, strain, declarer):
 def valid_cards(deal, strain, leader):
     """Return all cards that can be played.
     """
-    c_deal = Deal.from_deal(deal, strain, leader)
-    futp = FutureTricks()
-    dll.SolveBoard(c_deal, 0, 2, 1, byref(futp), 0)
+    futp = _solve_board(deal, strain, leader, 0, 2, 1)
     return [Card(futp.suit[i], 14 - futp.rank[i]) for i in range(futp.cards)]
 
 
 def solve_all(deal, strain, leader):
     """Return the number of tricks for declarer for each lead; wraps SolveBoard.
     """
-    c_deal = Deal.from_deal(deal, strain, leader)
-    futp = FutureTricks()
-    dll.SolveBoard(c_deal, -1, 3, 1, byref(futp), 0)
+    futp = _solve_board(deal, strain, leader, -1, 3, 1)
     return {Card(futp.suit[i], 14 - futp.rank[i]): futp.score[i]
             for i in range(futp.cards)}
 
@@ -163,5 +165,4 @@ else:
     dll.SolveBoardPBN.argtypes = [
         DealPBN, c_int, c_int, c_int, POINTER(FutureTricks)]
     if os.name == "posix":
-        dll.InitStart.argtypes = [c_int, c_int]
-        dll.InitStart(0, 0)
+        dll.SetMaxThreads(0)

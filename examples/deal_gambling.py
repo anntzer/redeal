@@ -1,5 +1,5 @@
 """Deal's gambling 3NT example, with smartstacking:
-    
+
 Find deals where south is AK K52 98765 962 and north has a gambling 3NT
 hand.
 
@@ -25,7 +25,7 @@ def gambling(holding):
 
 # all suits must satisfy "gambling", hence the total of 4
 predeal = {"S": H("AK K52 98765 962"),
-           "N": SmartStack(Gambling, gambling, 4)} # (max defaults to min)
+           "N": SmartStack(Gambling, gambling == 4)}
 
 def do(deal):
     print("-- " + " ".join(map(str, deal.north.shape)))
