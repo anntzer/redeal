@@ -26,7 +26,8 @@ class Main(object):
         help="the maximum number of tries (defaults to 1000*n)")
     parser.add_argument("-l", "--long", action="store_true",
         help="long output for diagrams")
-    parser.add_argument("-o", "--only", default=global_defs.SEATS,
+    parser.add_argument("-o", "--only",
+        default="".join(seat.name for seat in global_defs.Seat),
         help="hands to print")
     parser.add_argument("-v", "--verbose", action="store_true",
         help="be verbose")
@@ -83,12 +84,12 @@ class Main(object):
         self.given_funcs = [(name, argspec, self.verbose_getattr(name, body))
                             for name, argspec, body in self.func_defaults]
         self.predeal = self.verbose_getattr("predeal", {})
-        for seat in global_defs.SEATS:
+        for seat in global_defs.Seat:
             try:
-                hand = getattr(self.args, seat)
+                hand = getattr(self.args, seat.name)
             except AttributeError:
                 continue
-            self.predeal[seat] = redeal.H(hand)
+            self.predeal[seat.name] = redeal.H(hand)
 
     _obj = object()
     def verbose_getattr(self, attr, default=_obj):
@@ -156,7 +157,7 @@ class Main(object):
             redeal.Deal.set_str_style(redeal.Deal.LONG if self.args.long
                                       else redeal.Deal.SHORT)
             redeal.Deal.set_print_only(
-                [seat.upper() for seat in self.args.only])
+                [global_defs.Seat[seat] for seat in self.args.only])
             self.generate(simulation)
 
 

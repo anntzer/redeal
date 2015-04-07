@@ -2,8 +2,10 @@
 from __future__ import division, print_function, unicode_literals
 from array import array
 from bisect import bisect
-from itertools import count, permutations, product
+from enum import Enum
+from itertools import permutations, product
 from math import sqrt
+from operator import itemgetter
 import random
 import sys
 if sys.version_info.major < 3:
@@ -24,16 +26,15 @@ from .smartstack import SmartStack, _SmartStack
 
 __all__ = ["Shape", "balanced", "semibalanced",
            "Evaluator", "hcp", "qp", "controls",
-           "RANKS", "A", "K", "Q", "J", "T",
+           "Rank", "A", "K", "Q", "J", "T",
            "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
            "Simulation", "OpeningLeadSim",]
 
 
-for i, suit in enumerate(SUITS):
-    for j, rank in enumerate(RANKS):
-        globals()[suit + rank] = Card(i, j)
-del i, j, suit, rank
+for card in FULL_DECK:
+    globals()[str(card)] = card
+del card
 
 
 class Shape(object):
@@ -59,9 +60,9 @@ class Shape(object):
         except KeyError:
             self = object.__new__(cls)
             self.table = array(str("b"))
-            self.table.fromlist([0] * (PER_SUIT + 1) ** N_SUITS)
-            self.min_ls = [PER_SUIT for _ in range(N_SUITS)]
-            self.max_ls = [0 for _ in range(N_SUITS)]
+            self.table.fromlist([0] * (len(Rank) + 1) ** len(Suit))
+            self.min_ls = [len(Rank) for _ in Suit]
+            self.max_ls = [0 for _ in Suit]
             self._op_cache = {}
             if init:
                 self.insert([self.TABLE[char.lower()] for char in init])
@@ -78,10 +79,9 @@ class Shape(object):
         if min_max_hint is not None:
             self.min_ls, self.max_ls = min_max_hint
         else:
-            self.min_ls = [PER_SUIT for _ in range(N_SUITS)]
-            self.max_ls = [0 for _ in range(N_SUITS)]
-            for nonflat in product(*[range(PER_SUIT + 1)
-                                     for _ in range(N_SUITS)]):
+            self.min_ls = [len(Rank) for _ in Suit]
+            self.max_ls = [0 for _ in Suit]
+            for nonflat in product(*[range(len(Rank) + 1) for _ in Suit]):
                 if self.table[self._flatten(nonflat)]:
                     for dim, coord in enumerate(nonflat):
                         self.min_ls[dim] = min(self.min_ls[dim], coord)
@@ -93,9 +93,8 @@ class Shape(object):
         """Initialize from a shape-accepting function.
         """
         self = cls()
-        for nonflat in product(*[range(PER_SUIT + 1)
-                                 for _ in range(N_SUITS)]):
-            if sum(nonflat) == PER_SUIT and func(*nonflat):
+        for nonflat in product(*[range(len(Rank) + 1) for _ in Suit]):
+            if sum(nonflat) == len(Rank) and func(*nonflat):
                 self.table[self._flatten(nonflat)] = True
                 for dim, coord in enumerate(nonflat):
                     self.min_ls[dim] = min(self.min_ls[dim], coord)
@@ -107,7 +106,7 @@ class Shape(object):
         """Transform a 4D index into a 1D index.
         """
         s, h, d, c = index
-        mul = PER_SUIT + 1
+        mul = len(Rank) + 1
         return ((((s * mul + h) * mul) + d) * mul) + c
 
     def _insert1(self, shape, safe=True):
@@ -116,19 +115,19 @@ class Shape(object):
         jokers = any(l == -1 for l in shape)
         pre_set = sum(l for l in shape if l >= 0)
         if not jokers:
-            if pre_set == PER_SUIT:
+            if pre_set == len(Rank):
                 self.table[self._flatten(shape)] = 1
-                for suit in range(N_SUITS):
+                for suit in Suit:
                     self.min_ls[suit] = min(self.min_ls[suit], shape[suit])
                     self.max_ls[suit] = max(self.max_ls[suit], shape[suit])
             elif safe:
                 raise Exception("Wrong number of cards in shape.")
         else:
-            if pre_set > PER_SUIT:
+            if pre_set > len(Rank):
                 raise Exception("Invalid ambiguous shape.")
             for i, l in enumerate(shape):
                 if l == -1:
-                    for ll in range(PER_SUIT - pre_set + 1):
+                    for ll in range(len(Rank) - pre_set + 1):
                         self._insert1(shape[:i] + (ll,) + shape[i+1:],
                                      safe=False)
 
@@ -168,9 +167,9 @@ class Shape(object):
             table = array(str("b"))
             table.fromlist([x or y for x, y in zip(self.table, other.table)])
             min_ls = [min(self.min_ls[suit], other.min_ls[suit])
-                      for suit in range(N_SUITS)]
+                      for suit in Suit]
             max_ls = [max(self.max_ls[suit], other.max_ls[suit])
-                      for suit in range(N_SUITS)]
+                      for suit in Suit]
             result = Shape.from_table(table, (min_ls, max_ls))
             self._op_cache["+", other] = result
             return result
@@ -201,7 +200,7 @@ class Evaluator(object):
     """
 
     def __init__(self, *vals, **kwargs):
-        self._vals = vals + (0,) * (PER_SUIT - len(vals))
+        self._vals = (0,) * (len(Rank) - len(vals)) + vals[::-1]
         self._le = kwargs.pop("le", None)
         self._ge = kwargs.pop("ge", None)
 
@@ -245,7 +244,8 @@ class Deal(tuple, object):
     """A deal, represented as a tuple of hands.
     """
 
-    LONG, SHORT = range(2)
+    LONG, SHORT = Enum("DealPrintStyle", "Long Short")
+    _print_only = Seat
 
     @staticmethod
     def prepare(predeal):
@@ -253,17 +253,19 @@ class Deal(tuple, object):
 
         There can be at most one ``SmartStack`` entry.
         """
-        predeal = predeal or {}
+        predeal = predeal.copy() or {}
         dealer = {}
         seat_smartstack = None
-        for seat in SEATS:
-            pre = predeal.get(seat, Hand(()))
+        for seat in Seat:
+            pre = predeal.pop(seat.name, Hand(()))
             if isinstance(pre, SmartStack):
                 if seat_smartstack:
                     raise Exception("Only one Smartstack allowed.")
                 seat_smartstack = seat, pre
             else:
                 dealer[seat] = pre.cards
+        if predeal:
+            raise Exception("Unused predeal entries: {}".format(predeal))
         predealt = [card for hand_cards in dealer.values()
                     for card in hand_cards()]
         predealt_set = set(predealt)
@@ -280,23 +282,23 @@ class Deal(tuple, object):
     def __new__(cls, dealer):
         """Randomly deal a hand from a prepared dealer.
         """
-        hands = [None] * N_SEATS
+        hands = [None] * len(Seat)
         cards = dealer["_remaining"]
         try:
             seat = dealer["_smartstack"]
         except KeyError:
             pass
         else:
-            hands[SEATS.index(seat)] = hand = Hand(dealer[seat]())
+            hands[seat] = hand = Hand(dealer[seat]())
             cards = list(set(cards).difference(hand.cards()))
         random.shuffle(cards)
-        for seat in SEATS:
-            if hands[SEATS.index(seat)]:
+        for seat in Seat:
+            if hands[seat]:
                 continue
             pre = dealer[seat]()
-            to_deal = PER_SUIT - len(pre)
+            to_deal = len(Rank) - len(pre)
             hand, cards = pre + cards[:to_deal], cards[to_deal:]
-            hands[SEATS.index(seat)] = Hand(hand)
+            hands[seat] = Hand(hand)
         self = tuple.__new__(cls, hands)
         self._dd_cache = {}
         return self
@@ -304,21 +306,20 @@ class Deal(tuple, object):
     def _short_str(self):
         """Return a one-line version of the deal.
         """
-        return " ".join(self[SEATS.index(hand)]._short_str()
-                        for hand in self._print_only)
+        return " ".join(self[hand]._short_str() for hand in self._print_only)
 
     def _long_str(self):
         """Return pretty-printed version of the deal.
         """
         s = ""
-        if "N" in self._print_only:
+        if Seat.N in self._print_only:
             for line in self.north._long_str().split("\n"):
                 s += " " * 7 + line + "\n"
         for line_w, line_e in zip(self.west._long_str().split("\n"),
                                   self.east._long_str().split("\n")):
-            s += ((line_w if "W" in self._print_only else "").ljust(14) +
-                  (line_e if "E" in self._print_only else "") + "\n")
-        if "S" in self._print_only:
+            s += ((line_w if Seat.W in self._print_only else "").ljust(14) +
+                  (line_e if Seat.E in self._print_only else "") + "\n")
+        if Seat.S in self._print_only:
             for line in self.south._long_str().split("\n"):
                 s += " " * 7 + line + "\n"
         return s
@@ -327,8 +328,8 @@ class Deal(tuple, object):
         """Return the deal in PBN format.
         """
         return "{}:{}".format(
-            SEATS[0], " ".join(".".join(str(holding) for holding in hand)
-                               for hand in self))
+            Seat(0), " ".join(".".join(str(holding) for holding in hand)
+                              for hand in self))
 
     __str__ = _short_str
 
@@ -341,17 +342,13 @@ class Deal(tuple, object):
 
     @classmethod
     def set_print_only(cls, hands):
-        assert all(hand in SEATS for hand in hands)
+        assert all(hand in Seat for hand in hands)
         cls._print_only = hands
 
-    _N = SEATS.index("N")
-    _E = SEATS.index("E")
-    _S = SEATS.index("S")
-    _W = SEATS.index("W")
-    north = property(lambda self: self[self._N])
-    east = property(lambda self: self[self._E])
-    south = property(lambda self: self[self._S])
-    west = property(lambda self: self[self._W])
+    north = property(itemgetter(Seat.N), "north")
+    east = property(itemgetter(Seat.E), "east")
+    south = property(itemgetter(Seat.S), "south")
+    west = property(itemgetter(Seat.W), "west")
 
     def dd_tricks(self, contract_declarer):
         """Compute declarer's number of double-dummy tricks in a contract.
@@ -383,23 +380,25 @@ class Hand(tuple, object):
     def __new__(cls, cards):
         """Initialize with a sequence of :class:`Cards <Card>`.
         """
-        if len(cards) > PER_SUIT:
-            raise ValueError("More than {} cards in a hand".format(PER_SUIT))
+        if len(cards) > len(Rank):
+            raise ValueError("More than {} cards in a hand".format(len(Rank)))
         return tuple.__new__(
             cls,
             (Holding(card for card in cards if card.suit == suit)
-             for suit in range(N_SUITS)))
+             for suit in Suit))
 
     @classmethod
     def from_str(cls, init):
         """Initialize with a string, e.g. "AK432 K87 QJT54 -".
         """
         suits = [holding if holding != "-" else "" for holding in init.split()]
-        if (len(suits) != N_SUITS or
-            not all(rank in RANKS for holding in suits for rank in holding)):
+        if len(suits) != len(Suit):
             raise Exception("Invalid initializer for Hand.")
-        cards = [Card(suit=suit, rank=RANKS.index(rank.upper()))
-                 for suit, holding in enumerate(suits) for rank in holding]
+        try:
+            cards = [Card(suit=suit, rank=Rank[rank])
+                    for suit, holding in zip(Suit, suits) for rank in holding]
+        except KeyError:
+            raise Exception("Invalid initializer for Hand.")
         return cls(cards)
 
     def to_str(self):
@@ -410,15 +409,12 @@ class Hand(tuple, object):
     def _short_str(self):
         """Return a one-line version of the hand.
         """
-        return "".join(suit_symbol + str(holding)
-                       for suit_symbol, holding
-                       in zip(global_defs.SUITS_SYM, self))
+        return "".join(map("{}{}".format, Suit, self))
 
     def _long_str(self):
         """Return a pretty-printed version of the hand.
         """
-        return "\n" + "\n".join(suit_symbol + str(holding)
-            for suit_symbol, holding in zip(global_defs.SUITS_SYM, self))
+        return "\n" + "\n".join(map("{}{}".format, Suit, self))
 
     __str__ = _short_str
 
@@ -432,8 +428,7 @@ class Hand(tuple, object):
     def cards(self):
         """Return ``self`` as a list of card objects.
         """
-        return [Card(suit, rank)
-                for suit in range(N_SUITS) for rank in self[suit]]
+        return [Card(suit, rank) for suit in Suit for rank in self[suit]]
 
     def __contains__(self, other):
         """Specialize the case of checking for containing a :class:`Card`.
@@ -443,14 +438,10 @@ class Hand(tuple, object):
         else:
             return tuple.__contains__(self, other)
 
-    _S = SUITS.index("S")
-    _H = SUITS.index("H")
-    _D = SUITS.index("D")
-    _C = SUITS.index("C")
-    spades = util.reify(lambda self: self[self._S], "The hand's spades.")
-    hearts = util.reify(lambda self: self[self._H], "The hand's hearts.")
-    diamonds = util.reify(lambda self: self[self._D], "The hand's diamonds.")
-    clubs = util.reify(lambda self: self[self._C], "The hand's clubs.")
+    spades = util.reify(itemgetter(Suit.S), "The hand's spades.", "spades")
+    hearts = util.reify(itemgetter(Suit.H), "The hand's hearts.", "hearts")
+    diamonds = util.reify(itemgetter(Suit.D), "The hand's diamonds.", "diamonds")
+    clubs = util.reify(itemgetter(Suit.C), "The hand's clubs.", "clubs")
 
     shape = util.reify(lambda self: [len(holding) for holding in self],
                        "The hand's shape.")
@@ -462,7 +453,7 @@ class Hand(tuple, object):
                         "The hand's loser count.")
 
 
-A, K, Q, J, T = [RANKS.index(rank) for rank in "AKQJT"]
+A, K, Q, J, T = (Rank[rank] for rank in "AKQJT")
 class Holding(frozenset, object):
     """A one-suit holding, represented as a frozenset of card ranks.
     """
@@ -473,7 +464,7 @@ class Holding(frozenset, object):
         return frozenset.__new__(cls, (card.rank for card in cards))
 
     def __str__(self):
-        return "".join(RANKS[rank] for rank in sorted(self))
+        return "".join(rank.name for rank in sorted(self, reverse=True))
 
     hcp = util.reify(hcp, "The holding's HCP.")
     qp = util.reify(qp, "The holding's QP.")
@@ -500,7 +491,8 @@ class Holding(frozenset, object):
 
 class Contract(object):
     def __init__(self, level, strain, doubled=0, vul=False):
-        if not (1 <= level <= 7 and strain in STRAINS and 0 <= doubled <= 2):
+        if not (1 <= level <= 7 and hasattr(Strain, strain) and
+                0 <= doubled <= 2):
             raise ValueError("Invalid contract")
         self.level = level
         self.strain = strain
@@ -511,8 +503,8 @@ class Contract(object):
     def from_str(cls, s, vul=False):
         """Initialize with a string, e.g. "7NXX".  Vulnerability still a kwarg.
         """
-        doubled = len(s) - len(s.rstrip("xX"))
-        return cls(int(s[0]), s[1].upper(), doubled=doubled, vul=vul)
+        doubled = len(s) - len(s.rstrip("X"))
+        return cls(int(s[0]), s[1], doubled=doubled, vul=vul)
 
     def score(self, tricks):
         """Score for a contract for a given number of tricks taken.
@@ -596,14 +588,14 @@ class Simulation(object):
 class OpeningLeadSim(Simulation):
     def __init__(self, accept, contract_declarer, scoring):
         self.accept = accept
-        self.leader = SEATS[(SEATS.index(contract_declarer[-1]) + 1) % N_SEATS]
+        self.leader = (Seat[contract_declarer[-1]] + 1).name
         contract = Contract.from_str(contract_declarer[:-1])
         self.strain = contract.strain
         self.scoring = lambda ti, tj: scoring(contract.score(ti),
                                               contract.score(tj))
 
     def initial(self, dealer):
-        deal = next(filter(self.accept, (dealer() for _ in count())))
+        deal = next(filter(self.accept, iter(dealer, None)))
         self.payoff = Payoff(
             sorted(dds.valid_cards(deal, self.strain, self.leader)),
             self.scoring)

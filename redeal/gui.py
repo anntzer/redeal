@@ -71,14 +71,14 @@ class Application(tk.Frame):
         # hands
         frame = tk.Frame(self)
         self.seats = {}
-        for seat, long_seat in zip(global_defs.SEATS, global_defs.LONG_SEATS):
+        self.seat_entries = {}
+        for seat in global_defs.Seats:
             inner = tk.Frame(frame)
-            self.seats[seat] = check_button(inner, True, text=long_seat)
+            self.seats[seat] = check_button(inner, True, text=str(seat))
             self.seats[seat].pack(side=tk.TOP)
-            seat_entry = tk.Entry(inner, width=16)
+            self.seat_entries[seat] = seat_entry = tk.Entry(inner, width=16)
             seat_entry.insert(tk.END,
                 self.main.predeal.get(seat, redeal.H("- - - -")).to_str())
-            setattr(self, seat, seat_entry)
             seat_entry.pack(side=tk.TOP)
             inner.pack(side=tk.LEFT)
         frame.pack(side=tk.TOP)
@@ -117,14 +117,14 @@ class Application(tk.Frame):
         self.texts.append((name, argspec, text))
 
     def run(self):
-        _global_defs_SUITS_SYM = global_defs.SUITS_SYM
-        global_defs.SUITS_SYM = global_defs.SUITS_SYM_UNICODE
+        _global_defs_SUITS_FORCE_UNICODE = global_defs.SUITS_FORCE_UNICODE
+        global_defs.SUITS_FORCE_UNICODE = True
         # override configurables #1
         redeal.Hand.set_str_style(
             redeal.Hand.LONG if self.long.get_value() else redeal.Hand.SHORT)
         redeal.Deal.set_str_style(
             redeal.Deal.LONG if self.long.get_value() else redeal.Deal.SHORT)
-        redeal.Deal.set_print_only([seat for seat in global_defs.SEATS
+        redeal.Deal.set_print_only([seat for seat in global_defs.Seats
                                     if self.seats[seat].get_value()])
         _verbose = self.main.args.verbose
         self.main.args.verbose = self.verbose.get_value()
@@ -135,8 +135,8 @@ class Application(tk.Frame):
         self.main.args.max = eval(self.max.get())
         # override hands
         _predeal = self.main.predeal.copy()
-        for seat in global_defs.SEATS:
-            self.main.predeal[seat] = redeal.H(getattr(self, seat).get())
+        for seat in global_defs.Seats:
+            self.main.predeal[seat] = redeal.H(self.seat_entries[seat].get())
         # override functions
         simulation = type("", (redeal.Simulation,),
                           {name: util.create_func(
@@ -157,7 +157,7 @@ class Application(tk.Frame):
             self.main.args.n = _n
             self.main.args.max = _max
             self.main.predeal = _predeal
-            global_defs.SUITS_SYM = _global_defs_SUITS_SYM
+            global_defs.SUITS_FORCE_UNICODE = _global_defs_SUITS_FORCE_UNICODE
         threading.Thread(target=target).start()
 
     def stop(self):

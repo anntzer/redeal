@@ -66,14 +66,15 @@ class reify(object):
     """Auto-destructing property, from Pyramid code.
     """
 
-    def __init__(self, wrapped, doc=None):
+    def __init__(self, wrapped, doc=None, name=None):
         self.wrapped = wrapped
         self.__doc__ = (doc if doc is not None
                         else getattr(wrapped, "__doc__", None))
+        self.name = name if name is not None else wrapped.__name__
 
     def __get__(self, inst, owner):
         if inst is None:
             return self
         value = self.wrapped(inst)
-        setattr(inst, self.wrapped.__name__, value)
+        setattr(inst, self.name, value)
         return value

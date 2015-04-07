@@ -14,18 +14,18 @@ and compare to the output of deal's
 
 from redeal import *
 
-Gambling = Shape.from_cond(lambda s, h, d, c: s <= 3 and h <= 3 and
-                           (d >= 7 and c <= 4 or d <= 4 and c >= 7))
-
-_A, _K, _Q, = [RANKS.index(rank) for rank in "AKQ"]
-def gambling(holding):
-    return (len(holding) >= 7 and _A in holding and
-            _K in holding and _Q in holding or
-            len(holding) <= 4 and _A not in holding and _K not in holding)
+GamblingShape = Shape.from_cond(lambda s, h, d, c:
+    s <= 3 and h <= 3 and (d >= 7 and c <= 4 or d <= 4 and c >= 7))
 
 # all suits must satisfy "gambling", hence the total of 4
+def gambling(holding):
+    return (len(holding) >= 7 and A in holding and
+            K in holding and Q in holding or
+            len(holding) <= 4 and A not in holding and K not in holding)
+gambling.contains = lambda v: v == 4
+
 predeal = {"S": H("AK K52 98765 962"),
-           "N": SmartStack(Gambling, gambling == 4)}
+           "N": SmartStack(GamblingShape, gambling)}
 
 def do(deal):
     print("-- " + " ".join(map(str, deal.north.shape)))
