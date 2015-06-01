@@ -150,15 +150,16 @@ if os.name == "posix":
 else:
     dll_name = "dds.dll"
     DLL = WinDLL
-file_dir = os.path.dirname(os.path.abspath(__file__))
-
-try:
-    dll_path = [path for path in
-                [os.path.join(file_dir, "dds", dll_name),
-                 os.path.join(file_dir, "..", "..", "redeal", "dds", dll_name)]
-                if os.path.exists(path)][0]
-
-except IndexError:
+dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), dll_name)
+if os.path.exists(dll_path):
+    dll = DLL(dll_path)
+    dll.SolveBoard.argtypes = [
+        Deal, c_int, c_int, c_int, POINTER(FutureTricks)]
+    dll.SolveBoardPBN.argtypes = [
+        DealPBN, c_int, c_int, c_int, POINTER(FutureTricks)]
+    if os.name == "posix":
+        dll.SetMaxThreads(0)
+else:
     def solve(deal, strain, declarer):
         raise Exception("Unable to load DDS.  `solve` is unavailable.")
 
@@ -167,12 +168,3 @@ except IndexError:
 
     def solve_all(deal, strain, declarer):
         raise Exception("Unable to load DDS.  `solve_all` is unavailable.")
-
-else:
-    dll = DLL(dll_path)
-    dll.SolveBoard.argtypes = [
-        Deal, c_int, c_int, c_int, POINTER(FutureTricks)]
-    dll.SolveBoardPBN.argtypes = [
-        DealPBN, c_int, c_int, c_int, POINTER(FutureTricks)]
-    if os.name == "posix":
-        dll.SetMaxThreads(0)

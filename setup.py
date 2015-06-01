@@ -1,9 +1,10 @@
 #!/usr/bin/env python
-from distutils.command.build_clib import build_clib
+from distutils.command.build_py import build_py
 from setuptools import setup
 
 import contextlib
 import os
+import shutil
 import subprocess
 import sys
 if sys.version_info.major < 3:
@@ -15,47 +16,34 @@ else:
 from zipfile import ZipFile
 
 
-DDS_URL = "http://privat.bahnhof.se/wb758135/dds230-pbn-dll.zip"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if os.name == "posix":
-    PACKAGE_DATA = [os.path.join("dds", "libdds.so")]
+    PACKAGE_DATA = [os.path.join("redeal", "libdds.so")]
 elif os.name == "nt":
-    PACKAGE_DATA = [os.path.join("dds", "dds.dll")]
+    PACKAGE_DATA = [os.path.join("redeal", "dds.dll")]
 else:
     PACKAGE_DATA = []
 
 
-class make_build(build_clib):
+class make_build(build_py):
     def run(self):
-        dirname = os.path.dirname(os.path.abspath(__file__))
-        os.chdir(os.path.join(dirname, "redeal", "dds"))
+        super(make_build, self).run()
         if os.name == "posix":
-            subprocess.call("make")
-        elif os.name == "nt":
-            if not os.path.exists("dds.dll"):
-                try:
-                    with contextlib.closing(urlopen(DDS_URL)) as f:
-                        zip_file = ZipFile(BytesIO(f.read()))
-                        if zip_file.testzip() is not None:
-                            print("Corrupted zip file, installation stopped.")
-                            sys.exit(1)
-                        zip_file.extract("dds.dll")
-                        print("Successfully extracted dds.dll.")
-                except URLError:
-                    print("dds will not be available as I cannot download it.")
-        else:
-            print("dds will not be available as I don't know how to build it "
-                  "on {}.  Please contact the author if you can help.".
-                  format(os.name))
-        os.chdir(dirname)
+            orig_dir = os.getcwd()
+            os.chdir(os.path.join(BASE_DIR, "dds", "src"))
+            subprocess.check_call(
+                ["make", "-f", "Makefiles/Makefile_linux_shared"])
+            os.chdir(orig_dir)
+            shutil.copy(os.path.join(BASE_DIR, "dds", "src", "libdds.so"),
+                        os.path.join(self.build_lib, "redeal", "libdds.so"))
 
 
 setup(
-    cmdclass={"build_clib": make_build},
+    cmdclass={"build_py": make_build},
     name="redeal",
     version="0.2.0",
     author="Antony Lee",
     author_email="anntzer.lee@gmail.com",
-    libraries=[("dds", {"sources": []})],
     packages=["redeal"],
     package_data={"redeal": PACKAGE_DATA},
     entry_points={"console_scripts": ["redeal = redeal.__main__:console_entry"],

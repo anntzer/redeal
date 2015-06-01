@@ -12,25 +12,28 @@ Redeal runs under Python 2.7 or higher.  See the `examples/` folder for some
 example simulations.
 
 A double-dummy solver function is also available through Bo Haglund's DDS
-2.3.0, which is distributed with Redeal.  For Unix systems, DDS will be built
-upon package installation if you use `pip`; otherwise you can just run `make`
-in the `dds` folder.  For Windows, the DDS DLL is distributed with Redeal.  In
-any case, if you cannot compile the DDS library, Redeal will work fine but the
-`dd_tricks`, `dd_score` and `dd_all_tricks` methods will be unavailable.
+2.8.1, which is distributed with Redeal as a git submodule.  For Unix
+systems, run `git submodule init && git submodule update` to fetch the
+sources, then DDS will be built upon package installation (`./setup.py
+build` or `./setup.py install`).  Note that this requires the `libgomp`
+package.  You can also download the compiled shared objects from [Bo Haglund's
+website](`http://privat.bahnhof.se/wb758135/bridge/dll.html`).  For Windows,
+the DDS DLL is distributed together with Redeal.  In any case, if you cannot
+compile the DDS library, Redeal will work fine but the `dd_tricks`, `dd_score`
+and `dd_all_tricks` methods will be unavailable.
 
 Installation
 ------------
 
 Download everything, open a terminal (a.k.a. Command Prompt in Windows), `cd`
-to the directory where you downloaded the code and run `easy-install .` or `pip
-install .` (if using a Unix system, you will need to either use `sudo`, or
-pass the `--user` flag, too).  This will create two executable, `redeal` and
-`redeal-gui`.
+to the directory where you downloaded the code and run `./setup.py install` (if
+using a Unix system, you will need to either use `sudo`, or pass the `--user`
+flag, too).  This will create two executable, `redeal` and `redeal-gui`.
 
 Note that you do not actually need to install anything, if you do not wish
-to.  Instead, you can also `cd` to the folder containing this `README` and run
-`python -m redeal` instead of `redeal`, and `python -m redeal --gui` instead of
-`redeal-gui`.
+to.  Instead, you can also `cd` to the folder containing this `README`, build
+`dds` (`./setup.py build`) and run `python -m redeal` instead of `redeal`, and
+`python -m redeal --gui` instead of `redeal-gui`.
 
 Now, run `redeal --help` (or `python -m redeal` if you did not install
 `redeal`), or `redeal` to get a few hands, or `redeal examples/deal1.py` for
