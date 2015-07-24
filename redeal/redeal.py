@@ -597,7 +597,8 @@ class OpeningLeadSim(Simulation):
     def initial(self, dealer):
         deal = next(filter(self.accept, iter(dealer, None)))
         self.payoff = Payoff(
-            sorted(dds.valid_cards(deal, self.strain, self.leader)),
+            sorted(dds.valid_cards(deal, self.strain, self.leader),
+                   reverse=True),
             self.scoring)
 
     def do(self, deal):
