@@ -27,22 +27,20 @@ else:
 class make_build(build_py, object):
     def run(self):
         super(make_build, self).run()
-        if os.name == "posix" and not sys.platform.startswith('darwin'):
+        if os.name == "posix":
             orig_dir = os.getcwd()
             os.chdir(os.path.join(BASE_DIR, "dds", "src"))
-            subprocess.check_call(
-                ["make", "-f", "Makefiles/Makefile_linux_shared"])
+            if sys.platform.startswith('darwin'):
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_Mac_clang"])
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_Mac_gcc"])
+            else:
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_linux_shared"])
             os.chdir(orig_dir)
             shutil.copy(os.path.join(BASE_DIR, "dds", "src", "libdds.so"),
                         os.path.join(self.build_lib, "redeal", "libdds.so"))
-        elif sys.platform.startswith('darwin'):
-            orig_dir = os.getcwd()
-            os.chdir(os.path.join(BASE_DIR, "dds", "src"))
-            subprocess.check_call(
-                ["make", "-f", "Makefiles/Makefile_Mac_clang"])
-            os.chdir(orig_dir)
-            shutil.copy(os.path.join(BASE_DIR, "dds", "src", "libdds.a"),
-                        os.path.join(self.build_lib, "redeal", "libdds.a"))
 
 
 setup(
