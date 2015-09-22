@@ -164,9 +164,9 @@ if dll_name:
 if dll_name and os.path.exists(dll_path):
     dll = DLL(dll_path)
     dll.SolveBoard.argtypes = [
-        Deal, c_int, c_int, c_int, POINTER(FutureTricks)]
+        Deal, c_int, c_int, c_int, POINTER(FutureTricks), c_int]
     dll.SolveBoardPBN.argtypes = [
-        DealPBN, c_int, c_int, c_int, POINTER(FutureTricks)]
+        DealPBN, c_int, c_int, c_int, POINTER(FutureTricks), c_int]
     if os.name == "posix":
         dll.SetMaxThreads(0)
 else:
