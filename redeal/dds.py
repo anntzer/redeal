@@ -3,6 +3,8 @@ from __future__ import division, print_function
 # for pypy compatibility we do not use unicode_literals in this module
 from ctypes import *
 import os
+import sys
+import warnings
 
 from .global_defs import *
 
@@ -144,14 +146,22 @@ def solve_all(deal, strain, leader):
             futp.score[i] for i in range(futp.cards)}
 
 
+dll_name = DLL = None
 if os.name == "posix":
     dll_name = "libdds.so"
     DLL = CDLL
-else:
-    dll_name = "dds.dll"
-    DLL = WinDLL
-dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), dll_name)
-if os.path.exists(dll_path):
+elif os.name == "nt":
+    if sys.maxsize > 2 ** 32: # 64-bit Windows
+        warnings.warn("DDS is not available for Windows 64-bit.")
+    else:
+        dll_name = "dds.dll"
+        DLL = WinDLL
+
+if dll_name:
+    dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            dll_name)
+
+if dll_name and os.path.exists(dll_path):
     dll = DLL(dll_path)
     dll.SolveBoard.argtypes = [
         Deal, c_int, c_int, c_int, POINTER(FutureTricks)]

@@ -51,7 +51,7 @@ setup(
     url="http://github.com/anntzer/redeal",
     license="LICENSE.txt",
     description="A reimplementation of Thomas Andrews' Deal in Python.",
-    long_description=open("README.md").read(),
+    long_description=open("README.md", encoding="utf-8").read(),
     install_requires=
         ["colorama>=0.2.4"] +
         (["enum34>=1.0.4"] if sys.version_info < (3, 4) else [])
