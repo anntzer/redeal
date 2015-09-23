@@ -72,7 +72,7 @@ class Application(tk.Frame):
         frame = tk.Frame(self)
         self.seats = {}
         self.seat_entries = {}
-        for seat in global_defs.Seats:
+        for seat in global_defs.Seat:
             inner = tk.Frame(frame)
             self.seats[seat] = check_button(inner, True, text=str(seat))
             self.seats[seat].pack(side=tk.TOP)
@@ -124,7 +124,7 @@ class Application(tk.Frame):
             redeal.Hand.LONG if self.long.get_value() else redeal.Hand.SHORT)
         redeal.Deal.set_str_style(
             redeal.Deal.LONG if self.long.get_value() else redeal.Deal.SHORT)
-        redeal.Deal.set_print_only([seat for seat in global_defs.Seats
+        redeal.Deal.set_print_only([seat for seat in global_defs.Seat
                                     if self.seats[seat].get_value()])
         _verbose = self.main.args.verbose
         self.main.args.verbose = self.verbose.get_value()
@@ -135,7 +135,7 @@ class Application(tk.Frame):
         self.main.args.max = eval(self.max.get())
         # override hands
         _predeal = self.main.predeal.copy()
-        for seat in global_defs.Seats:
+        for seat in global_defs.Seat:
             self.main.predeal[seat] = redeal.H(self.seat_entries[seat].get())
         # override functions
         simulation = type("", (redeal.Simulation,),

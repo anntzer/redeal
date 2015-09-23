@@ -83,13 +83,15 @@ class Main(object):
 
         self.given_funcs = [(name, argspec, self.verbose_getattr(name, body))
                             for name, argspec, body in self.func_defaults]
-        self.predeal = self.verbose_getattr("predeal", {})
+        self.predeal = {
+            global_defs.Seat[seat_name]: hand
+            for seat_name, hand in self.verbose_getattr("predeal", {}).items()}
         for seat in global_defs.Seat:
             try:
                 hand = getattr(self.args, seat.name)
             except AttributeError:
                 continue
-            self.predeal[seat.name] = redeal.H(hand)
+            self.predeal[seat] = redeal.H(hand)
 
     _obj = object()
     def verbose_getattr(self, attr, default=_obj):

@@ -247,9 +247,9 @@ class Deal(tuple, object):
     LONG, SHORT = Enum("DealPrintStyle", "Long Short")
     _print_only = Seat
 
-    @staticmethod
-    def prepare(predeal):
-        """Contruct a dealer from a ``seat -> [Hand | SmartStack]`` dict.
+    @classmethod
+    def prepare(cls, predeal):
+        """Contruct a dealer from a ``Seat -> [Hand | SmartStack]`` dict.
 
         There can be at most one ``SmartStack`` entry.
         """
@@ -257,7 +257,7 @@ class Deal(tuple, object):
         dealer = {}
         seat_smartstack = None
         for seat in Seat:
-            pre = predeal.pop(seat.name, Hand(()))
+            pre = predeal.pop(seat, Hand(()))
             if isinstance(pre, SmartStack):
                 if seat_smartstack:
                     raise Exception("Only one Smartstack allowed.")
@@ -277,7 +277,7 @@ class Deal(tuple, object):
             dealer["_smartstack"] = seat
         dealer["_remaining"] = [card for card in FULL_DECK
                                 if card not in predealt_set]
-        return lambda: Deal(dealer)
+        return lambda: cls(dealer)
 
     def __new__(cls, dealer):
         """Randomly deal a hand from a prepared dealer.
