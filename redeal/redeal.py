@@ -244,9 +244,6 @@ class Deal(tuple, object):
     """A deal, represented as a tuple of hands.
     """
 
-    LONG, SHORT = Enum("DealPrintStyle", "Long Short")
-    _print_only = Seat
-
     @classmethod
     def prepare(cls, predeal):
         """Contruct a dealer from a ``Seat -> [Hand | SmartStack]`` dict.
@@ -324,21 +321,24 @@ class Deal(tuple, object):
                 s += " " * 7 + line + "\n"
         return s
 
-    def _pbn(self):
+    def _pbn_str(self):
         """Return the deal in PBN format.
         """
-        return "{}:{}".format(
-            Seat(0), " ".join(".".join(str(holding) for holding in hand)
-                              for hand in self))
+        return '[Deal "{.name[0]}:{}"]'.format(
+            Seat(0),
+            " ".join(hand._pbn_str() if seat in self._print_only else "-"
+                     for seat, hand in zip(Seat, self)))
 
     __str__ = _short_str
+    _print_only = Seat
 
     @classmethod
     def set_str_style(cls, style):
-        """Set output style (:attr:`Deal.SHORT` or :attr:`Deal.LONG`).
+        """Set output style (one of "short", "long" or "pbn").
         """
-        cls.__str__ = {cls.SHORT: cls._short_str,
-                       cls.LONG: cls._long_str}[style]
+        cls.__str__ = {"short": cls._short_str,
+                       "long": cls._long_str,
+                       "pbn": cls._pbn_str}[style]
 
     @classmethod
     def set_print_only(cls, hands):
@@ -374,8 +374,6 @@ class Deal(tuple, object):
 class Hand(tuple, object):
     """A hand, represented as a tuple of holdings.
     """
-
-    LONG, SHORT = range(2)
 
     def __new__(cls, cards):
         """Initialize with a sequence of :class:`Cards <Card>`.
@@ -416,14 +414,20 @@ class Hand(tuple, object):
         """
         return "\n" + "\n".join(map("{}{}".format, Suit, self))
 
+    def _pbn_str(self):
+        """Return the hand in PBN format.
+        """
+        return ".".join(map(str, self))
+
     __str__ = _short_str
 
     @classmethod
     def set_str_style(cls, style):
-        """Set output style (:attr:`Hand.SHORT` or :attr:`Hand.LONG`).
+        """Set output style (one of "short", "long" or "pbn").
         """
-        cls.__str__ = {cls.SHORT: cls._short_str,
-                       cls.LONG: cls._long_str}[style]
+        cls.__str__ = {"short": cls._short_str,
+                       "long": cls._long_str,
+                       "pbn": cls._pbn_str}[style]
 
     def cards(self):
         """Return ``self`` as a list of card objects.

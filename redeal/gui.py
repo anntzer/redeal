@@ -6,8 +6,11 @@ import sys
 import threading
 if sys.version_info.major < 3:
     import Tkinter as tk
+    from Tkinter import ttk
 else:
     import tkinter as tk
+    from tkinter import ttk
+for _name in ttk.__all__: setattr(tk, _name, getattr(ttk, _name))
 
 from . import global_defs, redeal, util
 
@@ -16,7 +19,8 @@ def check_button(master, state, **kwargs):
     var = tk.IntVar()
     button = tk.Checkbutton(master, variable=var, **kwargs)
     button.get_value = var.get
-    getattr(button, "select" if state else "deselect")()
+    if state:
+        button.invoke()
     return button
 
 
@@ -42,12 +46,10 @@ class Application(tk.Frame):
         # create widgets
         # configurables, #1
         frame = tk.Frame(self)
-        self.long = check_button(frame, self.main.args.long,
-                                 text="long output for diagrams")
-        self.long.pack(side=tk.LEFT)
-        self.verbose = check_button(frame, self.main.args.verbose,
-                                    text="be verbose")
-        self.verbose.pack(side=tk.LEFT)
+        self.format = tk.Combobox(frame, values=["short", "long", "pbn"],
+                                  text="long output for diagrams")
+        self.format.set("short")
+        self.format.pack(side=tk.LEFT)
         frame.pack(side=tk.TOP)
         frame = tk.Frame(self)
         tk.Label(frame, text="RNG seed").pack(side=tk.LEFT)
@@ -120,14 +122,12 @@ class Application(tk.Frame):
         _global_defs_SUITS_FORCE_UNICODE = global_defs.SUITS_FORCE_UNICODE
         global_defs.SUITS_FORCE_UNICODE = True
         # override configurables #1
-        redeal.Hand.set_str_style(
-            redeal.Hand.LONG if self.long.get_value() else redeal.Hand.SHORT)
-        redeal.Deal.set_str_style(
-            redeal.Deal.LONG if self.long.get_value() else redeal.Deal.SHORT)
+        redeal.Hand.set_str_style(self.format.get())
+        redeal.Deal.set_str_style(self.format.get())
         redeal.Deal.set_print_only([seat for seat in global_defs.Seat
                                     if self.seats[seat].get_value()])
         _verbose = self.main.args.verbose
-        self.main.args.verbose = self.verbose.get_value()
+        self.main.args.verbose = False # FIXME support for backspace in tk text.
         # override configurables #1
         _n = self.main.args.n
         self.main.args.n = int(self.n.get())

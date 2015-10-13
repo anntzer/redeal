@@ -24,8 +24,8 @@ class Main(object):
         help="the number of requested deals")
     parser.add_argument("--max", type=int,
         help="the maximum number of tries (defaults to 1000*n)")
-    parser.add_argument("-l", "--long", action="store_true",
-        help="long output for diagrams")
+    parser.add_argument("-f", "--format", choices=["short", "long", "pbn"],
+        default="short", help="set diagram print style")
     parser.add_argument("-o", "--only",
         default="".join(seat.name for seat in global_defs.Seat),
         help="hands to print")
@@ -118,7 +118,6 @@ class Main(object):
         """Repeatedly generate and process deals until enough are accepted.
         """
         found = 0
-        progress = ""
         dealer = redeal.Deal.prepare(self.predeal)
         if util.n_args(simulation.initial) == 1:
             simulation.initial(dealer)
@@ -132,10 +131,10 @@ class Main(object):
                 found += 1
                 simulation.do(deal)
                 if self.args.verbose:
-                    progress = (
-                        "\b" * len(progress) +
-                        "(hand #{}, found after {} tries)".format(found, i + 1))
-                    print(progress, end="", flush=True)
+                    progress = ("(hand #{}, found after {} tries)".
+                                format(found, i + 1))
+                    print(progress, end="\r", flush=True)
+                    print(" " * len(progress) + "\b" * len(progress), end="")
             if found >= self.args.n:
                 break
         print()
@@ -154,10 +153,8 @@ class Main(object):
                     str(), (redeal.Simulation,),
                     {name: util.create_func(redeal, name, argspec, body)
                      for name, argspec, body in self.given_funcs})()
-            redeal.Hand.set_str_style(redeal.Hand.LONG if self.args.long
-                                      else redeal.Hand.SHORT)
-            redeal.Deal.set_str_style(redeal.Deal.LONG if self.args.long
-                                      else redeal.Deal.SHORT)
+            redeal.Hand.set_str_style(self.args.format)
+            redeal.Deal.set_str_style(self.args.format)
             redeal.Deal.set_print_only(
                 [global_defs.Seat[seat] for seat in self.args.only])
             self.generate(simulation)
