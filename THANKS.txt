@@ -1,0 +1,3 @@
+Donal Lyons (LyonsDo): Windows 64-bit DLL.
+Filip Jelic (flipio): MacOS build instructions.
+Jon Higa (jonhiga): bug fix.
