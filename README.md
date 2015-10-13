@@ -18,10 +18,10 @@ sources, then DDS will be built upon package installation (`./setup.py
 build` or `./setup.py install`).  Note that this requires the `libgomp`
 package.  You can also download the compiled shared objects from [Bo Haglund's
 website](`http://privat.bahnhof.se/wb758135/bridge/dll.html`).  For Windows,
-the 32-bit DDS DLL is distributed together with Redeal (no 64-bit DLL is
-available, if you can build one please let me know).  In any case, if you
-cannot compile the DDS library, Redeal will work fine but the `dd_tricks`,
-`dd_score` and `dd_all_tricks` methods will be unavailable.
+the DDS DLLs are distributed together with Redeal (the 64-bit DLL only works
+for Python 3.5 or higher, let me know if you can help me fix this).  In any
+case, if you cannot compile the DDS library, Redeal will work fine but the
+`dd_tricks`, `dd_score` and `dd_all_tricks` methods will be unavailable.
 
 Installation
 ------------

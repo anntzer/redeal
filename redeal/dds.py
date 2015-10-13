@@ -152,10 +152,13 @@ if os.name == "posix":
     DLL = CDLL
 elif os.name == "nt":
     if sys.maxsize > 2 ** 32: # 64-bit Windows
-        warnings.warn("DDS is not available for Windows 64-bit.")
+        if sys.version_info >= (3, 5):
+            dll_name = "dds-64.dll"
+        else:
+            warnings.warn("For Windows 64-bit, DDS requires Python>=3.5.")
     else:
-        dll_name = "dds.dll"
-        DLL = WinDLL
+        dll_name = "dds-32.dll"
+    DLL = WinDLL
 
 if dll_name:
     dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
