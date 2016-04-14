@@ -102,21 +102,21 @@ Using the GUI, input the hands (using the same format) in the boxes labeled
 ### Formatting output
 
 The default output is compact, but not very friendly.  What about more classic
-diagrams?  The `-l` flag (or the GUI's "long output for diagrams" option) is
-there for that!
+diagrams?  The `--format=long` flag (or the GUI's "long output for diagrams"
+option) is there for that!
 
-    $ redeal -l -n1
-           
+    $ redeal --format=long -n1
+
            ♠
            ♡632
            ♢AKT92
            ♣K7652
-                  
+
     ♠AJ85         ♠T962
     ♡KJ954        ♡7
     ♢QJ           ♢8763
     ♣QJ           ♣AT94
-           
+
            ♠KQ743
            ♡AQT8
            ♢54
@@ -325,4 +325,4 @@ hands.  See `examples/deal_gambling.py` for a complete example.
 Finally, please note that smartstacking is only available for scripts in their
 own files, not at the command line nor in the GUI.
 
-// vim: fileencoding=utf-8
+<!--- vim: set fileencoding=utf-8: --->

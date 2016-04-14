@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
-cd $(dirname "$(readlink -f $0)")
-cd ..
+# May fail if someone has this in his $PATH, but readlink -f doesn't work on
+# Mac OS, so at least it's portable.
+cd "$(dirname "$(pwd)/$0")"/..
 for f in `ls examples/*.py`; do echo $f; ${PYTHON:-python} -m redeal $f; done

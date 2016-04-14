@@ -33,7 +33,7 @@ create_func.globals = {}
 def exec_(stmt, globals, locals):
     """The exec function/statement, as implemented by six.
     """
-    if sys.version_info.major < 3:
+    if sys.version_info < (3,):
         exec("exec {!r} in globals, locals".format(stmt))
     else:
         exec("exec({!r}, globals, locals)".format(stmt))
