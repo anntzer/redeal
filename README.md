@@ -106,17 +106,17 @@ diagrams?  The `-l` flag (or the GUI's "long output for diagrams" option) is
 there for that!
 
     $ redeal -l -n1
-           
+
            ♠
            ♡632
            ♢AKT92
            ♣K7652
-                  
+
     ♠AJ85         ♠T962
     ♡KJ954        ♡7
     ♢QJ           ♢8763
     ♣QJ           ♣AT94
-           
+
            ♠KQ743
            ♡AQT8
            ♢54
@@ -326,3 +326,12 @@ Finally, please note that smartstacking is only available for scripts in their
 own files, not at the command line nor in the GUI.
 
 // vim: fileencoding=utf-8
+
+### NOTE* Mac OS X users zone:
+
+First reinstall gcc: brew reinstall gcc --without-multilib
+Next you have do change couple of stuff, when you clone repo with git clone --recursive git@github.com:anntzer/redeal.git you need to go and change some Makefile in dds/src (since they are not supporting .so libs on mac, it says in their README.md).
+Go to dds/src/Makefiles/Makefile_Mac_gcc:
+
+- on line 53 change STATIC_LIB = lib$(DLLBASE).a --> STATIC_LIB = lib$(DLLBASE).so
+- then on line 85 change ar rcs $(STATIC_LIB) $(O_FILES) --> g++ -dynamiclib -o $(STATIC_LIB) $(O_FILES) -v

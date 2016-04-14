@@ -32,15 +32,20 @@ elif os.name == "nt":
 else:
     PACKAGE_DATA = []
 
-
 class make_build(build_py, object):
     def run(self):
         super(make_build, self).run()
         if os.name == "posix":
             orig_dir = os.getcwd()
             os.chdir(os.path.join(BASE_DIR, "dds", "src"))
-            subprocess.check_call(
-                ["make", "-f", "Makefiles/Makefile_linux_shared"])
+            if sys.platform.startswith('darwin'):
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_Mac_clang"])
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_Mac_gcc"])
+            else:
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_linux_shared"])
             os.chdir(orig_dir)
             shutil.move(os.path.join(BASE_DIR, "dds", "src", "libdds.so"),
                         os.path.join(self.build_lib, "redeal", "libdds.so"))
