@@ -8,7 +8,7 @@ from math import sqrt
 from operator import itemgetter
 import random
 import sys
-if sys.version_info.major < 3:
+if sys.version_info < (3,):
     from itertools import ifilter as filter
 
 try:

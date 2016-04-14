@@ -29,7 +29,9 @@ class Suit(_Enum):
 
     def __init__(self, value, sym, unicode_sym):
         self._value_ = value
-        self._sym = (unicode_sym if _sys.stdout.encoding.lower() == "utf-8"
+        self._sym = (unicode_sym
+                     if _sys.version_info > (3,) and
+                        _sys.stdout.encoding.lower() == "utf-8"
                      else sym)
         self._unicode_sym = unicode_sym
 

@@ -4,7 +4,7 @@ import inspect
 import random
 import sys
 import threading
-if sys.version_info.major < 3:
+if sys.version_info < (3,):
     import Tkinter as tk
     from Tkinter import ttk
 else:

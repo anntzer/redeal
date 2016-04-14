@@ -1,19 +1,27 @@
 #!/usr/bin/env python
-from distutils.command.build_py import build_py
-from setuptools import setup
-
+from __future__ import division, print_function
+# for distutils compatibility we do not use unicode_literals in this module
 import contextlib
+from distutils.command.build_py import build_py
+import io
 import os
 import shutil
 import subprocess
 import sys
-if sys.version_info.major < 3:
+if sys.version_info < (3,):
     from cStringIO import StringIO as BytesIO
     from urllib2 import urlopen, URLError
 else:
     from io import BytesIO
     from urllib.request import urlopen, URLError
 from zipfile import ZipFile
+
+try:
+    from setuptools import setup
+except ImportError:
+    print("Please install setuptools by following the instructions at "
+          "https://pypi.python.org/pypi/setuptools", file=sys.stderr)
+    sys.exit(1)
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,7 +42,7 @@ class make_build(build_py, object):
             subprocess.check_call(
                 ["make", "-f", "Makefiles/Makefile_linux_shared"])
             os.chdir(orig_dir)
-            shutil.copy(os.path.join(BASE_DIR, "dds", "src", "libdds.so"),
+            shutil.move(os.path.join(BASE_DIR, "dds", "src", "libdds.so"),
                         os.path.join(self.build_lib, "redeal", "libdds.so"))
 
 
@@ -51,7 +59,7 @@ setup(
     url="http://github.com/anntzer/redeal",
     license="LICENSE.txt",
     description="A reimplementation of Thomas Andrews' Deal in Python.",
-    long_description=open("README.md", encoding="utf-8").read(),
+    long_description=io.open("README.md", encoding="utf-8").read(),
     install_requires=
         ["colorama>=0.2.4"] +
         (["enum34>=1.0.4"] if sys.version_info < (3, 4) else [])
