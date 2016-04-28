@@ -1,0 +1,1 @@
+Cleanup macos makefile: trailing spaces, compiler choice (also in setup.py)

@@ -3,7 +3,7 @@ from __future__ import division, print_function, unicode_literals
 from array import array
 from bisect import bisect
 from enum import Enum
-from itertools import permutations, product
+from itertools import groupby, permutations, product
 from math import sqrt
 from operator import itemgetter
 import random
@@ -380,10 +380,10 @@ class Hand(tuple, object):
         """
         if len(cards) > len(Rank):
             raise ValueError("More than {} cards in a hand".format(len(Rank)))
-        return tuple.__new__(
-            cls,
-            (Holding(card for card in cards if card.suit == suit)
-             for suit in Suit))
+        holdings = [[] for _ in Suit]
+        for card in cards:
+            holdings[card.suit].append(card)
+        return tuple.__new__(cls, map(Holding, holdings))
 
     @classmethod
     def from_str(cls, init):
@@ -455,6 +455,8 @@ class Hand(tuple, object):
                     "The hand's QP count.")
     losers = util.reify(lambda self: sum(holding.losers for holding in self),
                         "The hand's loser count.")
+    pt = util.reify(lambda self: sum(holding.pt for holding in self),
+                    "The hand's playing tricks.")
 
 
 A, K, Q, J, T = (Rank[rank] for rank in "AKQJT")
@@ -491,6 +493,30 @@ class Holding(frozenset, object):
                   not any(rank in [J, T] for rank in self)):
                 losers += 0.5
         return losers
+
+    @util.reify
+    def pt(self):
+        """The holding's playing tricks.
+        """
+        len_pt = max(len(self) - 3, 0)
+        if {A, K, Q} <= self:
+            return 3 + len_pt
+        if {A, K, J} <= self or {A, Q, J} <= self:
+            return 2.5 + len_pt
+        if {A, K} <= self or {A, Q, T} <= self or {K, Q, J} <= self:
+            return 2 + len_pt
+        if {A, Q} <= self or {K, J, T} <= self:
+            return 1.5 + len_pt
+        if {A, J} <= self or {K, Q} <= self and len(self) >= 3:
+            return 1.5 + len_pt
+        if {A} <= self or {K, Q} <= self or {K, J} <= self:
+            return 1 + len_pt
+        if {K, T} <= self or {Q, J} <= self and len(self) >= 3:
+            return 1 + len_pt
+        if ({K} <= self and len(self) >= 2 or
+                ({Q} <= self or {J, T} in self) and len(self) >= 3):
+            return .5 + len_pt
+        return len_pt
 
 
 class Contract(object):
