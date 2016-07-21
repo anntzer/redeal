@@ -163,39 +163,7 @@ list of North's spade holding, and `deal.north.hcp` is North's number of HCP.
 If the conditions are satisfied, we return `True`.  This prints the hand and
 increments the counter of accepted hands.
 
-Redeal gives more information about its progress when given the `-v` flag (or
-when the "be verbose" box of the GUI is ticked):
-
-    $ redeal -v examples/onespade.py
-    Using default for predeal.
-    Using default for initial.
-    Using default for do.
-    Using default for final.
-    ♠KT8754♡5♢AKQ76♣J ♠QJ♡AQ94♢T542♣972 ♠9632♡JT32♢J8♣864 ♠A♡K876♢93♣AKQT53
-    (hand #1, found after 9 tries)
-    ♠KQT985♡Q8♢KJ6♣J9 ♠62♡♢AT985♣AQ7543 ♠J74♡9643♢72♣T862 ♠A3♡AKJT752♢Q43♣K
-    (hand #2, found after 37 tries)
-    ♠AK9874♡AJ♢K98♣K8 ♠T5♡T872♢AT43♣A92 ♠QJ♡Q965♢7652♣QJ7 ♠632♡K43♢QJ♣T6543
-    (hand #3, found after 97 tries)
-    ♠AKQJ7♡J8653♢♣KQJ ♠T53♡T42♢A7542♣32 ♠984♡Q97♢QT96♣AT5 ♠62♡AK♢KJ83♣98764
-    (hand #4, found after 116 tries)
-    ♠AQ643♡KQ5♢KJ72♣J ♠K9♡AJ94♢T94♣T652 ♠72♡73♢AQ3♣AKQ984 ♠JT85♡T862♢865♣73
-    (hand #5, found after 130 tries)
-    ♠AT972♡Q94♢Q♣KQJT ♠J43♡AK632♢85♣985 ♠K5♡J8♢9763♣A7432 ♠Q86♡T75♢AKJT42♣6
-    (hand #6, found after 158 tries)
-    ♠AQT74♡A2♢64♣KT43 ♠J65♡QT863♢Q95♣J5 ♠932♡K9♢KJ32♣A972 ♠K8♡J754♢AT87♣Q86
-    (hand #7, found after 165 tries)
-    ♠AQ984♡T4♢J97♣AK9 ♠653♡J86♢A43♣JT84 ♠J7♡AQ73♢KQT8♣Q52 ♠KT2♡K952♢652♣763
-    (hand #8, found after 179 tries)
-    ♠AKJ73♡74♢QJ72♣Q7 ♠Q♡9863♢T843♣AT92 ♠86542♡AT♢K965♣53 ♠T9♡KQJ52♢A♣KJ864
-    (hand #9, found after 188 tries)
-    ♠Q8752♡AJ♢AQJ53♣8 ♠J43♡K875♢T9♣AKJ3 ♠AT9♡Q943♢K74♣Q76 ♠K6♡T62♢862♣T9542
-    (hand #10, found after 204 tries)
-    Tries: 204
-
-This is also a good way to check that it is not the default `accept` function
-(which accepts all hands), but the one you defined, that is used.  As one can
-see, there are in total, four functions that can be overriden:
+There are in total, four functions that can be overridden:
 
 - `initial` (taking no argument) is called when the simulation begins
   (defaults to doing nothing)
@@ -298,12 +266,17 @@ hands).
 
 ### Smartstacking
 
-For some rare hand types, Deal and Redeal provide an alternative hand dealing
-technique: smartstacking.  Smartstacking works for only one of the four seats,
-and can only take two sorts of constraints: a Shape object, and bounds on the
-total value of a vector additive function (i.e. summed over the four suits).
-For example, the following example finds hands where North is 4-4 in the major,
-has a short minor and 11-15HCP.
+Rare hand types (say, 22 to 24 balanced) can be annoying to work with, as
+`redeal` needs to generate a lot of hands before finding any of them.  You
+can pass the `-v` flag (not available from the GUI) to add some progress
+information to the output.
+
+For some rare hand types, Deal and Redeal provide an alternative, faster hand
+dealing technique: smartstacking.  Smartstacking works for only one of the
+four seats, and can only take two sorts of constraints: a Shape object, and
+bounds on the total value of a vector additive function (i.e. summed over the
+four suits).  For example, the following example finds hands where North is
+4-4 in the major, has a short minor and 11-15HCP.
 
     from redeal import *
 
