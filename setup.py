@@ -49,10 +49,11 @@ class make_build(build_py, object):
                 if exc.errno == 2: # FileNotFoundError
                     _abort("""\
 DDS sources are missing.
+
 If you are using a git checkout, run
     git submodule init && git submodule update
-If you downloaded a zip archive from github, get a zip archive from
-    https://github.com/dds-bridge/dds/""")
+
+On a Unix system, do not use the zip archives from github.""")
             subprocess.check_call(
                 ["make", "-f", "Makefiles/Makefile_linux_shared"])
             os.chdir(orig_dir)

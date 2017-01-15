@@ -1,3 +1,3 @@
 [submodule "dds"]
 	path = dds
-	url = git@github.com:dds-bridge/dds.git
+	url = https://github.com/dds-bridge/dds.git
