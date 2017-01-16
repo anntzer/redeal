@@ -7,12 +7,7 @@ import inspect
 from os import path
 import random
 
-from . import global_defs, util
-try:
-    from . import gui
-except ImportError:
-    gui = None
-from . import redeal
+from . import global_defs, gui, redeal, util
 
 
 class Main(object):

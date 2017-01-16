@@ -6,7 +6,7 @@ import sys
 import threading
 if sys.version_info < (3,):
     import Tkinter as tk
-    from Tkinter import ttk
+    import ttk
 else:
     import tkinter as tk
     from tkinter import ttk
