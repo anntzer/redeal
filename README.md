@@ -27,9 +27,8 @@ Installation
 On a Unix system, do **not** download the `zip` or `tar.gz` releases.  They do
 not contain the DDS library.  The recommended way to install the package is
 directly from GitHub,
-```
-$ pip install --user git+https://github.com/anntzer/redeal
-```
+
+    $ pip install --user git+https://github.com/anntzer/redeal
 
 On Windows **only**, you can also download the `zip` archive (from master,
 not from the releases), and run, from the folder containing the archive, `pip
@@ -216,13 +215,15 @@ Again, one can also give the `accept` function at the command line.
 Or, one can indicate the predealt cards ("stacked", in Deal jargon) in the
 script, in the `predeal` variable:
 
-    from redeal import * # this is "reasonably" safe
+```python
+from redeal import * # this is "reasonably" safe
 
-    predeal = {"S": H("- 96532 A864 T962")} # H is a hand constructor.
+predeal = {"S": H("- 96532 A864 T962")} # H is a hand constructor.
 
-    def accept(deal):
-        if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
-            return True
+def accept(deal):
+    if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
+        return True
+```
 
 Note that the predealing occurs outside of the `accept` function.  Also, the
 `redeal` module has to be imported only for scripts in their own files; this is
@@ -234,20 +235,26 @@ Hands also have a `shape` attribute, which returns a list of the length in each
 suit.  This can be queried directly, or using `Shape` objects, which are very
 efficient:
 
-    from redeal import *
+```python
+from redeal import *
 
-    def accept(deal):
-        return balanced(deal.north)
+def accept(deal):
+    return balanced(deal.north)
+```
 
 `balanced` is defined in `redeal.py` as
 
-    balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
+```python
+balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
+```
 
 where the parentheses have the usual meaning.  `semibalanced` is available as
 well, and one can define other shapes, possibly using `x` as a generic
 placeholder:
 
-    major_two_suited = Shape("(54)xx") - Shape("(54)(40)")
+```python
+major_two_suited = Shape("(54)xx") - Shape("(54)(40)")
+```
 
 ### Vector additive functions
 
@@ -255,11 +262,13 @@ Quite a few hand evaluation techniques (HCP, controls, suit quality) look at
 one suit at a time, and attribute some value to each card.  Just like `deal`,
 `redeal` provides `Evaluator` for creating such evaluation functions:
 
-    from redeal import *
+```python
+from redeal import *
 
-    hcp = Evaluator(4, 3, 2, 1)
-    controls = Evaluator(2, 1)
-    top3 = Evaluator(1, 1, 1)
+hcp = Evaluator(4, 3, 2, 1)
+controls = Evaluator(2, 1)
+top3 = Evaluator(1, 1, 1)
+```
 
 Now you can test the quality of a suit with, for example,
 `top3(deal.north.spades) >= 2` (this may be relevant when generating weak two
@@ -279,11 +288,13 @@ bounds on the total value of a vector additive function (i.e. summed over the
 four suits).  For example, the following example finds hands where North is
 4-4 in the major, has a short minor and 11-15HCP.
 
-    from redeal import *
+```python
+from redeal import *
 
-    Roman = Shape("44(41)") + Shape("44(50)")
-    predeal = {"N": SmartStack(Roman, (11 <= Evaluator(4, 3, 2, 1)) <= 15)}
-    # Note the use of parentheses, which is *required*.
+Roman = Shape("44(41)") + Shape("44(50)")
+predeal = {"N": SmartStack(Roman, (11 <= Evaluator(4, 3, 2, 1)) <= 15)}
+# Note the use of parentheses, which is *required*.
+```
 
 When smartstacking is used, Redeal starts by computing the relative
 probabilities that each holding appears in a hand that satisfies the given
