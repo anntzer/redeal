@@ -29,22 +29,22 @@ except ImportError:
            "    https://pypi.python.org/pypi/setuptools")
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-if os.name == "posix":
-    PACKAGE_DATA = [os.path.join("redeal", "libdds.so")]
-elif os.name == "nt":
-    PACKAGE_DATA = [os.path.join("redeal", "dds.dll")]
+if os.name == "nt":
+    PACKAGE_DATA = ["dds-32.dll", "dds-64.dll"]
 else:
+    # On a POSIX system, libdds.so will be moved to its correct location by
+    # make_build.
     PACKAGE_DATA = []
 
 
 class make_build(build_py, object):
     def run(self):
+        base_dir = os.path.dirname(os.path.abspath(__file__))
         super(make_build, self).run()
         if os.name == "posix":
             orig_dir = os.getcwd()
             try:
-                os.chdir(os.path.join(BASE_DIR, "dds", "src"))
+                os.chdir(os.path.join(base_dir, "dds", "src"))
             except OSError as exc:
                 if exc.errno == 2: # FileNotFoundError
                     _abort("""\
@@ -57,7 +57,7 @@ On a Unix system, do not use the zip archives from github.""")
             subprocess.check_call(
                 ["make", "-f", "Makefiles/Makefile_linux_shared"])
             os.chdir(orig_dir)
-            shutil.move(os.path.join(BASE_DIR, "dds", "src", "libdds.so"),
+            shutil.move(os.path.join(base_dir, "dds", "src", "libdds.so"),
                         os.path.join(self.build_lib, "redeal", "libdds.so"))
 
 
