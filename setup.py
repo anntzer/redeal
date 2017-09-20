@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from __future__ import division, print_function
 # for distutils compatibility we do not use unicode_literals in this module
 import contextlib
@@ -74,7 +73,7 @@ setup(
     url="http://github.com/anntzer/redeal",
     license="LICENSE.txt",
     description="A reimplementation of Thomas Andrews' Deal in Python.",
-    long_description=io.open("README.md", encoding="utf-8").read(),
+    long_description=io.open("README.rst", encoding="utf-8").read(),
     install_requires=
         ["colorama>=0.2.4"] +
         (["enum34>=1.0.4"] if sys.version_info < (3, 4) else [])

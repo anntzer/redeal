@@ -1,5 +1,8 @@
+=============================================================
 Redeal: a reimplementation of Thomas Andrews' Deal in Python.
 =============================================================
+
+.. contents:: :local:
 
 Thomas Andrew's Deal is a deal generator: it outputs deals satisfying whatever
 conditions you specify -- deals with a double void, deals with a strong 2♣
@@ -8,55 +11,61 @@ can even solve the hands it has generated for you. Unfortunately, I have never
 really liked the language Deal uses for scripting: Tcl.  Redeal is thus my
 rewrite of Deal using another language: Python.
 
-Redeal runs under Python 2.7 or higher.  See the `examples/` folder for some
+Redeal runs under Python 2.7 or higher.  See the ``examples/`` folder for some
 example simulations.
 
-A double-dummy solver function is also available through Bo
-Haglund's DDS 2.8.1, which is distributed with Redeal as a git
-submodule.  Note that this requires the `libgomp` package.  You
-can also download the compiled shared objects from [Bo Haglund's
-website](`http://privat.bahnhof.se/wb758135/bridge/dll.html`).  For Windows,
-the DDS DLLs are distributed together with Redeal (the 64-bit DLL only works
-for Python 3.5 or higher, let me know if you can help me fix this).  In any
-case, if you cannot compile the DDS library, Redeal will work fine but the
-`dd_tricks`, `dd_score` and `dd_all_tricks` methods will be unavailable.
+A double-dummy solver function is also available through Bo Haglund's DDS
+2.8.1, which is distributed with Redeal as a git submodule.  Note that
+this requires the ``libgomp`` package.  You can also download the compiled
+shared objects from `Bo Haglund's website`_.  For Windows, the DDS DLLs are
+distributed together with Redeal (the 64-bit DLL only works for Python 3.5
+or higher, let me know if you can help me fix this).  In any case, if you
+cannot compile the DDS library, Redeal will work fine but the ``dd_tricks``,
+``dd_score`` and ``dd_all_tricks`` methods will be unavailable.
+
+.. _Bo Haglund's website: http://privat.bahnhof.se/wb758135/bridge/dll.html
 
 Installation
-------------
+============
 
-On a Unix system, do **not** download the `zip` or `tar.gz` releases.  They do
-not contain the DDS library.  The recommended way to install the package is
-directly from GitHub,
+On a Unix system, do **not** download the ``.zip`` or ``.tar.gz`` releases.
+They do not contain the DDS library.  The recommended way to install the
+package is directly from GitHub,
+
+.. code:: sh
 
     $ pip install --user git+https://github.com/anntzer/redeal
 
-On Windows **only**, you can also download the `zip` archive (from master,
-not from the releases), and run, from the folder containing the archive, `pip
-install redeal-master.zip` (or whatever name it has).
+On Windows **only**, you can also download the ``.zip`` archive (from master,
+not from the releases), and run, from the folder containing the archive, ``pip
+install redeal-master.zip`` (or whatever name it has).
 
-Directly running `setup.py` is **not** supported in either case.
+Directly running ``setup.py`` is **not** supported in either case.
 
-Now, run `redeal --help`, or `redeal` to get a few hands, or `redeal
-examples/deal1.py` for an example simulation.  In the `examples` folder,
-`./run_all_examples.sh` (or `run_all_examples.bat` on Windows) will go through
+Now, run ``redeal --help``, or ``redeal`` to get a few hands, or ``redeal
+examples/deal1.py`` for an example simulation.  In the ``examples`` folder,
+``./run_all_examples.sh`` (or ``run_all_examples.bat`` on Windows) will go through
 all the examples.
 
 A note on the GUI
------------------
+=================
 
-Redeal provides a GUI, `redeal-gui`, if you are not comfortable using the
+Redeal provides a GUI, ``redeal-gui``, if you are not comfortable using the
 command line.  Some GUI-specific information is scattered in the tutorial so
 read on!
 
 An introductory tutorial
-------------------------
+========================
 
 All these examples come from Deal's documentation.
 
-### Dealing hands
+Dealing hands
+-------------
 
-Run `redeal` at the command line to deal 10 hands, or `redeal -n N` to deal N
-hands.
+Run ``redeal`` at the command line to deal 10 hands, or ``redeal -n N`` to deal
+``N`` hands.
+
+.. code:: sh
 
     $ redeal -n2
     ♠AQ53♡QJ9♢K963♣T9 ♠K♡AK853♢AQ87♣A42 ♠976♡7642♢T2♣KJ73 ♠JT842♡T♢J54♣Q865
@@ -70,13 +79,16 @@ will be replaced by letters -- but the rest should work fine.
 Here, the number of tries is the same as the number of hands, as any hand is
 accepted.  This may not be the case in more complex cases.
 
-Using the GUI, just keep click `Run` to go!  The number of requested deals can
-be set at the top of the window.
+Using the GUI, just keep click ``Run`` to go!  The number of requested deals
+can be set at the top of the window.
 
-### Stacking a hand
+Stacking a hand
+---------------
 
 Would you open 2 or 3♡ with ♠-♡KQJT62♢T9876♣84?  Well, let's deal a couple of
 hands to see how this would fare.
+
+.. code:: sh
 
     $ redeal -S '- KQJT62 T9876 84'
     ♠AT982♡854♢J42♣KT ♠KQ7♡A973♢AK5♣AQJ ♠♡KQJT62♢T9876♣84 ♠J6543♡♢Q3♣976532
@@ -91,19 +103,22 @@ hands to see how this would fare.
     ♠AQJ8432♡4♢AQ♣KT5 ♠KT96♡A98♢32♣AJ76 ♠♡KQJT62♢T9876♣84 ♠75♡753♢KJ54♣Q932
     Tries: 10
 
-There are also `-N`, `-E` and `-W` options, with the expected meanings.  Note
-that you do not have to indicate 13 cards for a hand, but you always have to
-specify the four suits.  For example, you can select hands where North holds
-the heart ace with `redeal -S '- A - -'`.
+There are also ``-N``, ``-E`` and ``-W`` options, with the expected meanings.
+Note that you do not have to indicate 13 cards for a hand, but you always have
+to specify the four suits.  For example, you can select hands where North holds
+the heart ace with ``redeal -S '- A - -'``.
 
 Using the GUI, input the hands (using the same format) in the boxes labeled
 "North", "South", "East" and "West".
 
-### Formatting output
+Formatting output
+-----------------
 
 The default output is compact, but not very friendly.  What about more classic
-diagrams?  The `--format=long` flag (or the GUI's "long output for diagrams"
+diagrams?  The ``--format=long`` flag (or the GUI's "long output for diagrams"
 option) is there for that!
+
+.. code:: sh
 
     $ redeal --format=long -n1
 
@@ -124,20 +139,25 @@ option) is there for that!
 
     Tries: 1
 
-### Our first script
+Our first script
+----------------
 
 Let's say we want a selection of deals in which north holds a one spade opener.
 For now, we will use a crude definition for an opening 1♠ call -- we will
 require North to have 5 or more spades and 12 or more points.
 
-Here is the script we write, to a file we'll call `onespade.py`, or in the
-`accept` box of the GUI:
+Here is the script we write, to a file we'll call ``onespade.py``, or in the
+``accept`` box of the GUI:
+
+.. code:: python
 
     def accept(deal):
         if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
             return True
 
 and run it as follows:
+
+.. code:: sh
 
     $ redeal examples/onespade.py # put the path to onespade.py
     ♠AJ854♡J986♢T♣AKJ ♠KQ96♡2♢KJ874♣T52 ♠T732♡AKQT43♢Q2♣3 ♠♡75♢A9653♣Q98764
@@ -152,30 +172,33 @@ and run it as follows:
     ♠KJ842♡K5♢94♣AK74 ♠53♡Q7♢762♣Q98653 ♠AQ96♡943♢JT85♣JT ♠T7♡AJT862♢AKQ3♣2
     Tries: 120
 
-The `accept` function is called after each deal is dealt.  It can either return
-`True` (or any Python-truthy object), if the deal satisfies our conditions, or
-`False` (or any Python-falsey object) otherwise -- in which case it is not
-counted towards the goal of 10 deals.  Note that at the end, redeal also gives
-us the total number of hands it had to deal in order to get 10 accepted hands.
+The ``accept`` function is called after each deal is dealt.  It can either
+return ``True`` (or any Python-truthy object), if the deal satisfies our
+conditions, or ``False`` (or any Python-falsey object) otherwise -- in which
+case it is not counted towards the goal of 10 deals.  Note that at the end,
+redeal also gives us the total number of hands it had to deal in order to get
+10 accepted hands.
 
-In our case, `deal.north` represents North's hand, `deal.north.spades` is a
-list of North's spade holding, and `deal.north.hcp` is North's number of HCP.
-If the conditions are satisfied, we return `True`.  This prints the hand and
+In our case, ``deal.north`` represents North's hand, ``deal.north.spades`` is a
+list of North's spade holding, and ``deal.north.hcp`` is North's number of HCP.
+If the conditions are satisfied, we return ``True``.  This prints the hand and
 increments the counter of accepted hands.
 
 There are in total, four functions that can be overridden:
 
-- `initial` (taking no argument) is called when the simulation begins
+- ``initial`` (taking no argument) is called when the simulation begins
   (defaults to doing nothing)
-- `accept` (taking a `deal` argument) should return True or False depending
+- ``accept`` (taking a ``deal`` argument) should return True or False depending
   on whether the deal is accepted -- defaults to always True,
-- `do` (taking a `deal` argument) is called on each accepted deal --
+- ``do`` (taking a ``deal`` argument) is called on each accepted deal --
   defaults to printing the deal,
-- `final` (taking a `n_tries` argument) is called when the simulation ends
+- ``final`` (taking a ``n_tries`` argument) is called when the simulation ends
   (defaults to printing the number of tries).
 
-One can also give the `accept` function, as the body of a function taking a
-`deal` argument, at the command line:
+One can also give the ``accept`` function, as the body of a function taking a
+``deal`` argument, at the command line:
+
+.. code:: sh
 
     $ ./redeal.py --accept 'return len(deal.north.spades) >= 5 and \
         deal.north.hcp >= 12'
@@ -192,10 +215,13 @@ One can also give the `accept` function, as the body of a function taking a
     Tries: 203
 
 
-### Predealing and scripting
+Predealing and scripting
+------------------------
 
 Your partner opens 1♠ and you hold ♠-♡96532♢A864♣T962... do you pass or bid
 a forcing NT?  Let's generate a few hands so that we can see how we would fare.
+
+.. code:: sh
 
     $ redeal -S '- 96532 A864 T962' examples/onespade.py
     ♠A8643♡A8♢QT72♣Q8 ♠QT972♡Q♢K95♣K754 ♠♡96532♢A864♣T962 ♠KJ5♡KJT74♢J3♣AJ3
@@ -210,75 +236,78 @@ a forcing NT?  Let's generate a few hands so that we can see how we would fare.
     ♠KJ9863♡♢Q9♣AKJ73 ♠AT75♡QT874♢72♣85 ♠♡96532♢A864♣T962 ♠Q42♡AKJ♢KJT53♣Q4
     Tries: 31
 
-Again, one can also give the `accept` function at the command line.
+Again, one can also give the ``accept`` function at the command line.
 
 Or, one can indicate the predealt cards ("stacked", in Deal jargon) in the
-script, in the `predeal` variable:
+script, in the ``predeal`` variable:
 
-```python
-from redeal import * # this is "reasonably" safe
+.. code:: python
 
-predeal = {"S": H("- 96532 A864 T962")} # H is a hand constructor.
+   from redeal import * # this is "reasonably" safe
 
-def accept(deal):
-    if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
-        return True
-```
+   predeal = {"S": H("- 96532 A864 T962")} # H is a hand constructor.
 
-Note that the predealing occurs outside of the `accept` function.  Also, the
-`redeal` module has to be imported only for scripts in their own files; this is
-done implicitely for the GUI and for functions given at the command line.
+   def accept(deal):
+      if len(deal.north.spades) >= 5 and deal.north.hcp >= 12:
+         return True
 
-### Shape
+Note that the predealing occurs outside of the ``accept`` function.  Also, the
+``redeal`` module has to be imported only for scripts in their own files; this
+is done implicitely for the GUI and for functions given at the command line.
 
-Hands also have a `shape` attribute, which returns a list of the length in each
-suit.  This can be queried directly, or using `Shape` objects, which are very
-efficient:
+Shape
+-----
 
-```python
-from redeal import *
+Hands also have a ``shape`` attribute, which returns a list of the length in
+each suit.  This can be queried directly, or using ``Shape`` objects, which are
+very efficient:
 
-def accept(deal):
-    return balanced(deal.north)
-```
+.. code:: python
 
-`balanced` is defined in `redeal.py` as
+   from redeal import *
 
-```python
-balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
-```
+   def accept(deal):
+      return balanced(deal.north)
 
-where the parentheses have the usual meaning.  `semibalanced` is available as
-well, and one can define other shapes, possibly using `x` as a generic
+``balanced`` is defined in ``redeal.py`` as
+
+.. code:: python
+
+   balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
+
+where the parentheses have the usual meaning.  ``semibalanced`` is available as
+well, and one can define other shapes, possibly using ``x`` as a generic
 placeholder:
 
-```python
-major_two_suited = Shape("(54)xx") - Shape("(54)(40)")
-```
+.. code:: python
 
-### Vector additive functions
+   major_two_suited = Shape("(54)xx") - Shape("(54)(40)")
+
+Vector additive functions
+-------------------------
 
 Quite a few hand evaluation techniques (HCP, controls, suit quality) look at
-one suit at a time, and attribute some value to each card.  Just like `deal`,
-`redeal` provides `Evaluator` for creating such evaluation functions:
+one suit at a time, and attribute some value to each card.  Just like ``deal``,
+``redeal`` provides ``Evaluator`` for creating such evaluation functions:
 
-```python
-from redeal import *
+.. code:: python
 
-hcp = Evaluator(4, 3, 2, 1)
-controls = Evaluator(2, 1)
-top3 = Evaluator(1, 1, 1)
-```
+   from redeal import *
+
+   hcp = Evaluator(4, 3, 2, 1)
+   controls = Evaluator(2, 1)
+   top3 = Evaluator(1, 1, 1)
 
 Now you can test the quality of a suit with, for example,
-`top3(deal.north.spades) >= 2` (this may be relevant when generating weak two
+``top3(deal.north.spades) >= 2`` (this may be relevant when generating weak two
 hands).
 
-### Smartstacking
+Smartstacking
+-------------
 
 Rare hand types (say, 22 to 24 balanced) can be annoying to work with, as
-`redeal` needs to generate a lot of hands before finding any of them.  You
-can pass the `-v` flag (not available from the GUI) to add some progress
+``redeal`` needs to generate a lot of hands before finding any of them.  You
+can pass the ``-v`` flag (not available from the GUI) to add some progress
 information to the output.
 
 For some rare hand types, Deal and Redeal provide an alternative, faster hand
@@ -288,26 +317,26 @@ bounds on the total value of a vector additive function (i.e. summed over the
 four suits).  For example, the following example finds hands where North is
 4-4 in the major, has a short minor and 11-15HCP.
 
-```python
-from redeal import *
+.. code:: python
 
-Roman = Shape("44(41)") + Shape("44(50)")
-predeal = {"N": SmartStack(Roman, (11 <= Evaluator(4, 3, 2, 1)) <= 15)}
-# Note the use of parentheses, which is *required*.
-```
+   from redeal import *
+
+   Roman = Shape("44(41)") + Shape("44(50)")
+   predeal = {"N": SmartStack(Roman, (11 <= Evaluator(4, 3, 2, 1)) <= 15)}
+   # Note the use of parentheses, which is *required*.
 
 When smartstacking is used, Redeal starts by computing the relative
 probabilities that each holding appears in a hand that satisfies the given
 condition, which takes some time.  This then allows it to generate deals very
 quickly, much faster than by generating random deals and checking whether they
-pass an `accept` function.  For the given example, as long as one requests
+pass an ``accept`` function.  For the given example, as long as one requests
 a couple of dozen of hands, smartstacking is faster than direct dealing.
 
 Smartstacking will take into account other (normally) predealt hands, and an
-`accept` function can still be used, e.g. to still throw away some of the
-hands.  See `examples/deal_gambling.py` for a complete example.
+``accept`` function can still be used, e.g. to still throw away some of the
+hands.  See ``examples/deal_gambling.py`` for a complete example.
 
 Finally, please note that smartstacking is only available for scripts in their
 own files, not at the command line nor in the GUI.
 
-<!--- vim: set fileencoding=utf-8: --->
+.. vim: set fileencoding=utf-8:
