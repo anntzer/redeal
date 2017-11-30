@@ -44,8 +44,8 @@ Directly running ``setup.py`` is **not** supported in either case.
 
 Now, run ``redeal --help``, or ``redeal`` to get a few hands, or ``redeal
 examples/deal1.py`` for an example simulation.  In the ``examples`` folder,
-``./run_all_examples.sh`` (or ``run_all_examples.bat`` on Windows) will go through
-all the examples.
+``./run_all_examples.sh`` (or ``run_all_examples.bat`` on Windows) will go
+through all the examples.
 
 A note on the GUI
 =================
@@ -200,8 +200,7 @@ One can also give the ``accept`` function, as the body of a function taking a
 
 .. code:: sh
 
-    $ ./redeal.py --accept 'return len(deal.north.spades) >= 5 and \
-        deal.north.hcp >= 12'
+    $ redeal --accept 'return len(deal.north.spades) >= 5 and deal.north.hcp >= 12'
     ♠AKJT7♡85♢865♣KQ7 ♠852♡A74♢AQT42♣86 ♠963♡KJ3♢J973♣AT4 ♠Q4♡QT962♢K♣J9532
     ♠AKT86♡AJ76♢64♣42 ♠J954♡T♢KT752♣KT5 ♠3♡KQ853♢A983♣Q76 ♠Q72♡942♢QJ♣AJ983
     ♠AQ753♡A96♢A♣AT43 ♠KJT6♡KQ83♢Q753♣8 ♠9♡JT75♢KT42♣KQJ7 ♠842♡42♢J986♣9652
@@ -322,8 +321,7 @@ four suits).  For example, the following example finds hands where North is
    from redeal import *
 
    Roman = Shape("44(41)") + Shape("44(50)")
-   predeal = {"N": SmartStack(Roman, (11 <= Evaluator(4, 3, 2, 1)) <= 15)}
-   # Note the use of parentheses, which is *required*.
+   predeal = {"N": SmartStack(Roman, Evaluator(4, 3, 2, 1), range(11, 16))}
 
 When smartstacking is used, Redeal starts by computing the relative
 probabilities that each holding appears in a hand that satisfies the given

@@ -21,7 +21,7 @@ except ImportError:
 
 from . import global_defs, dds, util
 from .global_defs import *
-from .smartstack import SmartStack, _SmartStack
+from .smartstack import SmartStack
 
 
 __all__ = ["Shape", "balanced", "semibalanced",
@@ -212,25 +212,6 @@ class Evaluator(object):
         else:
             raise TypeError("Cannot evaluate {}".format(arg))
 
-    def __eq__(self, value):
-        if self._le is not None or self._ge is not None:
-            raise Exception("Already bound")
-        return type(self)(*self._vals, le=value, ge=value)
-
-    def __le__(self, value):
-        if self._le is not None:
-            raise Exception("Already bound by {}".format(self._le))
-        return type(self)(*self._vals, le=value, ge=self._ge)
-
-    def __ge__(self, value):
-        if self._ge is not None:
-            raise Exception("Already bound by {}".format(self._ge))
-        return type(self)(*self._vals, le=self._le, ge=value)
-
-    def contains(self, value):
-        return ((self._le is None or value <= self._le) and
-                (self._ge is None or value >= self._ge))
-
 
 hcp = Evaluator(4, 3, 2, 1)
 hcp.__name__ = "hcp"
@@ -270,7 +251,8 @@ class Deal(tuple, object):
             raise Exception("Same card dealt twice.")
         if seat_smartstack:
             seat, smartstack = seat_smartstack
-            dealer[seat] = _SmartStack.from_predealt(smartstack, predealt)
+            smartstack._predealt = predealt
+            dealer[seat] = smartstack
             dealer["_smartstack"] = seat
         dealer["_remaining"] = [card for card in FULL_DECK
                                 if card not in predealt_set]
@@ -447,7 +429,7 @@ class Hand(tuple, object):
     diamonds = util.reify(itemgetter(Suit.D), "The hand's diamonds.", "diamonds")
     clubs = util.reify(itemgetter(Suit.C), "The hand's clubs.", "clubs")
 
-    shape = util.reify(lambda self: [len(holding) for holding in self],
+    shape = util.reify(lambda self: tuple(len(holding) for holding in self),
                        "The hand's shape.")
     hcp = util.reify(lambda self: sum(holding.hcp for holding in self),
                      "The hand's HCP count.")

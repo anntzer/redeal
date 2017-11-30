@@ -9,29 +9,35 @@ import random
 from .global_defs import *
 
 
-class _SmartStack(object):
-    def __init__(self, shape, predealt, bound_eval):
-        # shape: Shape object
-        # predealt: predealt cards
-        # bound_eval: bound evaluator
+class SmartStack(object):
+    def __init__(self, shape, evaluator, values, predealt=None):
+        self._shape = shape
+        self._evaluator = evaluator
+        self._values = values
+        self._predealt = predealt
+        self._prepared = False
 
+    def _prepare(self):
         # holdings[i][l, v]:
         #     OK holdings for suit #i such that len(h) = l, eval_holding(h) = v
-        by_suit = {suit: {card.rank for card in predealt if card.suit == suit}
+        self._prepared = True
+        by_suit = {suit: {card.rank for card in (self._predealt or {})
+                          if card.suit == suit}
                    for suit in Suit}
         holdings = [{} for _ in Suit]
         for l in range(len(Rank)):
             for holding in map(frozenset, combinations(Rank, l)):
-                v = bound_eval(holding)
+                v = self._evaluator(holding)
                 for suit in Suit:
-                    if (shape.min_ls[suit] <= len(holding) <= shape.max_ls[suit] and
-                        not holding & by_suit[suit]):
+                    if (self._shape.min_ls[suit] <= len(holding)
+                            <= self._shape.max_ls[suit]
+                            and not holding & by_suit[suit]):
                         holdings[suit].setdefault((l, v), []).append(holding)
         counter = Counter()
         for lvs_hs in product(*[holdings[suit].items() for suit in Suit]):
             lvs, hs = zip(*lvs_hs)
             ls, vs = zip(*lvs)
-            if ls in shape and bound_eval.contains(sum(vs)):
+            if ls in self._shape and sum(vs) in self._values:
                 counter[ls, vs] += reduce(operator.mul, map(len, hs))
         patterns, cumsum = zip(*counter.items())
         cumsum = list(cumsum)
@@ -42,19 +48,11 @@ class _SmartStack(object):
         self.cumsum = cumsum
         self.total = cumsum[-1]
 
-    @classmethod
-    def from_predealt(cls, smartstack, predealt):
-        return cls(smartstack.shape, predealt, smartstack.bound_eval)
-
     def __call__(self):
+        if not self._prepared:
+            self._prepare()
         lvs = zip(*self.patterns[bisect(self.cumsum,
                                         random.randint(0, self.total - 1))])
         hand = [random.choice(holdings[ls, vs])
                 for holdings, (ls, vs) in zip(self.holdings, lvs)]
         return [Card(suit, rank) for suit in Suit for rank in hand[suit]]
-
-
-class SmartStack(object):
-    def __init__(self, shape, bound_eval):
-        self.shape = shape
-        self.bound_eval = bound_eval
