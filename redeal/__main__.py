@@ -61,10 +61,10 @@ class Main(object):
         self.stop_flag = False
         self.args = Namespace(n=10, max=None, verbose=False)
 
-    def parse_args(self):
+    def parse_args(self, argv=None):
         """Parse command line args.
         """
-        self.args = self.parser.parse_args()
+        self.args = self.parser.parse_args(argv)
 
         random.seed(self.args.seed)
 
