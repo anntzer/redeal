@@ -291,8 +291,8 @@ class Deal(tuple, object):
                 to_deal = len(Rank) - len(pre)
                 hand, cards = pre + cards[:to_deal], cards[to_deal:]
                 hands[seat] = Hand(hand)
-                self = tuple.__new__(cls, hands)
-                self._dd_cache = {}
+            self = tuple.__new__(cls, hands)
+            self._dd_cache = {}
             if accept_func is None or accept_func(self):
                 return self
         raise Exception("Could not generate any deal matching accept_func")
