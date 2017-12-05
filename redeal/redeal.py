@@ -6,6 +6,7 @@ from enum import Enum
 from itertools import groupby, permutations, product
 from math import sqrt
 from operator import itemgetter
+import functools
 import random
 import sys
 if sys.version_info < (3,):
@@ -29,7 +30,7 @@ __all__ = ["Shape", "balanced", "semibalanced",
            "Rank", "A", "K", "Q", "J", "T",
            "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
-           "Simulation", "OpeningLeadSim", "predeal_dict",]
+           "Simulation", "OpeningLeadSim",]
 
 
 for card in FULL_DECK:
@@ -221,31 +222,28 @@ controls = Evaluator(2, 1)
 controls.__name__ = "controls"
 
 
-def predeal_dict(*args):
-    """Construct a ``Seat -> Hand`` dict.
-
-    ``args`` must be an even number of strings; seat followed by the hand.
-    Example: ``predeal_dict('S', 'KJ8432 - - -', 'N', 'AQ - - -')``"""
-    return {Seat[args[i]]: H(args[i + 1])
-            for i in range(0, len(args), 2)}
-
-
 class Deal(tuple, object):
     """A deal, represented as a tuple of hands.
     """
 
     @classmethod
-    def prepare(cls, predeal):
+    def prepare(cls, predeal=None):
         """Contruct a dealer from a ``Seat -> [Hand | SmartStack]`` dict.
+        Seat and/or Hand may be given as strings.
 
         There can be at most one ``SmartStack`` entry.
         """
-        predeal = predeal.copy() or {}
+        predeal = {} if predeal is None else predeal.copy() or {}
         dealer = {}
         seat_smartstack = None
         for seat in Seat:
-            pre = predeal.pop(seat, Hand(()))
-            if isinstance(pre, SmartStack):
+            try:
+                pre = predeal.pop(str(seat)[0])
+            except:
+                pre = predeal.pop(seat, Hand(()))
+            if isinstance(pre, str):
+                dealer[seat] = H(pre).cards
+            elif isinstance(pre, SmartStack):
                 if seat_smartstack:
                     raise Exception("Only one Smartstack allowed.")
                 seat_smartstack = seat, pre
@@ -265,7 +263,7 @@ class Deal(tuple, object):
             dealer["_smartstack"] = seat
         dealer["_remaining"] = [card for card in FULL_DECK
                                 if card not in predealt_set]
-        return lambda accept_func=None, tries=1000: cls(dealer, accept_func, tries)
+        return functools.partial(cls, dealer)
 
     def __new__(cls, dealer, accept_func=None, tries=1000):
         """Randomly deal a hand from a prepared dealer.

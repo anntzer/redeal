@@ -350,7 +350,7 @@ Deals can also be generated programmatically from Python, instead of using the
    def accept(deal):
        return deal.north.hcp >= 18
 
-   dealer = Deal.prepare({})
+   dealer = Deal.prepare()
 
    # A random deal is generated
    deal1 = dealer()
@@ -359,8 +359,7 @@ Deals can also be generated programmatically from Python, instead of using the
    deal2 = dealer(accept)
 
 You may also use predealing and SmartStacking, as an argument to
-``Deal.prepare``. The helper function ``predeal_dict`` can be used for easy
-predealing:
+``Deal.prepare``:
 
 .. code:: python
 
@@ -369,7 +368,7 @@ predealing:
    def accept(deal):
        return deal.north.hcp >= 15
 
-   dealer = Deal.prepare(predeal_dict('S', 'K83 AK83 - QJT972'))
+   dealer = Deal.prepare({'S': 'K83 AK83 - QJT972'})
    deal = dealer(accept)
 
 .. vim: set fileencoding=utf-8:
