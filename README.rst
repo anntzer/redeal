@@ -337,4 +337,39 @@ hands.  See ``examples/deal_gambling.py`` for a complete example.
 Finally, please note that smartstacking is only available for scripts in their
 own files, not at the command line nor in the GUI.
 
+Generating deals using Python
+=============================
+
+Deals can also be generated programmatically from Python, instead of using the
+``redeal`` program. Here's an example:
+
+.. code:: python
+
+   from redeal import *
+
+   def accept(deal):
+       return deal.north.hcp >= 18
+
+   dealer = Deal.prepare({})
+
+   # A random deal is generated
+   deal1 = dealer()
+
+   # Generate another one, using our accept function above
+   deal2 = dealer(accept)
+
+You may also use predealing and SmartStacking, as an argument to
+``Deal.prepare``. The helper function ``predeal_dict`` can be used for easy
+predealing:
+
+.. code:: python
+
+   from redeal import *
+
+   def accept(deal):
+       return deal.north.hcp >= 15
+
+   dealer = Deal.prepare(predeal_dict('S', 'K83 AK83 - QJT972'))
+   deal = dealer(accept)
+
 .. vim: set fileencoding=utf-8:

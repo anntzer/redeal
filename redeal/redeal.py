@@ -29,7 +29,7 @@ __all__ = ["Shape", "balanced", "semibalanced",
            "Rank", "A", "K", "Q", "J", "T",
            "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
-           "Simulation", "OpeningLeadSim",]
+           "Simulation", "OpeningLeadSim", "predeal_dict",]
 
 
 for card in FULL_DECK:
@@ -221,6 +221,15 @@ controls = Evaluator(2, 1)
 controls.__name__ = "controls"
 
 
+def predeal_dict(*args):
+    """Construct a ``Seat -> Hand`` dict.
+
+    ``args`` must be an even number of strings; seat followed by the hand.
+    Example: ``predeal_dict('S', 'KJ8432 - - -', 'N', 'AQ - - -')``"""
+    return {Seat[args[i]]: H(args[i + 1])
+            for i in range(0, len(args), 2)}
+
+
 class Deal(tuple, object):
     """A deal, represented as a tuple of hands.
     """
@@ -256,31 +265,37 @@ class Deal(tuple, object):
             dealer["_smartstack"] = seat
         dealer["_remaining"] = [card for card in FULL_DECK
                                 if card not in predealt_set]
-        return lambda: cls(dealer)
+        return lambda accept_func=None, tries=1000: cls(dealer, accept_func, tries)
 
-    def __new__(cls, dealer):
+    def __new__(cls, dealer, accept_func=None, tries=1000):
         """Randomly deal a hand from a prepared dealer.
+
+        ``accept_func`` can be a function similar to ``Simulation.accept``
+        Reshuffles until ``accept_func`` returns true, but at most set number of ``tries``.
         """
-        hands = [None] * len(Seat)
-        cards = dealer["_remaining"]
-        try:
-            seat = dealer["_smartstack"]
-        except KeyError:
-            pass
-        else:
-            hands[seat] = hand = Hand(dealer[seat]())
-            cards = list(set(cards).difference(hand.cards()))
-        random.shuffle(cards)
-        for seat in Seat:
-            if hands[seat]:
-                continue
-            pre = dealer[seat]()
-            to_deal = len(Rank) - len(pre)
-            hand, cards = pre + cards[:to_deal], cards[to_deal:]
-            hands[seat] = Hand(hand)
-        self = tuple.__new__(cls, hands)
-        self._dd_cache = {}
-        return self
+        for i in range(tries):
+            hands = [None] * len(Seat)
+            cards = dealer["_remaining"]
+            try:
+                seat = dealer["_smartstack"]
+            except KeyError:
+                pass
+            else:
+                hands[seat] = hand = Hand(dealer[seat]())
+                cards = list(set(cards).difference(hand.cards()))
+            random.shuffle(cards)
+            for seat in Seat:
+                if hands[seat]:
+                    continue
+                pre = dealer[seat]()
+                to_deal = len(Rank) - len(pre)
+                hand, cards = pre + cards[:to_deal], cards[to_deal:]
+                hands[seat] = Hand(hand)
+                self = tuple.__new__(cls, hands)
+                self._dd_cache = {}
+            if accept_func is None or accept_func(self):
+                return self
+        raise Exception("Could not generate any deal matching accept_func")
 
     def _short_str(self):
         """Return a one-line version of the deal.
