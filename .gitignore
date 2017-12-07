@@ -1,6 +1,7 @@
 build/
 dist/
 doc/
+htmlcov/
 redeal.egg-info/
 setup.cfg
 *.o

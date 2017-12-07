@@ -233,13 +233,13 @@ class Deal(tuple, object):
 
         There can be at most one ``SmartStack`` entry.
         """
-        predeal = {} if predeal is None else predeal.copy() or {}
+        predeal = {} if predeal is None else predeal.copy()
         dealer = {}
         seat_smartstack = None
         for seat in Seat:
             try:
                 pre = predeal.pop(str(seat)[0])
-            except:
+            except KeyError:
                 pre = predeal.pop(seat, Hand(()))
             if isinstance(pre, str):
                 dealer[seat] = H(pre).cards
@@ -268,8 +268,9 @@ class Deal(tuple, object):
     def __new__(cls, dealer, accept_func=None, tries=1000):
         """Randomly deal a hand from a prepared dealer.
 
-        ``accept_func`` can be a function similar to ``Simulation.accept``
-        Reshuffles until ``accept_func`` returns true, but at most set number of ``tries``.
+        *accept_func* can be a function similar to `Simulation.accept`:
+        reshuffle until *accept_func* returns True, but no more than *tries*
+        times.
         """
         for i in range(tries):
             hands = [None] * len(Seat)

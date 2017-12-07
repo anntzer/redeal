@@ -21,9 +21,8 @@ The following names will be imported from the simulation module: `predeal`,
 from redeal import *
 
 
-# The predealt cards (a dict with keys N, E, S, W).  `H` is a hand constructor
-# (if less than 13 cards are predealt, use "-" for the empty suits).
-predeal = {"S": H("652 K752 53 9862")}
+# The predealt cards (a dict with keys N, E, S, W; use "-" for voids).
+predeal = {"S": "652 K752 53 9862"}
 
 
 # `initial` is called at the beginning of the sim.  Here it initializes a

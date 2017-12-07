@@ -24,7 +24,7 @@ def gambling(holding):
         len(holding) >= 7 and A in holding and K in holding and Q in holding
         or len(holding) <= 4 and A not in holding and K not in holding)
 
-predeal = {"S": H("AK K52 98765 962"),
+predeal = {"S": "AK K52 98765 962",
            "N": SmartStack(GamblingShape, gambling, [4])}
 
 _shapes = Counter()
