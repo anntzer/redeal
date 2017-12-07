@@ -34,11 +34,11 @@ package is directly from GitHub,
 
 .. code:: sh
 
-    $ pip install --user git+https://github.com/anntzer/redeal
+    $ python -mpip install --user git+https://github.com/anntzer/redeal
 
 On Windows **only**, you can also download the ``.zip`` archive (from master,
-not from the releases), and run, from the folder containing the archive, ``pip
-install redeal-master.zip`` (or whatever name it has).
+not from the releases), and run, from the folder containing the archive,
+``python -mpip install redeal-master.zip`` (or whatever name it has).
 
 Directly running ``setup.py`` is **not** supported in either case.
 

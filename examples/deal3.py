@@ -13,7 +13,7 @@ support.
 
 from redeal import *
 
-predeal = {"S": H("764 J4 J753 AQJ2")}
+predeal = {"S": "764 J4 J753 AQJ2"}
 
 def accept(deal):
     return (16 <= deal.west.hcp <= 19 and deal.west.shape in Shape("5(332)")
