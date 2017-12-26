@@ -28,7 +28,7 @@ except ImportError:
            "    https://pypi.python.org/pypi/setuptools")
 
 
-if os.name == "nt":
+if sys.platform == "win32":
     PACKAGE_DATA = ["dds-32.dll", "dds-64.dll"]
 else:
     # On a POSIX system, libdds.so will be moved to its correct location by
@@ -40,7 +40,7 @@ class make_build(build_py, object):
     def run(self):
         base_dir = os.path.dirname(os.path.abspath(__file__))
         super(make_build, self).run()
-        if os.name == "posix":
+        if sys.platform.startswith("linux") or sys.platform == "darwin":
             orig_dir = os.getcwd()
             try:
                 os.chdir(os.path.join(base_dir, "dds", "src"))
@@ -53,8 +53,21 @@ If you are using a git checkout, run
     git submodule init && git submodule update
 
 On a Unix system, do not use the zip archives from github.""")
-            subprocess.check_call(
-                ["make", "-f", "Makefiles/Makefile_linux_shared"])
+            if sys.platform.startswith("linux"):
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_linux_shared"])
+            elif sys.platform == "darwin":
+                with open("Makefiles/Makefile_Mac_clang") as file:
+                    contents = file.read()
+                contents = contents.replace(
+                    "ar rcs $(STATIC_LIB) $(O_FILES)\n",
+                    "$(CC) -dynamiclib -o lib$(DLLBASE).so $(O_FILES) -lc++\n")
+                with open("Makefiles/Makefile_Mac_clang_patched", "w") as file:
+                    file.write(contents)
+                subprocess.check_call(
+                    ["make", "-f", "Makefiles/Makefile_Mac_clang_patched",
+                     "CC=gcc"])
+                os.remove("Makefiles/Makefile_Mac_clang_patched")
             os.chdir(orig_dir)
             shutil.move(os.path.join(base_dir, "dds", "src", "libdds.so"),
                         os.path.join(self.build_lib, "redeal", "libdds.so"))
