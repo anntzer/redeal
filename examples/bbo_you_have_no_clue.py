@@ -5,7 +5,7 @@ from collections import Counter
 from redeal import *
 
 
-predeal = {"S": H("T8 8762 KT4 KQ52")}
+predeal = {"S": "T8 8762 KT4 KQ52"}
 
 
 def initial():

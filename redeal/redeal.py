@@ -454,6 +454,15 @@ class Hand(tuple, object):
     pt = util.reify(lambda self: sum(holding.pt for holding in self),
                     "The hand's playing tricks.")
 
+    @util.reify
+    def freakness(self):
+        """The hand's Pavlicek freakness
+
+        (http://www.rpbridge.net/8j17.htm#8).
+        """
+        return (sum(max(l - 4, 3 - l) for l in map(len, self))
+                + {0: 2, 1: 1}.get(min(map(len, self)), 0))
+
 
 A, K, Q, J, T = (Rank[rank] for rank in "AKQJT")
 class Holding(frozenset, object):
@@ -492,7 +501,9 @@ class Holding(frozenset, object):
 
     @util.reify
     def pt(self):
-        """The holding's playing tricks.
+        """The holding's Pavlicek playing tricks
+
+        (http://www.rpbridge.net/8j17.htm#3).
         """
         len_pt = max(len(self) - 3, 0)
         if {A, K, Q} <= self:
