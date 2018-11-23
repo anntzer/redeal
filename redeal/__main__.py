@@ -2,10 +2,11 @@
 from __future__ import division, print_function, unicode_literals
 import argparse
 from argparse import Namespace
-import imp
 import inspect
 from os import path
 import random
+import runpy
+import sys
 
 from . import global_defs, gui, redeal, util
 
@@ -52,7 +53,9 @@ class Main(object):
 
     func_defaults = [
         (func.__name__,
-         inspect.getargspec(func),
+         inspect.formatargspec(*inspect.getargspec(func))
+         if sys.version_info < (3,) else
+         str(inspect.signature(func)),
          inspect.getsource(func).split("\n", 1)[1].lstrip())
         for func in (getattr(redeal.Simulation, fname)
                      for fname in ("initial", "accept", "do", "final"))]
@@ -69,18 +72,21 @@ class Main(object):
         random.seed(self.args.seed)
 
         if self.args.script is None:
-            self.module = None
+            self.script_dict = {}
         else:
-            folder, name = path.split(path.splitext(self.args.script)[0])
-            file, pathname, description = imp.find_module(name, [folder])
-            self.module = imp.load_module(name, file, pathname, description)
-            file.close()
+            self.script_dict = runpy.run_path(self.args.script)
+            if sys.version_info < (3,):  # Workaround Py2 bug(?) in run_path?
+                for func_name, _, _ in self.func_defaults:
+                    func = self.script_dict.get(func_name)
+                    if func:
+                        func.func_globals.update(self.script_dict)
 
-        self.given_funcs = [(name, argspec, self.verbose_getattr(name, body))
-                            for name, argspec, body in self.func_defaults]
+        self.given_funcs = [
+            (name, signature_str, self.verbose_get(name, body))
+            for name, signature_str, body in self.func_defaults]
         self.predeal = {
             global_defs.Seat[seat_name]: hand
-            for seat_name, hand in self.verbose_getattr("predeal", {}).items()}
+            for seat_name, hand in self.verbose_get("predeal", {}).items()}
         for seat in global_defs.Seat:
             try:
                 hand = getattr(self.args, seat.name)
@@ -89,18 +95,18 @@ class Main(object):
             self.predeal[seat] = redeal.H(hand)
 
     _obj = object()
-    def verbose_getattr(self, attr, default=_obj):
+    def verbose_get(self, attr, default=_obj):
         """Try to get an attribute:
 
-        Query `self.args` first, then `self.module`, then uses `default`;
+        Query `self.args` first, then `self.globals`, then uses `default`;
         report if `self.verbose is set`.
         """
         try:
             value = getattr(self.args, attr)
         except AttributeError:
             try:
-                value = getattr(self.module, attr)
-            except AttributeError:
+                value = self.script_dict[attr]
+            except KeyError:
                 if default is not self._obj:
                     if self.args.verbose:
                         print("Using default for {}.".format(attr))
@@ -142,12 +148,12 @@ class Main(object):
             gui.run_gui(self)
         else:
             try:
-                simulation = self.verbose_getattr("simulation")
-            except AttributeError:
+                simulation = self.verbose_get("simulation")
+            except LookupError:
                 simulation = type(
                     str(), (redeal.Simulation,),
-                    {name: util.create_func(redeal, name, argspec, body)
-                     for name, argspec, body in self.given_funcs})()
+                    {name: util.create_func(redeal, name, signature_str, body)
+                     for name, signature_str, body in self.given_funcs})()
             redeal.Hand.set_str_style(self.args.format)
             redeal.Deal.set_str_style(self.args.format)
             redeal.Deal.set_print_only(

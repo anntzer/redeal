@@ -4,7 +4,7 @@ import inspect
 import sys
 
 
-def create_func(module, name, argspec, body):
+def create_func(module, name, signature_str, body):
     """Create a method with the given module dict, name, arguments and body.
     """
     if isinstance(body, type(lambda: None)):
@@ -14,7 +14,7 @@ def create_func(module, name, argspec, body):
             return staticmethod(body)
     defs = "def {name}{spec}:\n{body}".format(
         name=name,
-        spec=inspect.formatargspec(*argspec),
+        spec=signature_str,
         body=indent(body, "    "))
     if module not in create_func.globals:
         # This allows us to share globals between callbacks.

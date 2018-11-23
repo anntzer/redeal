@@ -85,8 +85,8 @@ class Application(tk.Frame):
             inner.pack(side=tk.LEFT)
         frame.pack(side=tk.TOP)
         # functions
-        for name, argspec, body in self.main.given_funcs:
-            self.create_text(self, name, argspec, body)
+        for name, signature_str, body in self.main.given_funcs:
+            self.create_text(self, name, signature_str, body)
         # run & quit
         frame = tk.Frame(self)
         self.run_button = tk.Button(frame, text="Run", command=self.run)
@@ -106,17 +106,16 @@ class Application(tk.Frame):
         # end of widget creation
         self.pack()
 
-    def create_text(self, master, name, argspec, default, height=None):
+    def create_text(self, master, name, signature_str, default, height=None):
         frame = tk.Frame(master)
-        proto = "def {name}{spec}:".format(
-            name=name, spec=inspect.formatargspec(*argspec))
+        proto = "def {}{}:".format(name, signature_str)
         tk.Label(frame, text=proto).pack(side=tk.TOP, anchor="w")
         inner, text = scrolled_text(frame, height=height if height is not None
                                            else self.func_text_height)
         inner.pack(side=tk.TOP)
         text.insert("end", "\t" + default)
         frame.pack(side=tk.TOP)
-        self.texts.append((name, argspec, text))
+        self.texts.append((name, signature_str, text))
 
     def run(self):
         _global_defs_SUITS_FORCE_UNICODE = global_defs.SUITS_FORCE_UNICODE
@@ -138,10 +137,11 @@ class Application(tk.Frame):
         for seat in global_defs.Seat:
             self.main.predeal[seat] = redeal.H(self.seat_entries[seat].get())
         # override functions
-        simulation = type("", (redeal.Simulation,),
-                          {name: util.create_func(
-                              redeal, name, argspec, text.get(1.0, tk.END))
-                           for name, argspec, text in self.texts})()
+        simulation = type(
+            "", (redeal.Simulation,),
+            {name: util.create_func(
+                redeal, name, signature_str, text.get(1.0, tk.END))
+             for name, signature_str, text in self.texts})()
         # simulation
         def target():
             self.main.stop_flag = False
