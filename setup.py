@@ -54,8 +54,10 @@ If you are using a git checkout, run
 
 On a Unix system, do not use the zip archives from github.""")
             if sys.platform.startswith("linux"):
-                subprocess.check_call(
-                    ["make", "-f", "Makefiles/Makefile_linux_shared"])
+                subprocess.check_call([
+                    "make", "THREADING=", "CC_BOOST_LINK=",
+                    "-f", "Makefiles/Makefile_linux_shared",
+                ])
             elif sys.platform == "darwin":
                 with open("Makefiles/Makefile_Mac_clang") as file:
                     contents = file.read()
