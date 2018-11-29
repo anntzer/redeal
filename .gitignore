@@ -1,3 +1,4 @@
+.venv/
 build/
 dist/
 doc/
@@ -10,3 +11,4 @@ setup.cfg
 .*.swp
 *.orig
 .coverage
+.gdb_history
