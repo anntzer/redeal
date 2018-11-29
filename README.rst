@@ -1,6 +1,10 @@
-=============================================================
-Redeal: a reimplementation of Thomas Andrews' Deal in Python.
-=============================================================
+======
+Redeal
+======
+
+-----------------------------------------------------
+A reimplementation of Thomas Andrews' Deal in Python.
+-----------------------------------------------------
 
 .. contents:: :local:
 
@@ -11,8 +15,8 @@ can even solve the hands it has generated for you. Unfortunately, I have never
 really liked the language Deal uses for scripting: Tcl.  Redeal is thus my
 rewrite of Deal using another language: Python.
 
-Redeal runs under Python 2.7 or higher.  See the ``examples/`` folder for some
-example simulations.
+Redeal runs under Python 2.7 or higher.  See the ``examples/`` directory for
+some example simulations.
 
 A double-dummy solver function is also available through Bo Haglund's DDS
 2.8.1, which is distributed with Redeal as a git submodule.  Note that
@@ -34,18 +38,19 @@ package is directly from GitHub,
 
 .. code:: sh
 
-    $ python -mpip install --user git+https://github.com/anntzer/redeal
+    $ python -mpip install --user --upgrade git+https://github.com/anntzer/redeal
 
 On Windows **only**, you can also download the ``.zip`` archive (from master,
-not from the releases), and run, from the folder containing the archive,
-``python -mpip install redeal-master.zip`` (or whatever name it has).
+not from the releases), and run, from the directory containing the archive,
+``python -mpip install --user --upgrade redeal-master.zip`` (or whatever name
+it has).
 
 Directly running ``setup.py`` is **not** supported in either case.
 
 Now, run ``redeal --help``, or ``redeal`` to get a few hands, or ``redeal
-examples/deal1.py`` for an example simulation.  In the ``examples`` folder,
-``./run_all_examples.sh`` (or ``run_all_examples.bat`` on Windows) will go
-through all the examples.
+examples/deal1.py`` for an example simulation.  In the ``examples`` directory
+(which you can extract from the zip archive), ``./run_all_examples.sh`` (or
+``run_all_examples.bat`` on Windows) will go through all the examples.
 
 A note on the GUI
 =================
