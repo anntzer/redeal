@@ -13,7 +13,9 @@ if sys.version_info < (3,):
     from itertools import ifilter as filter
 
 try:
+    import colorama
     from colorama import Fore, Style
+    colorama.init()
     BRIGHT_GREEN = Style.BRIGHT + Fore.GREEN
     BRIGHT_RED = Style.BRIGHT + Fore.RED
     RESET_ALL = Style.RESET_ALL
