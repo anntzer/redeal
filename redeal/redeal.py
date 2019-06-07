@@ -630,8 +630,8 @@ class OpeningLeadSim(Simulation):
         self.leader = (Seat[contract_declarer[-1]] + 1).name
         contract = Contract.from_str(contract_declarer[:-1])
         self.strain = contract.strain
-        self.scoring = lambda ti, tj: scoring(contract.score(ti),
-                                              contract.score(tj))
+        self.scoring = lambda ti, tj: -scoring(contract.score(len(Rank) - ti),
+                                               contract.score(len(Rank) - tj))
 
     def initial(self, dealer):
         deal = next(filter(self.accept, iter(dealer, None)))
