@@ -21,13 +21,13 @@ some example simulations.
 A double-dummy solver function is also available through Bo Haglund's DDS
 2.8.1, which is distributed with Redeal as a git submodule.  Note that
 this requires the ``libgomp`` package.  You can also download the compiled
-shared objects from `Bo Haglund's website`_.  For Windows, the DDS DLLs are
+shared objects from `Bo Haglund's website`__.  For Windows, the DDS DLLs are
 distributed together with Redeal (the 64-bit DLL only works for Python 3.5
 or higher, let me know if you can help me fix this).  In any case, if you
 cannot compile the DDS library, Redeal will work fine but the ``dd_tricks``,
 ``dd_score`` and ``dd_all_tricks`` methods will be unavailable.
 
-.. _Bo Haglund's website: http://privat.bahnhof.se/wb758135/bridge/dll.html
+__ http://privat.bahnhof.se/wb758135/bridge/dll.html
 
 Installation
 ============
@@ -341,6 +341,15 @@ hands.  See ``examples/deal_gambling.py`` for a complete example.
 
 Finally, please note that smartstacking is only available for scripts in their
 own files, not at the command line nor in the GUI.
+
+External links
+==============
+
+Some articles written by users showcasing the use of Redeal:
+
+- `A Simulation Tutorial for Better Decisionmaking at Bridge.`__
+
+__ http://datadaydreams.com/posts/a-simulation-tutorial-for-better-decisionmaking-at-bridge/
 
 Generating deals using Python
 =============================
