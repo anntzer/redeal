@@ -1,4 +1,5 @@
-"""Deal's example 2:
+"""
+Deal's example 2:
 
 I held the south hand given below, and east opened 2C. I overcalled 2S
 red-on-red.  This procedure deals hands where east will open 2C in front of the

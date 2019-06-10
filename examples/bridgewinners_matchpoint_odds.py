@@ -1,5 +1,6 @@
 # vim: set fileencoding=utf-8
-"""An example script for redeal.
+"""
+An example script for redeal.
 
 The following problem was presented on BridgeWinners.  You hold 652 K752 53
 9862 and partner opens and shows a 22-24NT in front of you (2C-2D[waiting]-2N).
@@ -65,12 +66,12 @@ def do(deal):
     # puppet Stayman, and go through Stayman but prefer a 4-3 S fit to 3N.
     scores = dict(pass2N=pass2N, bid3N=bid3N, stayman=stayman,
                   pstayman=pstayman, majorgame=majorgame)
-    print("{} {}".format(deal, " ".join(str(scores[k]) for k in TABLE.entries)))
+    print(deal, " ".join(str(scores[k]) for k in TABLE.entries))
     # Update the cross-matchpoint table.
     TABLE.add_data(scores)
     # Keep track of how often at least one game makes.
-    if (deal.dd_tricks("4HN") >= 10 or deal.dd_tricks("4SN") >= 10 or
-        deal.dd_tricks("3NN") >= 9):
+    if (deal.dd_tricks("4HN") >= 10 or deal.dd_tricks("4SN") >= 10
+            or deal.dd_tricks("3NN") >= 9):
         TABLE2[True] += 1
     else:
         TABLE2[False] += 1

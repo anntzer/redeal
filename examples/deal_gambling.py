@@ -1,4 +1,5 @@
-"""Deal's gambling 3NT example, with smartstacking:
+"""
+Deal's gambling 3NT example, with smartstacking:
 
 Find deals where south is AK K52 98765 962 and north has a gambling 3NT
 hand.
@@ -15,7 +16,8 @@ and compare to the output of deal's ::
 from collections import Counter
 from redeal import *
 
-GamblingShape = Shape.from_cond(lambda s, h, d, c:
+GamblingShape = Shape.from_cond(
+    lambda s, h, d, c:
     s <= 3 and h <= 3 and (d >= 7 and c <= 4 or d <= 4 and c >= 7))
 
 # All suits must satisfy "gambling", so the total "gambling" should equal 4.

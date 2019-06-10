@@ -1,6 +1,5 @@
 # vim: set fileencoding=utf-8
 from __future__ import division, print_function, unicode_literals
-import inspect
 import random
 import sys
 import threading
@@ -10,9 +9,13 @@ if sys.version_info < (3,):
 else:
     import tkinter as tk
     from tkinter import ttk
-for _name in ttk.__all__: setattr(tk, _name, getattr(ttk, _name))
 
+from . import __copyright__, __fullname__
 from . import global_defs, redeal, util
+
+
+for _name in ttk.__all__:
+    setattr(tk, _name, getattr(ttk, _name))
 
 
 def check_button(master, state, **kwargs):
@@ -55,8 +58,9 @@ class Application(tk.Frame):
         tk.Label(frame, text="RNG seed").pack(side=tk.LEFT)
         seed = tk.Entry(frame, width=8)
         seed.pack(side=tk.LEFT)
-        tk.Button(frame, text="Reseed",
-                  command=lambda: random.seed(int(seed.get()))).pack(side=tk.LEFT)
+        (tk.Button(frame, text="Reseed",
+                   command=lambda: random.seed(int(seed.get())))
+         .pack(side=tk.LEFT))
         frame.pack(side=tk.TOP)
         # configurables, #2
         for dest, text in [("n", "Number of requested deals:"),
@@ -79,7 +83,8 @@ class Application(tk.Frame):
             self.seats[seat] = check_button(inner, True, text=str(seat))
             self.seats[seat].pack(side=tk.TOP)
             self.seat_entries[seat] = seat_entry = tk.Entry(inner, width=16)
-            seat_entry.insert(tk.END,
+            seat_entry.insert(
+                tk.END,
                 self.main.predeal.get(seat, redeal.H("- - - -")).to_str())
             seat_entry.pack(side=tk.TOP)
             inner.pack(side=tk.LEFT)
@@ -101,7 +106,7 @@ class Application(tk.Frame):
         inner, self.out = scrolled_text(self, height=self.out_text_height)
         inner.pack(side=tk.TOP)
         # copyright
-        (tk.Label(self, text=global_defs.__copyright__, relief=tk.SUNKEN).
+        (tk.Label(self, text=__copyright__, relief=tk.SUNKEN).
          pack(side=tk.BOTTOM, fill=tk.X))
         # end of widget creation
         self.pack()
@@ -110,8 +115,9 @@ class Application(tk.Frame):
         frame = tk.Frame(master)
         proto = "def {}{}:".format(name, signature_str)
         tk.Label(frame, text=proto).pack(side=tk.TOP, anchor="w")
-        inner, text = scrolled_text(frame, height=height if height is not None
-                                           else self.func_text_height)
+        inner, text = scrolled_text(
+            frame,
+            height=height if height is not None else self.func_text_height)
         inner.pack(side=tk.TOP)
         text.insert("end", "\t" + default)
         frame.pack(side=tk.TOP)
@@ -126,7 +132,7 @@ class Application(tk.Frame):
         redeal.Deal.set_print_only([seat for seat in global_defs.Seat
                                     if self.seats[seat].get_value()])
         _verbose = self.main.args.verbose
-        self.main.args.verbose = False # FIXME support for backspace in tk text.
+        self.main.args.verbose = False  # FIXME backspace support in tk text.
         # override configurables #1
         _n = self.main.args.n
         self.main.args.n = int(self.n.get())
@@ -142,6 +148,7 @@ class Application(tk.Frame):
             {name: util.create_func(
                 redeal, name, signature_str, text.get(1.0, tk.END))
              for name, signature_str, text in self.texts})()
+
         # simulation
         def target():
             self.main.stop_flag = False
@@ -158,6 +165,7 @@ class Application(tk.Frame):
             self.main.args.max = _max
             self.main.predeal = _predeal
             global_defs.SUITS_FORCE_UNICODE = _global_defs_SUITS_FORCE_UNICODE
+
         threading.Thread(target=target).start()
 
     def stop(self):
@@ -169,7 +177,7 @@ class Application(tk.Frame):
 
 def run_gui(main):
     root = tk.Tk()
-    root.title(global_defs.__fullname__)
+    root.title(__fullname__)
     app = Application(root, main)
     _stdout = sys.stdout
     _stderr = sys.stderr

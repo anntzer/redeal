@@ -5,8 +5,7 @@ import sys
 
 
 def create_func(module, name, signature_str, body):
-    """Create a method with the given module dict, name, arguments and body.
-    """
+    """Create a method with the given module dict, name, arguments and body."""
     if isinstance(body, type(lambda: None)):
         if inspect.ismethod(body):
             return body
@@ -23,16 +22,17 @@ def create_func(module, name, signature_str, body):
     d = {}
     try:
         exec_(defs, create_func.globals[module], d)
-    except:
+    except Exception:
         print("An invalid function definition raised:\n", file=sys.stderr)
         raise
     return d[name]
+
+
 create_func.globals = {}
 
 
 def exec_(stmt, globals, locals):
-    """The exec function/statement, as implemented by six.
-    """
+    """The exec function/statement, as implemented by six."""
     if sys.version_info < (3,):
         exec("exec {!r} in globals, locals".format(stmt))
     else:
@@ -41,7 +41,8 @@ def exec_(stmt, globals, locals):
 
 # Backported from Python 3.
 def indent(text, prefix, predicate=None):
-    """Adds 'prefix' to the beginning of selected lines in 'text'.
+    """
+    Adds 'prefix' to the beginning of selected lines in 'text'.
 
     If 'predicate' is provided, 'prefix' will only be added to the lines
     where 'predicate(line)' is True. If 'predicate' is not provided,
@@ -63,8 +64,7 @@ def n_args(func):
 
 
 class reify(object):
-    """Auto-destructing property, from Pyramid code.
-    """
+    """Auto-destructing property, from Pyramid code."""
 
     def __init__(self, wrapped, doc=None, name=None):
         self.wrapped = wrapped

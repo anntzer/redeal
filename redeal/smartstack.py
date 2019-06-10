@@ -6,7 +6,7 @@ from itertools import combinations, product
 import operator
 import random
 
-from .global_defs import *
+from .global_defs import Card, Rank, Suit
 
 
 class SmartStack(object):

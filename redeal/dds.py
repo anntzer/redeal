@@ -1,16 +1,19 @@
 # vim: set fileencoding=utf-8
 from __future__ import division, print_function
 # for pypy compatibility we do not use unicode_literals in this module
-from ctypes import *
+import ctypes
+from ctypes import POINTER, Structure, byref, c_char, c_int, c_uint
 import os
 import sys
 import warnings
 
-from .global_defs import *
+from .global_defs import Card, Rank, Seat, Strain, Suit
 
 
 def to_c_strain(strain):
-    return {Strain.C: 3, Strain.D: 2, Strain.H: 1, Strain.S: 0, Strain.N: 4}[strain]
+    return {
+        Strain.C: 3, Strain.D: 2, Strain.H: 1, Strain.S: 0, Strain.N: 4,
+    }[strain]
 
 
 def to_suit(suit):
@@ -22,15 +25,16 @@ def convert_rank(rank):
 
 
 class Deal(Structure):
-    """The deal struct.
-    """
+    """The deal struct."""
 
-    _fields_ = [("trump", c_int), # 0=S, 1=H, 2=D, 3=C, 4=NT
-                ("first", c_int), # leader: 0=N, 1=E, 2=S, 3=W
-                ("currentTrickSuit", c_int * 3),
-                ("currentTrickRank", c_int * 3), # 2-14, up to 3 cards; 0=unplayed
-                # remainCards[hand][suit] is a bit-array (2->2^2, ..., A->2^14)
-                ("remainCards", c_uint * 4 * 4)]
+    _fields_ = [
+        ("trump", c_int),  # 0=S, 1=H, 2=D, 3=C, 4=NT
+        ("first", c_int),  # leader: 0=N, 1=E, 2=S, 3=W
+        ("currentTrickSuit", c_int * 3),
+        ("currentTrickRank", c_int * 3),  # 2-14, up to 3 cards; 0=unplayed
+        # remainCards[hand][suit] is a bit-array (2->2^2, ..., A->2^14)
+        ("remainCards", c_uint * 4 * 4),
+    ]
 
     @classmethod
     def from_deal(cls, deal, strain, leader):
@@ -47,14 +51,15 @@ class Deal(Structure):
 
 
 class DealPBN(Structure):
-    """The dealPBN struct.
-    """
+    """The dealPBN struct."""
 
-    _fields_ = [("trump", c_int), # 0=S, 1=H, 2=D, 3=C, 4=NT
-                ("first", c_int), # leader: 0=N, 1=E, 2=S, 3=W
-                ("currentTrickSuit", c_int * 3),
-                ("currentTrickRank", c_int * 3), # 2-14, up to 3 cards; 0=unplayed
-                ("remainCards", c_char * 80)] # PBN-like format
+    _fields_ = [
+        ("trump", c_int),  # 0=S, 1=H, 2=D, 3=C, 4=NT
+        ("first", c_int),  # leader: 0=N, 1=E, 2=S, 3=W
+        ("currentTrickSuit", c_int * 3),
+        ("currentTrickRank", c_int * 3),  # 2-14, up to 3 cards; 0=unplayed
+        ("remainCards", c_char * 80),  # PBN-like format
+    ]
 
     @classmethod
     def from_deal(cls, deal, strain, leader):
@@ -68,8 +73,7 @@ class DealPBN(Structure):
 
 
 class FutureTricks(Structure):
-    """The futureTricks struct.
-    """
+    """The futureTricks struct."""
 
     _fields_ = [("nodes", c_int),
                 ("cards", c_int),
@@ -94,7 +98,8 @@ SolveBoardStatus = {
     -13: "Card played in current trick is also remaining",
     -14: "Wrong number of remaining cards in a hand",
     -15: "threadIndex < 0 or >=noOfThreads, noOfThreads is the configured "
-         "maximum number of threads"}
+         "maximum number of threads",
+}
 
 
 def _solve_board(deal, strain, leader, target, sol, mode):
@@ -108,8 +113,8 @@ def _solve_board(deal, strain, leader, target, sol, mode):
 
 
 def solve(deal, strain, declarer):
-    """Return the number of tricks for declarer; wraps SolveBoard.
-    """
+    """Return the number of tricks for declarer; wraps SolveBoard."""
+    _check_dll("solve")
     leader = Seat[declarer] + 1
     # find one optimal card with its score, even if only one card
     futp = _solve_board(deal, Strain[strain], leader, -1, 1, 1)
@@ -118,10 +123,11 @@ def solve(deal, strain, declarer):
 
 
 def solve_pbn(deal, strain, declarer):
-    """Return the number of tricks for declarer; wraps SolveBoardPBN.
-    """
+    """Return the number of tricks for declarer; wraps SolveBoardPBN."""
+    _check_dll("solve_pbn")
     leader = Seat[declarer] + 1
     c_deal_pbn = DealPBN.from_deal(deal, Strain[strain], leader)
+    futp = FutureTricks()
     status = dll.SolveBoardPBN(c_deal_pbn, -1, 1, 1, byref(futp), 0)
     if status != 1:
         raise Exception("SolveBoardPBN({}, ...) failed with status {} ({}).".
@@ -131,16 +137,18 @@ def solve_pbn(deal, strain, declarer):
 
 
 def valid_cards(deal, strain, leader):
-    """Return all cards that can be played.
-    """
+    """Return all cards that can be played."""
+    _check_dll("valid_cards")
     futp = _solve_board(deal, Strain[strain], Seat[leader], 0, 2, 1)
     return [Card(to_suit(futp.suit[i]), convert_rank(futp.rank[i]))
             for i in range(futp.cards)]
 
 
 def solve_all(deal, strain, leader):
-    """Return the number of tricks for declarer for each lead; wraps SolveBoard.
     """
+    Return the number of tricks for declarer for each lead; wraps SolveBoard.
+    """
+    _check_dll("solve_all")
     futp = _solve_board(deal, Strain[strain], Seat[leader], -1, 3, 1)
     return {Card(to_suit(futp.suit[i]), convert_rank(futp.rank[i])):
             futp.score[i] for i in range(futp.cards)}
@@ -149,16 +157,16 @@ def solve_all(deal, strain, leader):
 dll_name = DLL = None
 if os.name == "posix":
     dll_name = "libdds.so"
-    DLL = CDLL
+    DLL = ctypes.CDLL
 elif os.name == "nt":
-    if sys.maxsize > 2 ** 32: # 64-bit Windows
+    if sys.maxsize > 2 ** 32:  # 64-bit Windows
         if sys.version_info >= (3, 5):
             dll_name = "dds-64.dll"
         else:
             warnings.warn("For Windows 64-bit, DDS requires Python>=3.5.")
     else:
         dll_name = "dds-32.dll"
-    DLL = WinDLL
+    DLL = ctypes.WinDLL
 
 if dll_name:
     dll_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -172,12 +180,10 @@ if dll_name and os.path.exists(dll_path):
         DealPBN, c_int, c_int, c_int, POINTER(FutureTricks), c_int]
     if os.name == "posix":
         dll.SetMaxThreads(0)
+
+    def _check_dll(name):
+        return
+
 else:
-    def solve(deal, strain, declarer):
-        raise Exception("Unable to load DDS.  `solve` is unavailable.")
-
-    def valid_cards(deal, strain, leader):
-        raise Exception("Unable to load DDS.  `valid_cards` is unavailable.")
-
-    def solve_all(deal, strain, declarer):
-        raise Exception("Unable to load DDS.  `solve_all` is unavailable.")
+    def _check_dll(name):
+        raise Exception("Unable to load DDS; {} is not available".format(name))

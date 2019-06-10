@@ -1,4 +1,5 @@
-"""Deal's example 3:
+"""
+Deal's example 3:
 
 You hold the south hand: 764 J4 J753 AQJ2 and the auction has gone:
 1S(W)-1NT-2NT-3NT by the opponents, who are playing 2/1.  Choose a lead.

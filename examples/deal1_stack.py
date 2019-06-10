@@ -1,4 +1,5 @@
-"""Deal's example 1, with smartstacking:
+"""
+Deal's example 1, with smartstacking:
 
 North is 44 in the majors, short in a minor, and has 11-15HCP.
 """

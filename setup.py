@@ -1,19 +1,11 @@
 from __future__ import division, print_function
 # for distutils compatibility we do not use unicode_literals in this module
-import contextlib
 from distutils.command.build_py import build_py
 import io
 import os
 import shutil
 import subprocess
 import sys
-if sys.version_info < (3,):
-    from cStringIO import StringIO as BytesIO
-    from urllib2 import urlopen, URLError
-else:
-    from io import BytesIO
-    from urllib.request import urlopen, URLError
-from zipfile import ZipFile
 
 
 def _abort(msg):
@@ -45,7 +37,7 @@ class make_build(build_py, object):
             try:
                 os.chdir(os.path.join(base_dir, "dds", "src"))
             except OSError as exc:
-                if exc.errno == 2: # FileNotFoundError
+                if exc.errno == 2:  # FileNotFoundError
                     _abort("""\
 DDS sources are missing.
 
@@ -83,8 +75,10 @@ setup(
     author_email="anntzer.lee@gmail.com",
     packages=["redeal"],
     package_data={"redeal": PACKAGE_DATA},
-    entry_points={"console_scripts": ["redeal = redeal.__main__:console_entry"],
-                  "gui_scripts": ["redeal-gui = redeal.__main__:gui_entry"]},
+    entry_points={
+        "console_scripts": ["redeal = redeal.__main__:console_entry"],
+        "gui_scripts": ["redeal-gui = redeal.__main__:gui_entry"],
+    },
     url="http://github.com/anntzer/redeal",
     license="LICENSE.txt",
     description="A reimplementation of Thomas Andrews' Deal in Python.",

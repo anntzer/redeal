@@ -11,9 +11,9 @@ setup(
     author_email="anntzer.lee@gmail.com",
     libraries=[("dds", {"sources": []})],
     packages=["redeal"],
-    options={"build_exe":
-        {"include_files":
-            [os.path.join("redeal", "dds", "dds.dll")]}},
+    options={
+        "build_exe": {
+            "include_files": [os.path.join("redeal", "dds", "dds.dll")]}},
     executables=[Executable("freeze_executable.py", base="Win32GUI")],
     url="http://github.com/anntzer/redeal",
     license="LICENSE.txt",

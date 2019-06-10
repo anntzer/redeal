@@ -3,7 +3,6 @@ from __future__ import division, print_function, unicode_literals
 import argparse
 from argparse import Namespace
 import inspect
-from os import path
 import random
 import runpy
 import sys
@@ -14,41 +13,57 @@ from . import global_defs, gui, redeal, util
 class Main(object):
     parser = argparse.ArgumentParser(
         description="A reimplementation of Thomas Andrews' Deal in Python.")
-    parser.add_argument("--gui", action="store_true",
+    parser.add_argument(
+        "--gui", action="store_true",
         help="start the GUI")
-    parser.add_argument("-n", type=int, default=10,
+    parser.add_argument(
+        "-n", type=int, default=10,
         help="the number of requested deals")
-    parser.add_argument("--max", type=int,
+    parser.add_argument(
+        "--max", type=int,
         help="the maximum number of tries (defaults to 1000*n)")
-    parser.add_argument("-f", "--format", choices=["short", "long", "pbn"],
+    parser.add_argument(
+        "-f", "--format", choices=["short", "long", "pbn"],
         default="short", help="set diagram print style")
-    parser.add_argument("-o", "--only",
+    parser.add_argument(
+        "-o", "--only",
         default="".join(seat.name for seat in global_defs.Seat),
         help="hands to print")
-    parser.add_argument("-v", "--verbose", action="store_true",
+    parser.add_argument(
+        "-v", "--verbose", action="store_true",
         help="be verbose")
-    parser.add_argument("--seed", type=int,
+    parser.add_argument(
+        "--seed", type=int,
         help="random number generator seed")
-    parser.add_argument("script", nargs="?",
+    parser.add_argument(
+        "script", nargs="?",
         help="path to script")
     override = parser.add_argument_group(
         "arguments overriding values given in script",
         argument_default=argparse.SUPPRESS)
-    override.add_argument("-N",
+    override.add_argument(
+        "-N",
         help="predealt North hand as a string")
-    override.add_argument("-E",
+    override.add_argument(
+        "-E",
         help="predealt East hand as a string")
-    override.add_argument("-S",
+    override.add_argument(
+        "-S",
         help="predealt West hand as a string")
-    override.add_argument("-W",
+    override.add_argument(
+        "-W",
         help="predealt South hand as a string")
-    override.add_argument("--initial",
+    override.add_argument(
+        "--initial",
         help='body of "initial" function: "def initial(self): <INITIAL>"')
-    override.add_argument("--accept",
+    override.add_argument(
+        "--accept",
         help='body of "accept" function: "def accept(self, deal): <ACCEPT>"')
-    override.add_argument("--do",
+    override.add_argument(
+        "--do",
         help='body of "do" function: "def do(self, deal): <ACCEPT>"')
-    override.add_argument("--final",
+    override.add_argument(
+        "--final",
         help='body of "final" function: "def final(self, n_tries): <FINAL>"')
 
     func_defaults = [
@@ -65,8 +80,7 @@ class Main(object):
         self.args = Namespace(n=10, max=None, verbose=False)
 
     def parse_args(self, argv=None):
-        """Parse command line args.
-        """
+        """Parse command line args."""
         self.args = self.parser.parse_args(argv)
 
         random.seed(self.args.seed)
@@ -95,8 +109,10 @@ class Main(object):
             self.predeal[seat] = redeal.H(hand)
 
     _obj = object()
+
     def verbose_get(self, attr, default=_obj):
-        """Try to get an attribute:
+        """
+        Try to get an attribute:
 
         Query `self.args` first, then `self.globals`, then uses `default`;
         report if `self.verbose is set`.
@@ -116,8 +132,7 @@ class Main(object):
         return value
 
     def generate(self, simulation):
-        """Repeatedly generate and process deals until enough are accepted.
-        """
+        """Repeatedly generate and process deals until enough are accepted."""
         found = 0
         dealer = redeal.Deal.prepare(self.predeal)
         if util.n_args(simulation.initial) == 1:
@@ -142,8 +157,7 @@ class Main(object):
         simulation.final(i + 1)
 
     def run(self):
-        """Start a GUI or run a simulation.
-        """
+        """Start a GUI or run a simulation."""
         if self.args.gui:
             gui.run_gui(self)
         else:
