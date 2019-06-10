@@ -1,0 +1,32 @@
+strategy:
+  matrix:
+    Linux_py36:
+        vmImage: 'ubuntu-16.04'
+        pythonVersion: '3.6'
+    Linux_py37:
+        vmImage: 'ubuntu-16.04'
+        pythonVersion: '3.7'
+
+pool:
+  vmImage: '$(vmImage)'
+
+steps:
+
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '$(pythonVersion)'
+    architecture: 'x64'
+
+- bash: |
+    git submodule init &&
+      git submodule update &&
+      pip install --upgrade pip setuptools wheel &&
+      pip wheel --no-deps --wheel-dir dist . &&
+      pip install dist/*
+  displayName: 'Build & install'
+
+- bash: |
+    pip install coverage &&
+      cd examples &&
+      python __run_all_examples__.py --cov
+  displayName: 'Test'
