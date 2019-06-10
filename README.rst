@@ -47,9 +47,9 @@ it has).
 Directly running ``setup.py`` is **not** supported in either case.
 
 Now, run ``redeal --help``, or ``redeal`` to get a few hands, or ``redeal
-examples/deal1.py`` for an example simulation.  In the ``examples`` directory
-(which you can extract from the zip archive), ``./run_all_examples.sh`` (or
-``run_all_examples.bat`` on Windows) will go through all the examples.
+examples/deal1.py`` for an example simulation.  In the ``examples``
+directory (which you can extract from the zip archive), ``python
+__run_all_examples__.py`` will go through all the examples.
 
 A note on the GUI
 =================
