@@ -46,6 +46,12 @@ If you are using a git checkout, run
 
 On a Unix system, do not use the zip archives from github.""")
             if sys.platform.startswith("linux"):
+                # Patch dds issue #91.
+                with open("dds.cpp") as file:
+                    contents = file.read()
+                contents = contents.replace("FreeMemory();", "")
+                with open("dds.cpp", "w") as file:
+                    file.write(contents)
                 subprocess.check_call([
                     "make", "THREADING=", "CC_BOOST_LINK=",
                     "-f", "Makefiles/Makefile_linux_shared",
