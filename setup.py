@@ -1,15 +1,16 @@
-from distutils.command.build_py import build_py
-from pathlib import Path
-import shutil
-import subprocess
-import sys
-
-
 try:
     from setuptools import setup
 except ImportError:
     sys.exit("Please install setuptools by following the instructions at\n"
              "    https://pypi.python.org/pypi/setuptools")
+
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+from setuptools import Extension
+from setuptools.command.build_ext import build_ext
 
 
 if sys.platform == "win32":
@@ -20,9 +21,15 @@ else:
     PACKAGE_DATA = []
 
 
-class make_build(build_py):
-    def run(self):
-        super().run()
+class build_ext(build_ext):
+    def finalize_options(self):
+        super().finalize_options()
+        # Needs to be computed here because setuptools patches out inplace.
+        self.__dest_dir = Path(self.get_ext_fullpath("redeal._")).parent
+
+    def build_extensions(self):
+        self.distribution.ext_modules[:] = []
+        super().build_extensions()
         if sys.platform.startswith("linux") or sys.platform == "darwin":
             dds_src = Path(__file__).resolve().parent / "dds/src"
             if not dds_src.exists():
@@ -57,12 +64,11 @@ On a Unix system, do not use the zip archives from github.""")
                          "CC=gcc"], cwd=dds_src)
                 finally:
                     patched_path.write_text(contents)
-            shutil.move(dds_src / "libdds.so",
-                        Path(self.build_lib, "redeal", "libdds.so"))
+            shutil.copy2(dds_src / "libdds.so", self.__dest_dir)
 
 
 setup(
-    cmdclass={"build_py": make_build},
+    cmdclass={"build_ext": build_ext},
     name="redeal",
     version="0.2.0",
     author="Antony Lee",
@@ -79,4 +85,5 @@ setup(
     long_description=Path("README.rst").read_text(encoding="utf-8"),
     python_requires=">=3.6",
     install_requires=["colorama>=0.2.4"],
+    ext_modules=[Extension("", [])]
 )
