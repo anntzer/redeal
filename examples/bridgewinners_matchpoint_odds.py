@@ -1,4 +1,3 @@
-# vim: set fileencoding=utf-8
 """
 An example script for redeal.
 
@@ -83,4 +82,4 @@ def do(deal):
 def final(n_tries):
     TABLE.report()
     print(TABLE2)
-    print("Tries: {}".format(n_tries))
+    print(f"Tries: {n_tries}")

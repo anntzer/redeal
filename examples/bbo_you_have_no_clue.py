@@ -1,6 +1,3 @@
-# vim: set fileencoding=utf-8
-from __future__ import division
-
 from collections import Counter
 from redeal import *
 
@@ -51,4 +48,4 @@ def final(n_tries):
         print("\t".join(str(sum(list(counter.elements())) /
                             len(list(counter.elements())))
                         for counter in line))
-    print("Tries: {}".format(n_tries))
+    print(f"Tries: {n_tries}")

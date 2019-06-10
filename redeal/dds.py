@@ -1,11 +1,7 @@
-# vim: set fileencoding=utf-8
-from __future__ import division, print_function
-# for pypy compatibility we do not use unicode_literals in this module
 import ctypes
 from ctypes import POINTER, Structure, byref, c_char, c_int, c_uint
 import os
 import sys
-import warnings
 
 from .global_defs import Card, Rank, Seat, Strain, Suit
 
@@ -159,13 +155,7 @@ if os.name == "posix":
     dll_name = "libdds.so"
     DLL = ctypes.CDLL
 elif os.name == "nt":
-    if sys.maxsize > 2 ** 32:  # 64-bit Windows
-        if sys.version_info >= (3, 5):
-            dll_name = "dds-64.dll"
-        else:
-            warnings.warn("For Windows 64-bit, DDS requires Python>=3.5.")
-    else:
-        dll_name = "dds-32.dll"
+    dll_name = "dds-64.dll" if sys.maxsize > 2 ** 32 else "dds-32.dll"
     DLL = ctypes.WinDLL
 
 if dll_name:
@@ -186,4 +176,4 @@ if dll_name and os.path.exists(dll_path):
 
 else:
     def _check_dll(name):
-        raise Exception("Unable to load DDS; {} is not available".format(name))
+        raise Exception(f"Unable to load DDS; {name} is not available")

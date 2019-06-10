@@ -1,14 +1,10 @@
-# vim: set fileencoding=utf-8
-from __future__ import division, print_function, unicode_literals
 from array import array
 from bisect import bisect
 from itertools import permutations, product
 from operator import itemgetter
 import functools
 import random
-import sys
-if sys.version_info < (3,):
-    from itertools import ifilter as filter
+import statistics
 
 try:
     import colorama
@@ -38,7 +34,7 @@ for card in FULL_DECK:
 del card
 
 
-class Shape(object):
+class Shape:
     """
     A shape specification, as a 0-1 table, intended as immutable.
 
@@ -60,7 +56,7 @@ class Shape(object):
             return cls._cls_cache[init]
         except KeyError:
             self = object.__new__(cls)
-            self.table = array(str("b"))
+            self.table = array("b")
             self.table.fromlist([0] * (len(Rank) + 1) ** len(Suit))
             self.min_ls = [len(Rank) for _ in Suit]
             self.max_ls = [0 for _ in Suit]
@@ -74,7 +70,7 @@ class Shape(object):
     def from_table(cls, table, min_max_hint=None):
         """Initialize from a table."""
         self = cls()
-        self.table = array(str("b"))
+        self.table = array("b")
         self.table.fromlist(list(table))
         if min_max_hint is not None:
             self.min_ls, self.max_ls = min_max_hint
@@ -157,7 +153,7 @@ class Shape(object):
         try:
             return self._op_cache["+", other]
         except KeyError:
-            table = array(str("b"))
+            table = array("b")
             table.fromlist([x or y for x, y in zip(self.table, other.table)])
             min_ls = [min(self.min_ls[suit], other.min_ls[suit])
                       for suit in Suit]
@@ -184,7 +180,7 @@ balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
 semibalanced = balanced + Shape("(5422)") + Shape("(6322)")
 
 
-class Evaluator(object):
+class Evaluator:
     """
     Additive holding evaluator.
 
@@ -203,7 +199,7 @@ class Evaluator(object):
         elif isinstance(arg, tuple):  # Hand
             return sum(self(holding) for holding in arg)
         else:
-            raise TypeError("Cannot evaluate {}".format(arg))
+            raise TypeError(f"Cannot evaluate {arg}")
 
 
 hcp = Evaluator(4, 3, 2, 1)
@@ -214,7 +210,7 @@ controls = Evaluator(2, 1)
 controls.__name__ = "controls"
 
 
-class Deal(tuple, object):
+class Deal(tuple):
     """A deal, represented as a tuple of hands."""
 
     @classmethod
@@ -242,7 +238,7 @@ class Deal(tuple, object):
             else:
                 dealer[seat] = pre.cards
         if predeal:
-            raise Exception("Unused predeal entries: {}".format(predeal))
+            raise Exception(f"Unused predeal entries: {predeal}")
         predealt = [card for hand_cards in dealer.values()
                     for card in hand_cards()]
         predealt_set = set(predealt)
@@ -354,7 +350,7 @@ class Deal(tuple, object):
         return dds.solve_all(self, strain, leader)
 
 
-class Hand(tuple, object):
+class Hand(tuple):
     """A hand, represented as a tuple of holdings."""
 
     def __new__(cls, cards):
@@ -449,7 +445,7 @@ class Hand(tuple, object):
 A, K, Q, J, T = (Rank[rank] for rank in "AKQJT")
 
 
-class Holding(frozenset, object):
+class Holding(frozenset):
     """A one-suit holding, represented as a frozenset of card ranks."""
 
     def __new__(cls, cards):
@@ -508,7 +504,7 @@ class Holding(frozenset, object):
         return len_pt
 
 
-class Contract(object):
+class Contract:
     def __init__(self, level, strain, doubled=0, vul=False):
         if not (1 <= level <= 7 and hasattr(Strain, strain) and
                 0 <= doubled <= 2):
@@ -586,7 +582,7 @@ def imps(my, other):
     return bisect(imp_table, abs(my - other)) * (1 if my > other else -1)
 
 
-class Simulation(object):
+class Simulation:
     """The default simulation."""
 
     def initial(self):
@@ -599,7 +595,7 @@ class Simulation(object):
         print(format(deal, ""))  # Unicode on Python 2.
 
     def final(self, n_tries):
-        print("Tries: {}".format(n_tries))
+        print(f"Tries: {n_tries}")
 
 
 class OpeningLeadSim(Simulation):
@@ -625,7 +621,7 @@ class OpeningLeadSim(Simulation):
         self.payoff.report()
 
 
-class Payoff(object):
+class Payoff:
     """A payoff table for comparing multiple strategies."""
 
     def __init__(self, entries, diff):
@@ -645,12 +641,14 @@ class Payoff(object):
 
     def report(self):
         """Pretty-print a payoff table."""
-        means_stderrs = [[(mean(score), stderr(score)) for score in line]
+        means_stderrs = [[(statistics.mean(score),
+                           statistics.stdev(score) / len(score) ** (1/2))
+                          for score in line]
                          for line in self.table]
         print(
-            "\t" + "".join("{:.7}\t".format(entry) for entry in self.entries))
+            "\t" + "".join(f"{entry:.7}\t" for entry in self.entries))
         for i, (entry, line) in enumerate(zip(self.entries, means_stderrs)):
-            print("{:.7}".format(entry),
+            print(f"{entry:.7}",
                   *("{}{:+.2f}{}".format(
                       BRIGHT_GREEN if mean > stderr
                       else BRIGHT_RED if mean < -stderr
@@ -660,14 +658,6 @@ class Payoff(object):
                     for j, (mean, stderr) in enumerate(line)),
                   sep="\t")
             print("",
-                  *("({:.2f})".format(stderr) if i != j else ""
+                  *(f"({stderr:.2f})" if i != j else ""
                     for j, (mean, stderr) in enumerate(line)),
                   sep="\t")
-
-
-def mean(l):
-    return sum(l) / len(l)
-
-
-def stderr(l):
-    return ((mean([s ** 2 for s in l]) - mean(l) ** 2) / len(l)) ** (1/2)

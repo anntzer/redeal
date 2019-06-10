@@ -1,16 +1,13 @@
-# vim: set fileencoding=utf-8
-from __future__ import division, print_function, unicode_literals
 import argparse
 from argparse import Namespace
 import inspect
 import random
 import runpy
-import sys
 
 from . import global_defs, gui, redeal, util
 
 
-class Main(object):
+class Main:
     parser = argparse.ArgumentParser(
         description="A reimplementation of Thomas Andrews' Deal in Python.")
     parser.add_argument(
@@ -68,8 +65,6 @@ class Main(object):
 
     func_defaults = [
         (func.__name__,
-         inspect.formatargspec(*inspect.getargspec(func))
-         if sys.version_info < (3,) else
          str(inspect.signature(func)),
          inspect.getsource(func).split("\n", 1)[1].lstrip())
         for func in (getattr(redeal.Simulation, fname)
@@ -89,11 +84,6 @@ class Main(object):
             self.script_dict = {}
         else:
             self.script_dict = runpy.run_path(self.args.script)
-            if sys.version_info < (3,):  # Workaround Py2 bug(?) in run_path?
-                for func_name, _, _ in self.func_defaults:
-                    func = self.script_dict.get(func_name)
-                    if func:
-                        func.func_globals.update(self.script_dict)
 
         self.given_funcs = [
             (name, signature_str, self.verbose_get(name, body))
@@ -125,7 +115,7 @@ class Main(object):
             except KeyError:
                 if default is not self._obj:
                     if self.args.verbose:
-                        print("Using default for {}.".format(attr))
+                        print(f"Using default for {attr}.")
                     return default
                 else:
                     raise
@@ -135,10 +125,12 @@ class Main(object):
         """Repeatedly generate and process deals until enough are accepted."""
         found = 0
         dealer = redeal.Deal.prepare(self.predeal)
-        if util.n_args(simulation.initial) == 1:
-            simulation.initial(dealer)
-        else:
+        try:
+            inspect.signature(simulation.initial).bind(dealer)
+        except TypeError:
             simulation.initial()
+        else:
+            simulation.initial(dealer)
         for i in range(self.args.max or 1000 * self.args.n):
             if self.stop_flag:
                 break

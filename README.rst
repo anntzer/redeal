@@ -15,17 +15,16 @@ can even solve the hands it has generated for you. Unfortunately, I have never
 really liked the language Deal uses for scripting: Tcl.  Redeal is thus my
 rewrite of Deal using another language: Python.
 
-Redeal runs under Python 2.7 or higher.  See the ``examples/`` directory for
+Redeal runs under Python 3.6 or higher.  See the ``examples/`` directory for
 some example simulations.
 
 A double-dummy solver function is also available through Bo Haglund's DDS
-2.8.1, which is distributed with Redeal as a git submodule.  Note that
+2.9.0, which is distributed with Redeal as a git submodule.  Note that
 this requires the ``libgomp`` package.  You can also download the compiled
 shared objects from `Bo Haglund's website`__.  For Windows, the DDS DLLs are
-distributed together with Redeal (the 64-bit DLL only works for Python 3.5
-or higher, let me know if you can help me fix this).  In any case, if you
-cannot compile the DDS library, Redeal will work fine but the ``dd_tricks``,
-``dd_score`` and ``dd_all_tricks`` methods will be unavailable.
+distributed together with Redeal.  In any case, if you cannot compile the
+DDS library, Redeal will work fine but the ``dd_tricks``, ``dd_score`` and
+``dd_all_tricks`` methods will be unavailable.
 
 __ http://privat.bahnhof.se/wb758135/bridge/dll.html
 

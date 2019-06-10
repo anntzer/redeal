@@ -1,7 +1,4 @@
-# vim: set fileencoding=utf-8
-from __future__ import division, print_function, unicode_literals
 from collections import namedtuple
-
 from enum import Enum
 import itertools
 import sys
@@ -23,10 +20,8 @@ class Suit(Enum):
 
     def __init__(self, value, sym, unicode_sym):
         self._value_ = value
-        self._sym = (unicode_sym
-                     if (sys.version_info > (3,)
-                         and sys.stdout.encoding.lower() == "utf-8")
-                     else sym)
+        self._sym = (
+            unicode_sym if sys.stdout.encoding.lower() == "utf-8" else sym)
         self._unicode_sym = unicode_sym
 
     def __str__(self):

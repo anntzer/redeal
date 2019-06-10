@@ -1,21 +1,11 @@
-# vim: set fileencoding=utf-8
-from __future__ import division, print_function, unicode_literals
 import random
 import sys
 import threading
-if sys.version_info < (3,):
-    import Tkinter as tk
-    import ttk
-else:
-    import tkinter as tk
-    from tkinter import ttk
+import tkinter as tk
+from tkinter import ttk
 
 from . import __copyright__, __fullname__
 from . import global_defs, redeal, util
-
-
-for _name in ttk.__all__:
-    setattr(tk, _name, getattr(ttk, _name))
 
 
 def check_button(master, state, **kwargs):
@@ -49,8 +39,8 @@ class Application(tk.Frame):
         # create widgets
         # configurables, #1
         frame = tk.Frame(self)
-        self.format = tk.Combobox(frame, values=["short", "long", "pbn"],
-                                  text="long output for diagrams")
+        self.format = ttk.Combobox(frame, values=["short", "long", "pbn"],
+                                   text="long output for diagrams")
         self.format.set("short")
         self.format.pack(side=tk.LEFT)
         frame.pack(side=tk.TOP)
@@ -113,7 +103,7 @@ class Application(tk.Frame):
 
     def create_text(self, master, name, signature_str, default, height=None):
         frame = tk.Frame(master)
-        proto = "def {}{}:".format(name, signature_str)
+        proto = f"def {name}{signature_str}:"
         tk.Label(frame, text=proto).pack(side=tk.TOP, anchor="w")
         inner, text = scrolled_text(
             frame,
@@ -182,7 +172,7 @@ def run_gui(main):
     _stdout = sys.stdout
     _stderr = sys.stderr
 
-    class TkText(object):
+    class TkText:
         def write(self, text):
             app.out.insert(tk.END, text)
 

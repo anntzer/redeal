@@ -1,4 +1,3 @@
-# vim: set fileencoding=utf-8
 from bisect import bisect
 from collections import Counter
 from functools import reduce
@@ -9,7 +8,7 @@ import random
 from .global_defs import Card, Rank, Suit
 
 
-class SmartStack(object):
+class SmartStack:
     def __init__(self, shape, evaluator, values, predealt=None):
         self._shape = shape
         self._evaluator = evaluator

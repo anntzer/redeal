@@ -1,23 +1,15 @@
-from __future__ import division, print_function
-# for distutils compatibility we do not use unicode_literals in this module
 from distutils.command.build_py import build_py
-import io
-import os
+from pathlib import Path
 import shutil
 import subprocess
 import sys
 
 
-def _abort(msg):
-    print(msg, file=sys.stderr)
-    sys.exit(1)
-
-
 try:
     from setuptools import setup
 except ImportError:
-    _abort("Please install setuptools by following the instructions at\n"
-           "    https://pypi.python.org/pypi/setuptools")
+    sys.exit("Please install setuptools by following the instructions at\n"
+             "    https://pypi.python.org/pypi/setuptools")
 
 
 if sys.platform == "win32":
@@ -28,17 +20,13 @@ else:
     PACKAGE_DATA = []
 
 
-class make_build(build_py, object):
+class make_build(build_py):
     def run(self):
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        super(make_build, self).run()
+        super().run()
         if sys.platform.startswith("linux") or sys.platform == "darwin":
-            orig_dir = os.getcwd()
-            try:
-                os.chdir(os.path.join(base_dir, "dds", "src"))
-            except OSError as exc:
-                if exc.errno == 2:  # FileNotFoundError
-                    _abort("""\
+            dds_src = Path(__file__).resolve().parent / "dds/src"
+            if not dds_src.exists():
+                sys.exit("""\
 DDS sources are missing.
 
 If you are using a git checkout, run
@@ -46,31 +34,31 @@ If you are using a git checkout, run
 
 On a Unix system, do not use the zip archives from github.""")
             if sys.platform.startswith("linux"):
-                # Patch dds issue #91.
-                with open("dds.cpp") as file:
-                    contents = file.read()
-                contents = contents.replace("FreeMemory();", "")
-                with open("dds.cpp", "w") as file:
-                    file.write(contents)
-                subprocess.check_call([
-                    "make", "THREADING=", "CC_BOOST_LINK=",
-                    "-f", "Makefiles/Makefile_linux_shared",
-                ])
+                patched_path = dds_src / "dds.cpp"
+                contents = patched_path.read_text()
+                try:
+                    patched_path.write_text(  # Patch dds issue #91.
+                        contents.replace("FreeMemory();", ""))
+                    subprocess.check_call(
+                        ["make", "-f", "Makefiles/Makefile_linux_shared",
+                         "THREADING=", "CC_BOOST_LINK="], cwd=dds_src)
+                finally:  # Restore the sources.
+                    patched_path.write_text(contents)
             elif sys.platform == "darwin":
-                with open("Makefiles/Makefile_Mac_clang") as file:
-                    contents = file.read()
-                contents = contents.replace(
-                    "ar rcs $(STATIC_LIB) $(O_FILES)\n",
-                    "$(CC) -dynamiclib -o lib$(DLLBASE).so $(O_FILES) -lc++\n")
-                with open("Makefiles/Makefile_Mac_clang_patched", "w") as file:
-                    file.write(contents)
-                subprocess.check_call(
-                    ["make", "-f", "Makefiles/Makefile_Mac_clang_patched",
-                     "CC=gcc"])
-                os.remove("Makefiles/Makefile_Mac_clang_patched")
-            os.chdir(orig_dir)
-            shutil.move(os.path.join(base_dir, "dds", "src", "libdds.so"),
-                        os.path.join(self.build_lib, "redeal", "libdds.so"))
+                patched_path = dds_src / "Makefiles/Makefile_Mac_clang"
+                contents = patched_path.read_text()
+                try:
+                    patched_path.write_text(contents.replace(
+                        "ar rcs $(STATIC_LIB) $(O_FILES)\n",
+                        "$(CC) "
+                        "-dynamiclib -o lib$(DLLBASE).so $(O_FILES) -lc++\n"))
+                    subprocess.check_call(
+                        ["make", "-f", "Makefiles/Makefile_Mac_clang",
+                         "CC=gcc"], cwd=dds_src)
+                finally:
+                    patched_path.write_text(contents)
+            shutil.move(dds_src / "libdds.so",
+                        Path(self.build_lib, "redeal", "libdds.so"))
 
 
 setup(
@@ -88,8 +76,7 @@ setup(
     url="http://github.com/anntzer/redeal",
     license="LICENSE.txt",
     description="A reimplementation of Thomas Andrews' Deal in Python.",
-    long_description=io.open("README.rst", encoding="utf-8").read(),
-    install_requires=
-        ["colorama>=0.2.4"] +
-        (["enum34>=1.0.4"] if sys.version_info < (3, 4) else [])
+    long_description=Path("README.rst").read_text(encoding="utf-8"),
+    python_requires=">=3.6",
+    install_requires=["colorama>=0.2.4"],
 )
