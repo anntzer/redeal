@@ -4,7 +4,7 @@ import inspect
 import random
 import runpy
 
-from . import global_defs, gui, redeal, util
+from . import global_defs, redeal, util
 
 
 class Main:
@@ -151,6 +151,7 @@ class Main:
     def run(self):
         """Start a GUI or run a simulation."""
         if self.args.gui:
+            from . import gui  # Not needed otherwise, and absent on CI.
             gui.run_gui(self)
         else:
             try:
