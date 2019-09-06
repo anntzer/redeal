@@ -359,8 +359,10 @@ class Hand(tuple):
             raise ValueError("More than {} cards in a hand".format(len(Rank)))
         holdings = [[] for _ in Suit]
         for card in cards:
-            holdings[card.suit].append(card)
-        return tuple.__new__(cls, map(Holding, holdings))
+            # ._value_ is much faster than .value (or .__index__).
+            holdings[card.suit._value_].append(card.rank._value_)
+        # Much faster, but yuck.
+        return tuple.__new__(cls, [frozenset.__new__(Holding, holding) for holding in holdings])
 
     @classmethod
     def from_str(cls, init):
