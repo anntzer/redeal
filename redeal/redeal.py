@@ -24,7 +24,7 @@ from .smartstack import SmartStack
 __all__ = ["Shape", "balanced", "semibalanced",
            "Evaluator", "hcp", "qp", "controls",
            "Rank", "A", "K", "Q", "J", "T",
-           "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
+           "Card", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
            "Simulation", "OpeningLeadSim"]
 
@@ -194,8 +194,9 @@ class Evaluator:
         self._ge = kwargs.pop("ge", None)
 
     def __call__(self, arg):
-        if isinstance(arg, frozenset):  # Holding
-            return sum(self._vals[rank] for rank in arg)
+        if isinstance(arg, Rank):
+            return sum(self._vals[idx] for idx, rank in enumerate(Rank)
+                       if arg & rank)
         elif isinstance(arg, tuple):  # Hand
             return sum(self(holding) for holding in arg)
         else:
@@ -350,6 +351,10 @@ class Deal(tuple):
         return dds.solve_all(self, strain, leader)
 
 
+_suit_values = [(suit, suit.value) for suit in Suit]
+_rank_values = [(rank, rank.value) for rank in Rank]
+
+
 class Hand(tuple):
     """A hand, represented as a tuple of holdings."""
 
@@ -357,12 +362,12 @@ class Hand(tuple):
         """Initialize with a sequence of :class:`Cards <Card>`."""
         if len(cards) > len(Rank):
             raise ValueError("More than {} cards in a hand".format(len(Rank)))
-        holdings = [[] for _ in Suit]
+        holdings = [0] * len(Suit)
         for card in cards:
             # ._value_ is much faster than .value (or .__index__).
-            holdings[card.suit._value_].append(card.rank._value_)
+            holdings[card.suit._value_] |= card.rank._value_
         # Much faster, but yuck.
-        return tuple.__new__(cls, [frozenset.__new__(Holding, holding) for holding in holdings])
+        return tuple.__new__(cls, map(Rank, holdings))
 
     @classmethod
     def from_str(cls, init):
@@ -404,7 +409,10 @@ class Hand(tuple):
 
     def cards(self):
         """Return ``self`` as a list of card objects."""
-        return [Card(suit, rank) for suit in Suit for rank in self[suit]]
+        return [Card(suit, rank)
+                for suit, suit_value in _suit_values
+                for rank, rank_value in _rank_values
+                if self[suit_value]._value_ & rank_value]
 
     def __contains__(self, other):
         """Specialize the case of checking for containing a :class:`Card`."""
@@ -447,63 +455,60 @@ class Hand(tuple):
 A, K, Q, J, T = (Rank[rank] for rank in "AKQJT")
 
 
-class Holding(frozenset):
-    """A one-suit holding, represented as a frozenset of card ranks."""
-
-    def __new__(cls, cards):
-        """Initialize with a sequence of :class:`Cards <Card>`."""
-        return frozenset.__new__(cls, (card.rank for card in cards))
-
-    def __str__(self):
-        return "".join(rank.name for rank in sorted(self, reverse=True))
-
-    hcp = util.reify(hcp, "The holding's HCP.")
-    qp = util.reify(qp, "The holding's QP.")
-
-    @util.reify
-    def losers(self):
-        """The holding's loser count."""
-        if len(self) == 0:
-            return 0
-        losers = 0
-        if not any(rank == A for rank in self):
+def _losers(holding):
+    """The holding's loser count."""
+    n = len(holding)
+    if n == 0:
+        return 0
+    losers = 0
+    if not A & holding:
+        losers += 1
+    if n >= 2 and not K & holding:
+        losers += 1
+    if n >= 3:
+        if not Q & holding:
             losers += 1
-        if len(self) >= 2 and not any(rank == K for rank in self):
-            losers += 1
-        if len(self) >= 3:
-            if not any(rank == Q for rank in self):
-                losers += 1
-            elif (losers == 2 and
-                  not any(rank in [J, T] for rank in self)):
-                losers += 0.5
-        return losers
+        elif losers == 2 and not (J | T) & holding:
+            losers += 0.5
+    return losers
 
-    @util.reify
-    def pt(self):
-        """
-        The holding's `Pavlicek playing tricks`__.
 
-        __ http://www.rpbridge.net/8j17.htm#3
-        """
-        len_pt = max(len(self) - 3, 0)
-        if {A, K, Q} <= self:
-            return 3 + len_pt
-        if {A, K, J} <= self or {A, Q, J} <= self:
-            return 2.5 + len_pt
-        if {A, K} <= self or {A, Q, T} <= self or {K, Q, J} <= self:
-            return 2 + len_pt
-        if {A, Q} <= self or {K, J, T} <= self:
-            return 1.5 + len_pt
-        if {A, J} <= self or {K, Q} <= self and len(self) >= 3:
-            return 1.5 + len_pt
-        if {A} <= self or {K, Q} <= self or {K, J} <= self:
-            return 1 + len_pt
-        if {K, T} <= self or {Q, J} <= self and len(self) >= 3:
-            return 1 + len_pt
-        if ({K} <= self and len(self) >= 2 or
-                ({Q} <= self or {J, T} in self) and len(self) >= 3):
-            return .5 + len_pt
-        return len_pt
+def _pt(holding):
+    """
+    The holding's `Pavlicek playing tricks`__.
+
+    __ http://www.rpbridge.net/8j17.htm#3
+    """
+    len_pt = max(len(holding) - 3, 0)
+    n = len(holding)
+    a = A & holding
+    k = K & holding
+    q = Q & holding
+    j = J & holding
+    t = T & holding
+    if a and k and q:
+        return 3 + len_pt
+    if a and k and j or a and q and j:
+        return 2.5 + len_pt
+    if a and k or a and q and t or k and q and j:
+        return 2 + len_pt
+    if a and q or k and j and t:
+        return 1.5 + len_pt
+    if a and j or k and q and n >= 3:
+        return 1.5 + len_pt
+    if a or k and q or k and j:
+        return 1 + len_pt
+    if k and t or q and j and n >= 3:
+        return 1 + len_pt
+    if k and n >= 2 or (q or j and t) and n >= 3:
+        return .5 + len_pt
+    return len_pt
+
+
+Rank.hcp = util.reify(hcp, "The holding's HCP.")
+Rank.qp = util.reify(qp, "The holding's QP.")
+Rank.losers = util.reify(_losers)
+Rank.pt = util.reify(_pt)
 
 
 class Contract:

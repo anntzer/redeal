@@ -1,5 +1,7 @@
 from collections import namedtuple
-from enum import Enum
+import enum
+from enum import Enum, Flag
+import functools
 import itertools
 import sys
 
@@ -46,13 +48,15 @@ Strain.__gt__ = lambda self, other: self.value > other.value
 Strain.__ge__ = lambda self, other: self.value >= other.value
 
 
-Rank = Enum("Rank", zip("23456789TJQKA", range(2, 15)))
-Rank.__str__ = lambda self: self.name
-Rank.__index__ = lambda self: self.value - 2
+Rank = Flag("Rank", list("23456789TJQKA"))
+Rank.__str__ = functools.lru_cache()(
+    lambda self: "".join(rank.name for rank in reversed(Rank) if self & rank))
+Rank.__index__ = lambda self: self.value.bit_length() - 1
 Rank.__lt__ = lambda self, other: self.value < other.value
 Rank.__le__ = lambda self, other: self.value <= other.value
 Rank.__gt__ = lambda self, other: self.value > other.value
 Rank.__ge__ = lambda self, other: self.value >= other.value
+Rank.__len__ = lambda self: sum(c == 1 for c in bin(self.value))
 
 
 Card = namedtuple("Card", ["suit", "rank"])
@@ -61,3 +65,26 @@ Card.__str__ = lambda self: "{0.suit}{0.rank}".format(self)
 Card.__format__ = lambda self, fmt: format(str(self), fmt)
 FULL_DECK = {Card(suit=suit, rank=rank)
              for suit, rank in itertools.product(Suit, Rank)}
+
+
+if sys.version_info < (3, 9):
+
+    def _decompose(flag, value):  # bpo-38045, minus IntFlag handling.
+        """Extract all members from the value."""
+        # _decompose is only called if the value is not named
+        not_covered = value
+        members = []
+        for member in flag:
+            member_value = member.value
+            if member_value and member_value & value == member_value:
+                members.append(member)
+                not_covered &= ~member_value
+        if not members and value in flag._value2member_map_:
+            members.append(flag._value2member_map_[value])
+        members.sort(key=lambda m: m._value_, reverse=True)
+        if len(members) > 1 and members[0].value == value:
+            # we have the breakdown, don't need the value member itself
+            members.pop(0)
+        return members, not_covered
+
+    enum._decompose = _decompose
