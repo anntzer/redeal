@@ -4,6 +4,7 @@ except ImportError:
     sys.exit("Please install setuptools by following the instructions at\n"
              "    https://pypi.python.org/pypi/setuptools")
 
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -30,7 +31,7 @@ class build_ext(build_ext):
     def build_extensions(self):
         self.distribution.ext_modules[:] = []
         super().build_extensions()
-        if sys.platform.startswith("linux") or sys.platform == "darwin":
+        if os.name == "posix":
             dds_src = Path(__file__).resolve().parent / "dds/src"
             if not dds_src.exists():
                 sys.exit("""\
