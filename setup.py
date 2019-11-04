@@ -49,7 +49,7 @@ On a Unix system, do not use the zip archives from github.""")
                         contents.replace("FreeMemory();", ""))
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_linux_shared",
-                         "THREADING=", "CC_BOOST_LINK="], cwd=dds_src)
+                         "THREADING=", "THREAD_LINK="], cwd=dds_src)
                 finally:  # Restore the sources.
                     patched_path.write_text(contents)
             elif sys.platform == "darwin":
@@ -62,7 +62,7 @@ On a Unix system, do not use the zip archives from github.""")
                         "-dynamiclib -o lib$(DLLBASE).so $(O_FILES) -lc++\n"))
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_Mac_clang_shared",
-                         "CC=gcc"], cwd=dds_src)
+                         "CC=gcc", "THREADING=", "THREAD_LINK="], cwd=dds_src)
                 finally:
                     patched_path.write_text(contents)
             shutil.copy2(dds_src / "libdds.so", self.__dest_dir)
