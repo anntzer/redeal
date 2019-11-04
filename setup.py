@@ -4,6 +4,7 @@ except ImportError:
     sys.exit("Please install setuptools by following the instructions at\n"
              "    https://pypi.python.org/pypi/setuptools")
 
+import contextlib
 import os
 from pathlib import Path
 import shutil
@@ -20,6 +21,16 @@ else:
     # On a POSIX system, libdds.so will be moved to its correct location by
     # make_build.
     PACKAGE_DATA = []
+
+
+@contextlib.contextmanager
+def patched_path(path, old, new):
+    contents = path.read_text()
+    try:
+        path.write_text(contents.replace(old, new))
+        yield
+    finally:
+        path.write_text(contents)
 
 
 class build_ext(build_ext):
@@ -42,27 +53,18 @@ If you are using a git checkout, run
 
 On a Unix system, do not use the zip archives from github.""")
             if sys.platform.startswith("linux"):
-                patched_path = dds_src / "dds.cpp"
-                contents = patched_path.read_text()
-                try:
-                    patched_path.write_text(  # Patch dds issue #91.
-                        contents.replace("FreeMemory();", ""))
+                # Patch dds issue #91.
+                with patched_path(dds_src / "dds.cpp", "FreeMemory();", ""):
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_linux_shared",
                          "THREADING=", "THREAD_LINK="], cwd=dds_src)
-                finally:  # Restore the sources.
-                    patched_path.write_text(contents)
             elif sys.platform == "darwin":
-                patched_path = dds_src / "Makefiles/Makefile_Mac_clang_shared"
-                contents = patched_path.read_text()
-                try:
-                    patched_path.write_text(contents.replace(
-                        "$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++"))
+                with patched_path(
+                        dds_src / "Makefiles/Makefile_Mac_clang_shared",
+                        "$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++"):
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_Mac_clang_shared",
                          "CC=gcc", "THREADING=", "THREAD_LINK="], cwd=dds_src)
-                finally:
-                    patched_path.write_text(contents)
             shutil.copy2(dds_src / "libdds.so", self.__dest_dir)
 
 
