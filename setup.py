@@ -57,9 +57,7 @@ On a Unix system, do not use the zip archives from github.""")
                 contents = patched_path.read_text()
                 try:
                     patched_path.write_text(contents.replace(
-                        "ar rcs $(STATIC_LIB) $(O_FILES)\n",
-                        "$(CC) "
-                        "-dynamiclib -o lib$(DLLBASE).so $(O_FILES) -lc++\n"))
+                        "$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++"))
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_Mac_clang_shared",
                          "CC=gcc", "THREADING=", "THREAD_LINK="], cwd=dds_src)
