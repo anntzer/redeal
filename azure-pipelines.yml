@@ -1,3 +1,7 @@
+# Proper manylinux builds would require building in a manylinux image, then
+# unpacking, moving out purelib, and repacking (using a recent version of wheel),
+# then returning to the image to retag.
+
 strategy:
   matrix:
     Linux_py36:
