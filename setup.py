@@ -53,7 +53,7 @@ On a Unix system, do not use the zip archives from github.""")
                 finally:  # Restore the sources.
                     patched_path.write_text(contents)
             elif sys.platform == "darwin":
-                patched_path = dds_src / "Makefiles/Makefile_Mac_clang"
+                patched_path = dds_src / "Makefiles/Makefile_Mac_clang_shared"
                 contents = patched_path.read_text()
                 try:
                     patched_path.write_text(contents.replace(
@@ -61,7 +61,7 @@ On a Unix system, do not use the zip archives from github.""")
                         "$(CC) "
                         "-dynamiclib -o lib$(DLLBASE).so $(O_FILES) -lc++\n"))
                     subprocess.check_call(
-                        ["make", "-f", "Makefiles/Makefile_Mac_clang",
+                        ["make", "-f", "Makefiles/Makefile_Mac_clang_shared",
                          "CC=gcc"], cwd=dds_src)
                 finally:
                     patched_path.write_text(contents)
