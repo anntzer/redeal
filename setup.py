@@ -24,13 +24,15 @@ else:
 
 
 @contextlib.contextmanager
-def patched_path(path, old, new):
-    contents = path.read_text()
+def patched_path(path, *pairs):
+    orig_contents = contents = path.read_text()
+    for old, new in pairs:
+        contents = contents.replace(old, new)
     try:
-        path.write_text(contents.replace(old, new))
+        path.write_text(contents)
         yield
     finally:
-        path.write_text(contents)
+        path.write_text(orig_contents)
 
 
 class build_ext(build_ext):
@@ -54,14 +56,18 @@ If you are using a git checkout, run
 On a Unix system, do not use the zip archives from github.""")
             if sys.platform.startswith("linux"):
                 # Patch dds issue #91.
-                with patched_path(dds_src / "dds.cpp", "FreeMemory();", ""):
+                with patched_path(
+                         dds_src / "Makefiles/Makefile_linux_shared",
+                         ("$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)")), \
+                     patched_path(dds_src / "dds.cpp", ("FreeMemory();", "")):
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_linux_shared",
                          "THREADING=", "THREAD_LINK="], cwd=dds_src)
             elif sys.platform == "darwin":
                 with patched_path(
                         dds_src / "Makefiles/Makefile_Mac_clang_shared",
-                        "$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++"):
+                        ("$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)"),
+                        ("$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++")):
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_Mac_clang_shared",
                          "CC=gcc", "THREADING=", "THREAD_LINK="], cwd=dds_src)
