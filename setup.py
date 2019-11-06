@@ -5,6 +5,7 @@ except ImportError:
              "    https://pypi.python.org/pypi/setuptools")
 
 import contextlib
+from contextlib import ExitStack
 import os
 from pathlib import Path
 import shutil
@@ -24,15 +25,31 @@ else:
 
 
 @contextlib.contextmanager
-def patched_path(path, *pairs):
-    orig_contents = contents = path.read_text()
-    for old, new in pairs:
-        contents = contents.replace(old, new)
+def patched_path(path, old, new):
+    contents = path.read_text()
+    if old not in contents:
+        raise Exception(f"Invalid patch: {old}")
     try:
-        path.write_text(contents)
+        path.write_text(contents.replace(old, new))
         yield
     finally:
-        path.write_text(orig_contents)
+        path.write_text(contents)
+
+
+patches = [
+    ("Makefiles/Makefile_linux_shared",
+     "$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)"),
+    ("System.cpp",  # redeal issue 19.
+     "free -k | tail -n+3 | head -n1 | awk '{print $NF}'",
+     r"grep -Po 'MemAvailable:\\s*\\K[0-9]*' /proc/meminfo || "
+     r"grep -Po 'MemFree:\\s*\\K[0-9]*' /proc/meminfo"),
+    ("dds.cpp",  # dds issue #91.
+     "FreeMemory();", ""),
+    ("Makefiles/Makefile_Mac_clang_shared",
+     "$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)"),
+    ("Makefiles/Makefile_Mac_clang_shared",
+     "$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++"),
+]
 
 
 class build_ext(build_ext):
@@ -54,20 +71,14 @@ If you are using a git checkout, run
     git submodule init && git submodule update
 
 On a Unix system, do not use the zip archives from github.""")
-            if sys.platform.startswith("linux"):
-                # Patch dds issue #91.
-                with patched_path(
-                         dds_src / "Makefiles/Makefile_linux_shared",
-                         ("$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)")), \
-                     patched_path(dds_src / "dds.cpp", ("FreeMemory();", "")):
+            with ExitStack() as stack:
+                for name, old, new in patches:
+                    stack.enter_context(patched_path(dds_src / name, old, new))
+                if sys.platform.startswith("linux"):
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_linux_shared",
                          "THREADING=", "THREAD_LINK="], cwd=dds_src)
-            elif sys.platform == "darwin":
-                with patched_path(
-                        dds_src / "Makefiles/Makefile_Mac_clang_shared",
-                        ("$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)"),
-                        ("$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++")):
+                elif sys.platform == "darwin":
                     subprocess.check_call(
                         ["make", "-f", "Makefiles/Makefile_Mac_clang_shared",
                          "CC=gcc", "THREADING=", "THREAD_LINK="], cwd=dds_src)
