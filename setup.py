@@ -1,9 +1,3 @@
-try:
-    from setuptools import setup
-except ImportError:
-    sys.exit("Please install setuptools by following the instructions at\n"
-             "    https://pypi.python.org/pypi/setuptools")
-
 import contextlib
 from contextlib import ExitStack
 import os
@@ -11,6 +5,12 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+
+try:
+    from setuptools import setup
+except ImportError:
+    sys.exit("Please install setuptools by following the instructions at\n"
+             "    https://pypi.python.org/pypi/setuptools")
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
