@@ -77,8 +77,8 @@ Run ``redeal`` at the command line to deal 10 hands, or ``redeal -n N`` to deal
     Tries: 2
 
 Note that if your terminal does not support UTF-8 (e.g. Windows' Command
-Prompt, or possibly Mac's Terminal.app), or if using Python 2, suit symbols
-will be replaced by letters -- but the rest should work fine.
+Prompt, or possibly Mac's Terminal.app), suit symbols will be replaced by
+letters -- but the rest should work fine.
 
 Here, the number of tries is the same as the number of hands, as any hand is
 accepted.  This may not be the case in more complex cases.

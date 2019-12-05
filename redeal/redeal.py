@@ -592,7 +592,7 @@ class Simulation:
         return True
 
     def do(self, deal):
-        print(format(deal, ""))  # Unicode on Python 2.
+        print(deal)
 
     def final(self, n_tries):
         print(f"Tries: {n_tries}")
