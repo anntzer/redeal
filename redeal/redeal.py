@@ -1,5 +1,6 @@
 from array import array
 from bisect import bisect
+from collections import Counter
 from itertools import permutations, product
 from operator import itemgetter
 import functools
@@ -241,16 +242,14 @@ class Deal(tuple):
             raise Exception(f"Unused predeal entries: {predeal}")
         predealt = [card for hand_cards in dealer.values()
                     for card in hand_cards()]
-        predealt_set = set(predealt)
-        if len(predealt_set) < len(predealt):
+        if max(Counter(predealt).values(), default=0) > 1:
             raise Exception("Same card dealt twice.")
         if seat_smartstack:
             seat, smartstack = seat_smartstack
             smartstack._predealt = predealt
             dealer[seat] = smartstack
             dealer["_smartstack"] = seat
-        dealer["_remaining"] = [card for card in FULL_DECK
-                                if card not in predealt_set]
+        dealer["_remaining"] = sorted({*FULL_DECK} - {*predealt})
         return functools.partial(cls, dealer)
 
     def __new__(cls, dealer, accept_func=None, tries=1000):
@@ -270,7 +269,7 @@ class Deal(tuple):
                 pass
             else:
                 hands[seat] = hand = Hand(dealer[seat]())
-                cards = list(set(cards).difference(hand.cards()))
+                cards = sorted({*cards} - {*hand.cards()})
             random.shuffle(cards)
             for seat in Seat:
                 if hands[seat]:
