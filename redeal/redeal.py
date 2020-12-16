@@ -345,7 +345,12 @@ class Deal(tuple):
             self.dd_tricks(contract_declarer))
 
     def dd_all_tricks(self, strain, leader):
-        """Compute declarer's number of double dummy tricks for all leads."""
+        """
+        Compute declarer's number of double dummy tricks for all leads.
+
+        Cards for which the card immediately above is in the same hand are not
+        listed; i.e., equivalent leads are only listed once.
+        """
         return dds.solve_all(self, strain, leader)
 
 
