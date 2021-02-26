@@ -341,15 +341,6 @@ hands.  See ``examples/deal_gambling.py`` for a complete example.
 Finally, please note that smartstacking is only available for scripts in their
 own files, not at the command line nor in the GUI.
 
-External links
-==============
-
-Some articles written by users showcasing the use of Redeal:
-
-- `A Simulation Tutorial for Better Decisionmaking at Bridge.`__
-
-__ http://datadaydreams.com/posts/a-simulation-tutorial-for-better-decisionmaking-at-bridge/
-
 Generating deals using Python
 =============================
 
@@ -383,5 +374,16 @@ You may also use predealing and SmartStacking, as an argument to
 
    dealer = Deal.prepare({'S': 'K83 AK83 - QJT972'})
    deal = dealer(accept)
+
+External links
+==============
+
+Some articles and videos produced by users showcasing the use of Redeal:
+
+- `A Simulation Tutorial for Better Decisionmaking at Bridge.`__
+- `Using data science in bridge: how important is shape for 3NT and 4S?`__
+
+__ http://datadaydreams.com/posts/a-simulation-tutorial-for-better-decisionmaking-at-bridge/
+__ https://www.youtube.com/watch?v=4J6yvoxx_Fg
 
 .. vim: set fileencoding=utf-8:
