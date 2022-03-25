@@ -1,10 +1,12 @@
+from collections import defaultdict
+
 from redeal import *
 
 # play with these values if desired
-NT_MIN = 15
-NT_MAX = 17
-RESP_MIN = 6
-RESP_MAX = 8
+NT_MIN = 13
+NT_MAX = 15
+RESP_MIN = 8
+RESP_MAX = 10
 INCLUDE_5M332 = True
 INCLUDE_6m322 = False
 PRINT_EACH_HAND = False
@@ -18,7 +20,7 @@ else:
     nt_shape += Shape('33(52)') + Shape('(32)(53)')
 if INCLUDE_6m322:
     nt_shape += Shape('(32)(62)') + Shape('22(63)')
-predeal = {'N': SmartStack(nt_shape, hcp, range(NT_MIN, NT_MAX+1))}
+predeal = {'N': SmartStack(nt_shape, hcp, range(NT_MIN, NT_MAX + 1))}
 
 
 class MySim(Simulation):
@@ -38,12 +40,13 @@ class MySim(Simulation):
         self.counters = {
             'accepted': 0,
             'nt_best': 0,
+            'nt_not_worse': 0,
             'nt_minus_1': 0,
             'nt_down': 0,
             'suit_down': 0,
             'fit': 0
         }
-        self.points = {}
+        self.points = defaultdict(int)
 
     def accept(self, deal):
         """Accept the deal if South is 5M332 and "maximum" for pass
@@ -53,17 +56,14 @@ class MySim(Simulation):
         """
 
         return (deal.south.shape in Shape('(53)(32)') + Shape('(52)33')
-                and deal.south.hcp in range(RESP_MIN, RESP_MAX+1))
+                and deal.south.hcp in range(RESP_MIN, RESP_MAX + 1))
 
     def do(self, deal):
         """Process the accepted deal.  Increment the relevant counters."""
 
         # increment total points counter
         points = deal.north.hcp + deal.south.hcp
-        try:
-            self.points[points] += 1
-        except KeyError:
-            self.points[points] = 1
+        self.points[points] += 1
 
         # get tricks in NT and the major.  Transfers, so NTer always plays.
         nt = deal.dd_tricks('1NN')
@@ -80,7 +80,9 @@ class MySim(Simulation):
         self.counters['accepted'] += 1
         self.counters['nt_best'] += bool(deal.dd_score('1NN')
                                          > deal.dd_score(s_contract))
-        self.counters['nt_minus_1'] += bool(nt - suit == 1)
+        self.counters['nt_not_worse'] += bool(deal.dd_score('1NN')
+                                              >= deal.dd_score(s_contract))
+        self.counters['nt_minus_1'] += bool(suit - nt == 1)
         self.counters['nt_down'] += bool(deal.dd_score('1NN') < 0)
         self.counters['suit_down'] += bool(deal.dd_score(s_contract) < 0)
         self.counters['fit'] += fit
@@ -95,17 +97,20 @@ class MySim(Simulation):
     def final(self, n_tries):
         """After all processing, print out the results"""
 
+        print('{lo}-{hi} opposite {rm}-{rx},{M5}{m6}'.format(
+            lo=NT_MIN, hi=NT_MAX, rm=RESP_MIN, rx=RESP_MAX,
+            M5=' 5M332' if INCLUDE_5M332 else '',
+            m6=' 6m322' if INCLUDE_6m322 else '',
+        ))
         print('{} hands processed of {} attempted:\n'
               .format(self.counters['accepted'], n_tries))
-        print('NT scores better on {} deals'
-              .format(self.counters['nt_best']))
-        print('NT one trick less on {} deals'
-              .format(self.counters['nt_minus_1']))
-        print('1NT goes down on {} deals'.format(self.counters['nt_down']))
-        print('2M goes down on {} deals'.format(self.counters['suit_down']))
-        print('8-card M fit on {} deals'.format(self.counters['fit']))
-        print('frequencies of HCP totals: {}'
-              .format(sorted(self.points.items())))
+        print(f"NT scores better on {self.counters['nt_best']} deals")
+        print(f"NT scores no worse on {self.counters['nt_not_worse']} deals")
+        print(f"NT one trick less on {self.counters['nt_minus_1']} deals")
+        print(f"1NT goes down on {self.counters['nt_down']} deals")
+        print(f"2M goes down on {self.counters['suit_down']} deals")
+        print(f"8-card M fit on {self.counters['fit']} deals")
+        print(f'frequencies of HCP totals: {sorted(self.points.items())}')
 
 
 simulation = MySim()
