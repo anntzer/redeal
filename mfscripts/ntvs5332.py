@@ -1,12 +1,12 @@
 from collections import defaultdict
 
-from redeal import *
+from redeal import hcp, Shape, Simulation, SmartStack
 
 # play with these values if desired
-NT_MIN = 13
-NT_MAX = 15
-RESP_MIN = 8
-RESP_MAX = 10
+NT_MIN = 15
+NT_MAX = 17
+RESP_MIN = 7
+RESP_MAX = 8
 INCLUDE_5M332 = True
 INCLUDE_6m322 = False
 PRINT_EACH_HAND = False
@@ -31,35 +31,45 @@ class MySim(Simulation):
      so you're a max for not-an-invite, is it better to pass and try to take
      the same number of tricks in NT as in the suit?"
 
-     This simulation attempts to answer this question.  It goes for "South is
-     6-8 HCP" instead of "22-23 HCP", because South can't know that.
+     This simulation attempts to answer this question.
 
     """
 
     def __init__(self):
-        self.counters = {
-            'accepted': 0,
-            'nt_best': 0,
-            'nt_not_worse': 0,
-            'nt_minus_1': 0,
-            'nt_down': 0,
-            'suit_down': 0,
-            'fit': 0
+        self.stats = {
+            'accepted': {
+                'count': 0,
+                'display': '{item} hands processed of {n_tries} attempted:\n'
+            },
+            'nt_best': {'count': 0,
+                        'display': 'NT scores better on {item} deals'},
+            'nt_not_worse': {
+                'count': 0,
+                'display': 'NT scores equal or better on {item} deals'
+            },
+            'nt_minus_1': {'count': 0,
+                           'display': 'NT one trick less on {item} deals'},
+            'nt_down': {'count': 0,
+                        'display': '1NT goes down on {item} deals'},
+            'suit_down': {'count': 0,
+                          'display': '2M goes down on {item} deals'},
+            'fit': {'count': 0,
+                    'display': '8-card M fit on {item} deals'},
         }
         self.points = defaultdict(int)
 
     def accept(self, deal):
-        """Accept the deal if South is 5M332 and "maximum" for pass
-
-        Specifically 6-8.  I assume we invite with 9.
-
-        """
+        """Accept the deal if South is 5M332 and within requested range."""
 
         return (deal.south.shape in Shape('(53)(32)') + Shape('(52)33')
                 and deal.south.hcp in range(RESP_MIN, RESP_MAX + 1))
 
     def do(self, deal):
         """Process the accepted deal.  Increment the relevant counters."""
+
+        def _increment_if(stat, test):
+            # relies on int(bool) being 1 or 0.
+            self.stats[stat]['count'] += test
 
         # increment total points counter
         points = deal.north.hcp + deal.south.hcp
@@ -76,23 +86,22 @@ class MySim(Simulation):
         suit = deal.dd_tricks(s_contract)
 
         # increment relevant counters for table.
-        # Note that bool() is guaranteed to be 1 or 0.
-        self.counters['accepted'] += 1
-        self.counters['nt_best'] += bool(deal.dd_score('1NN')
-                                         > deal.dd_score(s_contract))
-        self.counters['nt_not_worse'] += bool(deal.dd_score('1NN')
-                                              >= deal.dd_score(s_contract))
-        self.counters['nt_minus_1'] += bool(suit - nt == 1)
-        self.counters['nt_down'] += bool(deal.dd_score('1NN') < 0)
-        self.counters['suit_down'] += bool(deal.dd_score(s_contract) < 0)
-        self.counters['fit'] += fit
+        _increment_if('accepted', True)
+        _increment_if('nt_best',
+                      bool(deal.dd_score('1NN') > deal.dd_score(s_contract)))
+        _increment_if('nt_not_worse',
+                      bool(deal.dd_score('1NN') >= deal.dd_score(s_contract)))
+        _increment_if('nt_minus_1', bool(suit - nt == 1))
+        _increment_if('nt_down', bool(deal.dd_score('1NN') < 0))
+        _increment_if('suit_down', bool(deal.dd_score(s_contract) < 0))
+        _increment_if('fit', fit)
 
         if PRINT_EACH_HAND:
-            print('NT: {nt}, suit: {suit}, HCP: {hcp} {fit}'
+            print('NT: {nt}, suit: {suit}, HCP: {hcp}{fit}'
                   .format(nt=nt,
                           suit=suit,
-                          hcp=deal.north.hcp + deal.south.hcp,
-                          fit='FIT' if fit else ''))
+                          hcp=points,
+                          fit=' FIT' if fit else ''))
 
     def final(self, n_tries):
         """After all processing, print out the results"""
@@ -102,14 +111,8 @@ class MySim(Simulation):
             M5=' 5M332' if INCLUDE_5M332 else '',
             m6=' 6m322' if INCLUDE_6m322 else '',
         ))
-        print('{} hands processed of {} attempted:\n'
-              .format(self.counters['accepted'], n_tries))
-        print(f"NT scores better on {self.counters['nt_best']} deals")
-        print(f"NT scores no worse on {self.counters['nt_not_worse']} deals")
-        print(f"NT one trick less on {self.counters['nt_minus_1']} deals")
-        print(f"1NT goes down on {self.counters['nt_down']} deals")
-        print(f"2M goes down on {self.counters['suit_down']} deals")
-        print(f"8-card M fit on {self.counters['fit']} deals")
+        for stat in self.stats.values():
+            print(stat['display'].format(item=stat['count'], n_tries=n_tries))
         print(f'frequencies of HCP totals: {sorted(self.points.items())}')
 
 
