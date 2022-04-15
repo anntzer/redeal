@@ -46,17 +46,21 @@ it has).
 
 Directly running ``setup.py`` is **not** supported in either case.
 
-Now, run ``redeal --help``, or ``redeal`` to get a few hands, or ``redeal
-examples/deal1.py`` for an example simulation.  In the ``examples``
-directory (which you can extract from the zip archive), ``python
+Now, run ``python -mredeal --help``, or ``python -mredeal`` to get a few hands,
+or ``python -mredeal examples/deal1.py`` for an example simulation.  In the
+``examples`` directory (which you can extract from the zip archive), ``python
 __run_all_examples__.py`` will go through all the examples.
+
+(Depending on the details of your installation, directly using the command
+``redeal`` instead of ``python -mredeal`` may also work, but there are not
+guarantees for that.)
 
 A note on the GUI
 =================
 
-Redeal provides a GUI, ``redeal-gui``, if you are not comfortable using the
-command line.  Some GUI-specific information is scattered in the tutorial so
-read on!
+Redeal provides a GUI, ``python -mredeal --gui``, if you are not comfortable
+using the command line.  Some GUI-specific information is scattered in the
+tutorial so read on!
 
 An introductory tutorial
 ========================
@@ -66,12 +70,12 @@ All these examples come from Deal's documentation.
 Dealing hands
 -------------
 
-Run ``redeal`` at the command line to deal 10 hands, or ``redeal -n N`` to deal
-``N`` hands.
+Run ``python -mredeal`` at the command line to deal 10 hands, or ``python
+-mredeal -n N`` to deal ``N`` hands.
 
 .. code:: sh
 
-    $ redeal -n2
+    $ python -mredeal -n2
     ♠AQ53♡QJ9♢K963♣T9 ♠K♡AK853♢AQ87♣A42 ♠976♡7642♢T2♣KJ73 ♠JT842♡T♢J54♣Q865
     ♠T7♡J862♢QT4♣8752 ♠Q93♡T95♢A32♣KQ94 ♠K854♡AK7♢KJ87♣T3 ♠AJ62♡Q43♢965♣AJ6
     Tries: 2
@@ -94,7 +98,7 @@ hands to see how this would fare.
 
 .. code:: sh
 
-    $ redeal -S '- KQJT62 T9876 84'
+    $ python -mredeal -S '- KQJT62 T9876 84'
     ♠AT982♡854♢J42♣KT ♠KQ7♡A973♢AK5♣AQJ ♠♡KQJT62♢T9876♣84 ♠J6543♡♢Q3♣976532
     ♠85♡854♢K4♣JT9752 ♠K97643♡A97♢A♣KQ6 ♠♡KQJT62♢T9876♣84 ♠AQJT2♡3♢QJ532♣A3
     ♠94♡97♢KJ42♣QJ972 ♠KJ852♡A85♢AQ3♣K5 ♠♡KQJT62♢T9876♣84 ♠AQT763♡43♢5♣AT63
@@ -110,7 +114,7 @@ hands to see how this would fare.
 There are also ``-N``, ``-E`` and ``-W`` options, with the expected meanings.
 Note that you do not have to indicate 13 cards for a hand, but you always have
 to specify the four suits.  For example, you can select hands where North holds
-the heart ace with ``redeal -S '- A - -'``.
+the heart ace with ``python -mredeal -S '- A - -'``.
 
 Using the GUI, input the hands (using the same format) in the boxes labeled
 "North", "South", "East" and "West".
@@ -124,7 +128,7 @@ option) is there for that!
 
 .. code:: sh
 
-    $ redeal --format=long -n1
+    $ python -mredeal --format=long -n1
 
            ♠
            ♡632
@@ -163,7 +167,7 @@ and run it as follows:
 
 .. code:: sh
 
-    $ redeal examples/onespade.py # put the path to onespade.py
+    $ python -mredeal examples/onespade.py # put the path to onespade.py
     ♠AJ854♡J986♢T♣AKJ ♠KQ96♡2♢KJ874♣T52 ♠T732♡AKQT43♢Q2♣3 ♠♡75♢A9653♣Q98764
     ♠AQ875♡T87♢A♣QJ84 ♠T943♡♢9752♣T9652 ♠J6♡AQJ9432♢J6♣A7 ♠K2♡K65♢KQT843♣K3
     ♠KQ9874♡J4♢J43♣KQ ♠J65♡A873♢2♣AJT87 ♠A2♡K65♢AT975♣652 ♠T3♡QT92♢KQ86♣943
@@ -204,7 +208,7 @@ One can also give the ``accept`` function, as the body of a function taking a
 
 .. code:: sh
 
-    $ redeal --accept 'return len(deal.north.spades) >= 5 and deal.north.hcp >= 12'
+    $ python -mredeal --accept 'return len(deal.north.spades) >= 5 and deal.north.hcp >= 12'
     ♠AKJT7♡85♢865♣KQ7 ♠852♡A74♢AQT42♣86 ♠963♡KJ3♢J973♣AT4 ♠Q4♡QT962♢K♣J9532
     ♠AKT86♡AJ76♢64♣42 ♠J954♡T♢KT752♣KT5 ♠3♡KQ853♢A983♣Q76 ♠Q72♡942♢QJ♣AJ983
     ♠AQ753♡A96♢A♣AT43 ♠KJT6♡KQ83♢Q753♣8 ♠9♡JT75♢KT42♣KQJ7 ♠842♡42♢J986♣9652
@@ -226,7 +230,7 @@ a forcing NT?  Let's generate a few hands so that we can see how we would fare.
 
 .. code:: sh
 
-    $ redeal -S '- 96532 A864 T962' examples/onespade.py
+    $ python -mredeal -S '- 96532 A864 T962' examples/onespade.py
     ♠A8643♡A8♢QT72♣Q8 ♠QT972♡Q♢K95♣K754 ♠♡96532♢A864♣T962 ♠KJ5♡KJT74♢J3♣AJ3
     ♠AQ864♡4♢KJT72♣QJ ♠JT7♡AJT8♢Q3♣A743 ♠♡96532♢A864♣T962 ♠K9532♡KQ7♢95♣K85
     ♠AQT765♡7♢J72♣KQ8 ♠K9832♡AKT♢K953♣5 ♠♡96532♢A864♣T962 ♠J4♡QJ84♢QT♣AJ743
