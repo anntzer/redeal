@@ -39,12 +39,6 @@ def patched_path(path, old, new):
 patches = [
     ("Makefiles/Makefile_linux_shared",
      "$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)"),
-    ("System.cpp",  # redeal issue 19.
-     "free -k | tail -n+3 | head -n1 | awk '{print $NF}'",
-     r"grep -Po 'MemAvailable:\\s*\\K[0-9]*' /proc/meminfo || "
-     r"grep -Po 'MemFree:\\s*\\K[0-9]*' /proc/meminfo"),
-    ("dds.cpp",  # dds issue #91.
-     "FreeMemory();", ""),
     ("Makefiles/Makefile_Mac_clang_shared",
      "$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)"),
     ("Makefiles/Makefile_Mac_clang_shared",

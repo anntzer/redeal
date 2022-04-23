@@ -18,14 +18,13 @@ rewrite of Deal using another language: Python.
 Redeal runs under Python 3.6 or higher.  See the ``examples/`` directory for
 some example simulations.
 
-A double-dummy solver function is also available through Bo Haglund's DDS
-2.9.0 (slightly patched at build time), which is distributed with Redeal as
-a git submodule.  Note that this requires the ``libgomp`` package.  You can
-also download the compiled shared objects from `Bo Haglund's website`__.  For
-Windows, the DDS DLLs are distributed together with Redeal, so everything
-should work out of the box.  If the DDS library is absent, Redeal will work
-fine but the ``dd_tricks``, ``dd_score`` and ``dd_all_tricks`` methods will be
-unavailable.
+A double-dummy solver function is also available through Bo Haglund's DDS,
+which is distributed with Redeal as a git submodule.  Note that this requires
+the ``libgomp`` package.  You can also download the compiled shared objects
+from `Bo Haglund's website`__.  For Windows, the DDS DLLs are distributed
+together with Redeal, so everything should work out of the box.  If the DDS
+library is absent, Redeal will work fine but the ``dd_tricks``, ``dd_score``
+and ``dd_all_tricks`` methods will be unavailable.
 
 __ http://privat.bahnhof.se/wb758135/bridge/dll.html
 
