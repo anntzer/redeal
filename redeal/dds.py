@@ -58,11 +58,11 @@ class DealPBN(Structure):
     ]
 
     @classmethod
-    def from_deal(cls, deal, strain, leader):
+    def from_deal(cls, deal, strain, leader, ct=[[0,0,0],[0,0,0]]):
         return cls(trump=to_c_strain(strain),
                    first=leader.value,
-                   currentTrickSuit=(c_int * 3)(0, 0, 0),
-                   currentTrickRank=(c_int * 3)(0, 0, 0),
+                   currentTrickSuit=(c_int * 3)(ct[0][0],ct[0][1],ct[0][2]),
+                   currentTrickRank=(c_int * 3)(ct[1][0],ct[1][1],ct[1][2]),
                    remainCards=b"N:" + " ".join(
                        ".".join(str(holding) for holding in hand)
                        for hand in deal).encode("ascii"))
@@ -98,8 +98,8 @@ SolveBoardStatus = {
 }
 
 
-def _solve_board(deal, strain, leader, target, sol, mode):
-    c_deal = Deal.from_deal(deal, strain, leader)
+def _solve_board(deal, strain, leader, target, sol, mode, currentTricks=[[0,0,0],[0,0,0]]):
+    c_deal = Deal.from_deal(deal, strain, leader, currentTricks)
     futp = FutureTricks()
     status = dll.SolveBoard(c_deal, target, sol, mode, byref(futp), 0)
     if status != 1:
