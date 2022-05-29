@@ -1,0 +1,34 @@
+# Proper manylinux builds would require building in a manylinux image, then
+# unpacking, moving out purelib, and repacking (using a recent version of wheel),
+# then returning to the image to retag.
+
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-18.04, macos-10.15, windows-2019]
+        python-version: ["3.6", "3.10"]
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install
+      shell: bash
+      run: |
+        python -mpip install --upgrade pip setuptools wheel &&
+        python -mpip wheel --no-deps --wheel-dir dist . &&
+        python -mpip install dist/*
+    - name: Test
+      run: |
+        python -mpip install coverage &&
+          cd examples &&
+          python __run_all_examples__.py --cov

@@ -33,11 +33,13 @@ class Deal(Structure):
     ]
 
     @classmethod
-    def from_deal(cls, deal, strain, leader):
+    def from_deal(cls, deal, strain, leader, current_trick=()):
         self = cls(trump=to_c_strain(strain),
                    first=leader.value,
-                   currentTrickSuit=(c_int * 3)(0, 0, 0),
-                   currentTrickRank=(c_int * 3)(0, 0, 0))
+                   currentTrickSuit=(c_int * 3)(
+                       *[card.suit.value for card in current_trick]),
+                   currentTrickRank=(c_int * 3)(
+                       *[card.rank.value for card in current_trick]))
         # bit #i (2 ≤ i ≤ 14) is set if card of rank i (A = 14) is held
         for seat, hand in enumerate(deal):
             for suit, holding in enumerate(hand):
@@ -58,11 +60,13 @@ class DealPBN(Structure):
     ]
 
     @classmethod
-    def from_deal(cls, deal, strain, leader):
+    def from_deal(cls, deal, strain, leader, current_trick=()):
         return cls(trump=to_c_strain(strain),
                    first=leader.value,
-                   currentTrickSuit=(c_int * 3)(0, 0, 0),
-                   currentTrickRank=(c_int * 3)(0, 0, 0),
+                   currentTrickSuit=(c_int * 3)(
+                       *[card.suit.value for card in current_trick]),
+                   currentTrickRank=(c_int * 3)(
+                       *[card.rank.value for card in current_trick]),
                    remainCards=b"N:" + " ".join(
                        ".".join(str(holding) for holding in hand)
                        for hand in deal).encode("ascii"))
@@ -98,8 +102,8 @@ SolveBoardStatus = {
 }
 
 
-def _solve_board(deal, strain, leader, target, sol, mode):
-    c_deal = Deal.from_deal(deal, strain, leader)
+def _solve_board(deal, strain, leader, target, sol, mode, current_trick):
+    c_deal = Deal.from_deal(deal, strain, leader, current_trick)
     futp = FutureTricks()
     status = dll.SolveBoard(c_deal, target, sol, mode, byref(futp), 0)
     if status != 1:
@@ -108,21 +112,21 @@ def _solve_board(deal, strain, leader, target, sol, mode):
     return futp
 
 
-def solve(deal, strain, declarer):
+def solve(deal, strain, declarer, current_trick=()):
     """Return the number of tricks for declarer; wraps SolveBoard."""
     _check_dll("solve")
     leader = Seat[declarer] + 1
     # find one optimal card with its score, even if only one card
-    futp = _solve_board(deal, Strain[strain], leader, -1, 1, 1)
+    futp = _solve_board(deal, Strain[strain], leader, -1, 1, 1, current_trick)
     best_score = len(Rank) - futp.score[0]
     return best_score
 
 
-def solve_pbn(deal, strain, declarer):
+def solve_pbn(deal, strain, declarer, current_trick=()):
     """Return the number of tricks for declarer; wraps SolveBoardPBN."""
     _check_dll("solve_pbn")
     leader = Seat[declarer] + 1
-    c_deal_pbn = DealPBN.from_deal(deal, Strain[strain], leader)
+    c_deal_pbn = DealPBN.from_deal(deal, Strain[strain], leader, current_trick)
     futp = FutureTricks()
     status = dll.SolveBoardPBN(c_deal_pbn, -1, 1, 1, byref(futp), 0)
     if status != 1:
@@ -132,20 +136,22 @@ def solve_pbn(deal, strain, declarer):
     return best_score
 
 
-def valid_cards(deal, strain, leader):
+def valid_cards(deal, strain, leader, current_trick=()):
     """Return all cards that can be played."""
     _check_dll("valid_cards")
-    futp = _solve_board(deal, Strain[strain], Seat[leader], 0, 2, 1)
+    futp = _solve_board(
+        deal, Strain[strain], Seat[leader], 0, 2, 1, current_trick)
     return [Card(to_suit(futp.suit[i]), convert_rank(futp.rank[i]))
             for i in range(futp.cards)]
 
 
-def solve_all(deal, strain, leader):
+def solve_all(deal, strain, leader, current_trick=()):
     """
     Return the number of tricks for declarer for each lead; wraps SolveBoard.
     """
     _check_dll("solve_all")
-    futp = _solve_board(deal, Strain[strain], Seat[leader], -1, 3, 1)
+    futp = _solve_board(
+        deal, Strain[strain], Seat[leader], -1, 3, 1, current_trick)
     return {Card(to_suit(futp.suit[i]), convert_rank(futp.rank[i])):
             futp.score[i] for i in range(futp.cards)}
 
