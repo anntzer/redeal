@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-18.04, macos-10.15, windows-2019]
+        os: [ubuntu-20.04, macos-10.15, windows-2019]
         python-version: ["3.6", "3.10"]
       fail-fast: false
     runs-on: ${{ matrix.os }}
