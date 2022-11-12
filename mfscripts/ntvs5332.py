@@ -88,12 +88,15 @@ class MySim(Simulation):
         # increment relevant counters for table.
         _increment_if('accepted', True)
         _increment_if('nt_best',
-                      bool(deal.dd_score('1NN') > deal.dd_score(s_contract)))
+                      deal.dd_score('1NN') > deal.dd_score(s_contract))
         _increment_if('nt_not_worse',
-                      bool(deal.dd_score('1NN') >= deal.dd_score(s_contract)))
-        _increment_if('nt_minus_1', bool(suit - nt == 1))
-        _increment_if('nt_down', bool(deal.dd_score('1NN') < 0))
-        _increment_if('suit_down', bool(deal.dd_score(s_contract) < 0))
+                      deal.dd_score('1NN') >= deal.dd_score(s_contract))
+        _increment_if('nt_minus_1',
+                      suit - nt == 1)
+        _increment_if('nt_down',
+                      deal.dd_score('1NN') < 0)
+        _increment_if('suit_down',
+                      deal.dd_score(s_contract) < 0)
         _increment_if('fit', fit)
 
         if PRINT_EACH_HAND:
