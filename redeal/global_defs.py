@@ -13,10 +13,12 @@ Seat.__add__ = lambda self, val: Seat((self.value + val) % len(Seat))
 
 
 class Suit(Enum):
-    S = 0, " S", "♠"
-    H = 1, " H", "♡"
-    D = 2, " D", "♢"
-    C = 3, " C", "♣"
+    # "white" suits are not covered by consolas, and also render poorly when
+    # copy-pasted to html.
+    S = 0, " S", "\N{BLACK SPADE SUIT}"
+    H = 1, " H", "\N{BLACK HEART SUIT}"
+    D = 2, " D", "\N{BLACK DIAMOND SUIT}"
+    C = 3, " C", "\N{BLACK CLUB SUIT}"
 
     def __init__(self, value, sym, unicode_sym):
         self._value_ = value
