@@ -39,9 +39,9 @@ package is directly from GitHub,
 
     $ python -mpip install --user --upgrade git+https://github.com/anntzer/redeal
 
-On Windows **only**, you can also download the ``.zip`` archive (from master,
+On Windows **only**, you can also download the ``.zip`` archive (from main,
 not from the releases), and run, from the directory containing the archive,
-``python -mpip install --user --upgrade redeal-master.zip`` (or whatever name
+``python -mpip install --user --upgrade redeal-main.zip`` (or whatever name
 it has).
 
 Directly running ``setup.py`` is **not** supported in either case.
