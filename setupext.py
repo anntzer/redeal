@@ -2,9 +2,11 @@ import contextlib
 from contextlib import ExitStack
 import os
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import shutil
 import subprocess
 import sys
+import urllib.request
 
 try:
     from setuptools import setup
@@ -14,14 +16,6 @@ except ImportError:
 
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
-
-
-if sys.platform == "win32":
-    PACKAGE_DATA = ["dds-32.dll", "dds-64.dll"]
-else:
-    # On a POSIX system, libdds.so will be moved to its correct location by
-    # make_build.
-    PACKAGE_DATA = []
 
 
 @contextlib.contextmanager
@@ -77,6 +71,19 @@ On a Unix system, do not use the zip archives from github.""")
                         ["make", "-f", "Makefiles/Makefile_Mac_clang_shared",
                          "CC=gcc", "THREADING=", "THREAD_LINK="], cwd=dds_src)
             shutil.copy2(dds_src / "libdds.so", self.__dest_dir)
+        elif os.name == "nt":
+            url = "https://privat.bahnhof.se/wb758135/bridge/dds290-dll.zip"
+            with TemporaryDirectory() as tmpdir:
+                tmppath = Path(tmpdir)
+                zip_path = tmppath / "dds290-dll.zip"
+                with urllib.request.urlopen(url) as req:
+                    zip_path.write_bytes(req.read())
+                shutil.unpack_archive(str(zip_path), tmpdir)  # str() for Py36.
+                arch = "x64" if sys.maxsize > 2 ** 32 else "win32"
+                shutil.unpack_archive(
+                    str(tmppath / f"dds290-dll/dds-290-multi-{arch}-dll.zip"),
+                    tmppath)
+                shutil.copy2(tmppath / "dds.dll", self.__dest_dir)
 
 
 def main():
@@ -87,7 +94,6 @@ def main():
         author="Antony Lee",
         author_email="anntzer.lee@gmail.com",
         packages=["redeal"],
-        package_data={"redeal": PACKAGE_DATA},
         entry_points={
             "console_scripts": ["redeal = redeal.__main__:console_entry"],
             "gui_scripts": ["redeal-gui = redeal.__main__:gui_entry"],
