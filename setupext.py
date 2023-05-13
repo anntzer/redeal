@@ -36,6 +36,8 @@ patches = [
     ("Makefiles/Makefile_Mac_clang_shared",
      "$(COMPILE_FLAGS)", "$(COMPILE_FLAGS) $(CFLAGS)"),
     ("Makefiles/Makefile_Mac_clang_shared",
+     "-Wextra", "-Wextra -Wno-deprecated-declarations -Wno-sign-conversion"),
+    ("Makefiles/Makefile_Mac_clang_shared",
      "$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++"),
 ]
 
