@@ -381,12 +381,10 @@ You may also use predealing and SmartStacking, as an argument to
 External links
 ==============
 
-Some articles and videos produced by users showcasing the use of Redeal:
+Content produced by users showcasing the use of Redeal:
 
-- `A Simulation Tutorial for Better Decisionmaking at Bridge.`__
 - `Using data science in bridge: how important is shape for 3NT and 4S?`__
 
-__ http://datadaydreams.com/posts/a-simulation-tutorial-for-better-decisionmaking-at-bridge/
 __ https://www.youtube.com/watch?v=4J6yvoxx_Fg
 
 .. vim: set fileencoding=utf-8:
