@@ -178,7 +178,7 @@ class Shape:
 
 
 balanced = Shape("(4333)") + Shape("(4432)") + Shape("(5332)")
-semibalanced = balanced + Shape("(5422)") + Shape("(6322)")
+semibalanced = balanced + Shape("(5422)") + Shape("(6322)") + Shape("(7222)")
 
 
 class Evaluator:
