@@ -395,6 +395,26 @@ class Hand(tuple):
         """Return the hand in PBN format."""
         return ".".join(map(str, self))
 
+    @property
+    def l1(self):
+        """Return length of longest suit in hand."""
+        return sorted(list(map(lambda x:len(x), self)))[3]
+
+    @property
+    def l2(self):
+        """Return length of second longest suit in hand."""
+        return sorted(list(map(lambda x:len(x), self)))[2]
+
+    @property
+    def l3(self):
+        """Return length of third longest suit in hand."""
+        return sorted(list(map(lambda x:len(x), self)))[1]
+
+    @property
+    def l4(self):
+        """Return length of shortest suit in hand."""
+        return sorted(list(map(lambda x:len(x), self)))[0]
+
     __str__ = _short_str
 
     @classmethod
