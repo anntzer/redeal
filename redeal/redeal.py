@@ -2,7 +2,7 @@ from array import array
 from bisect import bisect
 from collections import Counter
 from itertools import permutations, product
-from operator import itemgetter
+from operator import itemgetter, attrgetter
 import functools
 import random
 import statistics
@@ -424,16 +424,31 @@ class Hand(tuple):
     clubs = util.reify(
         itemgetter(Suit.C), "The hand's clubs.", "clubs")
 
-    shape = util.reify(lambda self: tuple(len(holding) for holding in self),
-                       "The hand's shape.")
-    hcp = util.reify(lambda self: sum(holding.hcp for holding in self),
-                     "The hand's HCP count.")
-    qp = util.reify(lambda self: sum(holding.qp for holding in self),
-                    "The hand's QP count.")
-    losers = util.reify(lambda self: sum(holding.losers for holding in self),
-                        "The hand's loser count.")
-    pt = util.reify(lambda self: sum(holding.pt for holding in self),
-                    "The hand's playing tricks.")
+    shape = util.reify(
+        lambda self: tuple(map(len, self)),
+        "The hand's shape.")
+    hcp = util.reify(
+        lambda self, _hcp=attrgetter("hcp"): sum(map(_hcp, self)),
+        "The hand's HCP count.")
+    qp = util.reify(
+        lambda self, _qp=attrgetter("qp"): sum(map(_qp, self)),
+        "The hand's QP count.")
+    losers = util.reify(
+        lambda self, _losers=attrgetter("losers"): sum(map(_losers, self)),
+        "The hand's loser count.")
+    pt = util.reify(
+        lambda self, _pt=attrgetter("pt"): sum(map(_pt, self)),
+        "The hand's playing tricks.")
+
+    # Compatibility with Deal.
+    l1 = util.reify(lambda self: sorted(map(len, self))[3],
+                    "The length of the hand's longest suit.")
+    l2 = util.reify(lambda self: sorted(map(len, self))[2],
+                    "The length of the hand's second longest suit.")
+    l3 = util.reify(lambda self: sorted(map(len, self))[1],
+                    "The length of the hand's third longest suit.")
+    l4 = util.reify(lambda self: sorted(map(len, self))[0],
+                    "The length of the hand's shortest suit.")
 
     @util.reify
     def freakness(self):
