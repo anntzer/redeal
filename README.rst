@@ -44,8 +44,6 @@ not from the releases), and run, from the directory containing the archive,
 ``python -mpip install --user --upgrade redeal-main.zip`` (or whatever name
 it has).
 
-Directly running ``setup.py`` is **not** supported in either case.
-
 Now, run ``python -mredeal --help``, or ``python -mredeal`` to get a few hands,
 or ``python -mredeal examples/deal1.py`` for an example simulation.  In the
 ``examples`` directory (which you can extract from the zip archive), ``python
