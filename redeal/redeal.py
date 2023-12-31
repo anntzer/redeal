@@ -439,6 +439,9 @@ class Hand(tuple):
     pt = util.reify(
         lambda self, _pt=attrgetter("pt"): sum(map(_pt, self)),
         "The hand's playing tricks.")
+    newLTC = util.reify(
+        lambda self, _newLTC=attrgetter("newLTC"): sum(map(_newLTC, self)),
+        "The hand's New Losing Trick count.")
 
     # Compatibility with Deal.
     l1 = util.reify(lambda self: sorted(map(len, self))[3],
@@ -521,6 +524,37 @@ class Holding(frozenset):
                 ({Q} <= self or {J, T} in self) and len(self) >= 3):
             return .5 + len_pt
         return len_pt
+
+    @util.reify
+    def newLTC(self):
+        """
+        Compatibility with deal - calculate the
+        New Losing Trick Count as described in the
+        2003 Bridge World article.
+
+        Original implementation provided by Rex Livingstone
+
+        https://bridge.thomasoandrews.com/deal/commands.html#newLTC
+        """
+        newLTC = 0
+        if len(self) == 0:
+            return 0
+        if len(self) == 1:
+            if not any(rank == A for rank in self):
+                newLTC += 1.5
+        elif len(self) == 2:
+            if not any(rank == A for rank in self):
+                newLTC += 1.5
+            if not any(rank == K for rank in self):
+                newLTC += 1
+        else:
+            if not any(rank == A for rank in self):
+                newLTC += 1.5
+            if not any(rank == K for rank in self):
+                newLTC += 1
+            if not any(rank == Q for rank in self):
+                newLTC += 0.5
+        return newLTC
 
 
 class Contract:
