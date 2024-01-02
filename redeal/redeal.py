@@ -442,6 +442,9 @@ class Hand(tuple):
     newLTC = util.reify(
         lambda self, _newLTC=attrgetter("newLTC"): sum(map(_newLTC, self)),
         "The hand's New Losing Trick count.")
+    controls = util.reify(
+        lambda self, controls=attrgetter("controls"): sum(map(controls, self)),
+        "The hand's control count.")
 
     # Compatibility with Deal.
     l1 = util.reify(lambda self: sorted(map(len, self))[3],
@@ -479,6 +482,7 @@ class Holding(frozenset):
 
     hcp = util.reify(hcp, "The holding's HCP.")
     qp = util.reify(qp, "The holding's QP.")
+    controls = util.reify(controls, "The holding's controls.")
 
     @util.reify
     def losers(self):
