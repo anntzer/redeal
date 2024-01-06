@@ -433,8 +433,14 @@ class Hand(tuple):
     qp = util.reify(
         lambda self, _qp=attrgetter("qp"): sum(map(_qp, self)),
         "The hand's QP count.")
+    controls = util.reify(
+        lambda self, _controls=attrgetter("controls"): sum(map(_controls, self)),
+        "The hand's control count.")
     losers = util.reify(
         lambda self, _losers=attrgetter("losers"): sum(map(_losers, self)),
+        "The hand's loser count.")
+    newltc = util.reify(
+        lambda self, _newltc=attrgetter("newltc"): sum(map(_newltc, self)),
         "The hand's loser count.")
     pt = util.reify(
         lambda self, _pt=attrgetter("pt"): sum(map(_pt, self)),
@@ -476,24 +482,30 @@ class Holding(frozenset):
 
     hcp = util.reify(hcp, "The holding's HCP.")
     qp = util.reify(qp, "The holding's QP.")
+    controls = util.reify(controls, "The holding's control count.")
 
     @util.reify
     def losers(self):
         """The holding's loser count."""
-        if len(self) == 0:
-            return 0
         losers = 0
-        if not any(rank == A for rank in self):
-            losers += 1
-        if len(self) >= 2 and not any(rank == K for rank in self):
-            losers += 1
-        if len(self) >= 3:
-            if not any(rank == Q for rank in self):
-                losers += 1
-            elif (losers == 2 and
-                  not any(rank in [J, T] for rank in self)):
-                losers += 0.5
+        losers += (A not in self)
+        losers += (len(self) >= 2 and K not in self)
+        losers += (len(self) >= 3 and (
+            (Q not in self)
+            or (losers == 2 and J not in self and T not in self) / 2))
         return losers
+
+    @util.reify
+    def newltc(self):  # For compatibility with Deal.
+        """
+        The holding's new losing trick count (J. Koelman, The Bridge World,
+        2003).
+        """
+        return (
+            1.5 * (len(self) >= 1 and A not in self)
+            + 1.0 * (len(self) >= 2 and K not in self)
+            + 0.5 * (len(self) >= 3 and Q not in self)
+        )
 
     @util.reify
     def pt(self):
