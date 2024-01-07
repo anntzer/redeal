@@ -24,7 +24,7 @@ from .smartstack import SmartStack
 
 __all__ = ["Shape", "balanced", "semibalanced",
            "Evaluator", "hcp", "qp", "controls",
-           "Rank", "A", "K", "Q", "J", "T",
+           "Rank", "A", "K", "Q", "J", "T", "Seat", "Strain", "Suit",
            "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
            "Simulation", "OpeningLeadSim"]
