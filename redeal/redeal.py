@@ -353,6 +353,52 @@ class Deal(tuple):
         """
         return dds.solve_all(self, strain, leader)
 
+    def parscore(self, dealer, nsvul, ewvul):
+        """
+        get the double dummy par for this deal for given dealer +
+        vulnerability.  Returns (contract, declarer, score, tricks, auction)
+        similar to that returned by the original tcl-based Deal program
+        """
+
+        dealer_id = (str)(dealer)[0]
+        bid_order = [Seat[dealer_id] + 3, Seat[dealer_id] + 2,
+                     Seat[dealer_id] + 1, Seat[dealer_id]]
+        # To figure out if any seat is vulnerable, given nsvul and ewvul
+        allvuls = {Seat.N: nsvul, Seat.S: nsvul, Seat.E: ewvul, Seat.W: ewvul}
+
+        # strain to suit mapping - needed to calculate suit fits while
+        # looping through all strains
+        suit_mapping = {Strain.S: Suit.S, Strain.H: Suit.H,
+                        Strain.D: Suit.D, Strain.C: Suit.C}
+        par = ScoredContract.mk_allpass()
+        tricks_lookup = {strain: {} for strain in Strain}
+        for level in range(1, 8):
+            for strain in Strain:
+                for declarer in bid_order:
+                    isvul = allvuls[declarer]
+                    tricks = tricks_lookup[strain].get(declarer)
+                    if tricks is None:
+                        contract_declarer = f"1{strain}{(str)(declarer)[0]}"
+                        tricks = self.dd_tricks(contract_declarer)
+                        tricks_lookup[strain][declarer] = tricks
+                    if strain == Strain.N:
+                        fit = 14     # Consistent with the TCL implementation
+                    else:
+                        suit_index = list(Suit).index(suit_mapping[strain])
+                        partner_id = declarer + 2
+                        fit = len(self[declarer][suit_index]) + \
+                            len(self[partner_id][suit_index])
+                    doubled = tricks < 6 + level
+                    contract = Contract(
+                        level, (str)(strain)[0], doubled, isvul)
+                    score = contract.score(tricks)
+                    adjusted_par_score = par.adjusted_score(declarer)
+                    if score > adjusted_par_score or \
+                       (score == adjusted_par_score and fit > par.fit):
+                        par = ScoredContract(
+                            contract, declarer, score, tricks, fit)
+        return par.parscore(declarer.value)
+
 
 class Hand(tuple):
     """A hand, represented as a tuple of holdings."""
@@ -545,6 +591,12 @@ class Contract:
         self.doubled = doubled
         self.vul = vul
 
+    def __repr__(self):
+        if self.doubled:
+            return f"{self.level}{self.strain}X"
+        else:
+            return f"{self.level}{self.strain}"
+
     @classmethod
     def from_str(cls, s, vul=False):
         """
@@ -692,3 +744,61 @@ class Payoff:
                   *(f"({stderr:.2f})" if i != j else ""
                     for j, (mean, stderr) in enumerate(line)),
                   sep="\t")
+
+
+class ScoredContract:
+
+    def __init__(self, contract, declarer, score, tricks, fit):
+        self.contract = contract
+        if contract is None:
+            self.allpass = True
+            self.declarer = None
+            self.score = 0
+            self.fit = None
+        else:
+            self.allpass = False
+            self.declarer = declarer
+            self.score = score
+            self.tricks = tricks
+            self.fit = fit
+
+    def repr__(self):
+        return f"{self.contract} by {self.declarer}, "\
+               f"score {self.score}, fit {self.fit}"
+
+    def adjusted_score(self, candidate):
+        if self.score == 0:
+            return 0
+        if candidate in [self.declarer, self.declarer + 2]:
+            return self.score
+        return -1 * self.score
+
+    # Return information about this object in format expected
+    # by the parscore function (as tuple consisting of
+    # contract, declarer, NS score, tricks, auction)
+    def parscore(self, bidder_order):
+        if not self.contract:
+            return (None, None, 0, None, self.auction(bidder_order))
+        if self.declarer in [Seat.E, Seat.W]:
+            retscore = -1 * self.score
+        else:
+            retscore = self.score
+        return (self.contract, self.declarer, retscore, self.tricks,
+                self.auction(bidder_order))
+
+    def auction(self, bidder_order):
+        if not self.contract:
+            return "Pass Pass Pass Pass"
+        auction = ""
+        for _ in range(bidder_order):
+            auction += "Pass"
+        auction += f" {self.contract.level}{self.contract.strain}"
+        if self.contract.doubled:
+            auction += " X Pass Pass Pass"
+        else:
+            auction += " Pass Pass Pass"
+        return auction
+
+    @classmethod
+    def mk_allpass(cls):
+        return ScoredContract(None, None, None, None, None)
