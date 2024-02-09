@@ -352,6 +352,40 @@ class Deal(tuple):
         """
         return dds.solve_all(self, strain, leader)
 
+    def par(self, dealer, nsvul, ewvul):
+        """
+        Compute the double dummy par for the given dealer and vulnerabilities.
+
+        Returns a list of `ScoredContract` with the following attributes: the
+        `.contract`, the `.declarer`, the number of `.tricks`, and the NS
+        `.score`.
+        """
+        bid_order = [Seat((Seat[dealer].value + k) % 4) for k in range(4)]
+        vuls = {Seat.N: nsvul, Seat.S: nsvul, Seat.E: ewvul, Seat.W: ewvul}
+        pars = [ScoredContract(None, None, None)]
+        tricks_lookup = {
+            (strain, declarer): self.dd_tricks(f"1{strain}{declarer.name}")
+            for strain in Strain for declarer in Seat}
+        for level in range(1, 8):
+            for strain in Strain:
+                for declarer in bid_order[::-1]:
+                    tricks = tricks_lookup[strain, declarer]
+                    doubled = tricks < 6 + level
+                    contract = Contract(
+                        level, strain.name, doubled, vuls[declarer])
+                    score = contract.score(tricks)
+                    current_score = pars[0].score * (
+                        +1 if declarer.name in "NS" else -1)
+                    if score > current_score:
+                        pars = [ScoredContract(contract, declarer, tricks)]
+                    elif (score == current_score
+                          # Don't bid higher partscores than necessary.
+                          and not any(sc.declarer == declarer
+                                      and sc.contract.strain == contract.strain
+                                      for sc in pars)):
+                        pars.append(ScoredContract(contract, declarer, tricks))
+        return pars
+
 
 class Hand(tuple):
     """A hand, represented as a tuple of holdings."""
@@ -370,12 +404,12 @@ class Hand(tuple):
         """Initialize with a string, e.g. "AK432 K87 QJT54 -"."""
         suits = [holding if holding != "-" else "" for holding in init.split()]
         if len(suits) != len(Suit):
-            raise Exception("Invalid initializer for Hand.")
+            raise Exception(f"Invalid initializer for Hand ({init}).")
         try:
             cards = [Card(suit=suit, rank=Rank[rank])
                      for suit, holding in zip(Suit, suits) for rank in holding]
         except KeyError:
-            raise Exception("Invalid initializer for Hand.")
+            raise Exception(f"Invalid initializer for Hand ({init}).")
         return cls(cards)
 
     def to_str(self):
@@ -547,6 +581,9 @@ class Contract:
         self.doubled = doubled
         self.vul = vul
 
+    def __str__(self):
+        return f"{self.level}{self.strain}" + "X" * self.doubled
+
     @classmethod
     def from_str(cls, s, vul=False):
         """
@@ -596,6 +633,26 @@ class Contract:
             if self.doubled == 2:
                 score *= 2
             return score
+
+
+class ScoredContract:
+    def __init__(self, contract, declarer, tricks):
+        self.contract = contract
+        self.declarer = declarer
+        self.tricks = tricks
+        self.score = (
+            0 if contract is None else
+            contract.score(tricks) * (+1 if declarer.name in "NS" else -1))
+
+    def __str__(self):
+        if not self.contract:
+            return "all pass (0)"
+        else:
+            s = f"{self.contract}{self.declarer.name}"
+            delta = self.tricks - self.contract.level - 6
+            s += f"{delta:+}" if delta else "="
+            s += f" ({self.score:+})" if self.score else " (0)"
+            return s
 
 
 H = Hand.from_str
