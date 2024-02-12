@@ -397,7 +397,9 @@ class Deal(tuple):
                        (score == adjusted_par_score and fit > par.fit):
                         par = ScoredContract(
                             contract, declarer, score, tricks, fit)
-        return par.parscore(declarer.value)
+                        declarer_offset = (declarer.value + 4 -
+                                           Seat[dealer_id].value) % len(Suit)
+        return par.parscore(declarer_offset)
 
 
 class Hand(tuple):
@@ -789,14 +791,10 @@ class ScoredContract:
     def auction(self, bidder_order):
         if not self.contract:
             return "Pass Pass Pass Pass"
-        auction = ""
-        for _ in range(bidder_order):
-            auction += "Pass"
-        auction += f" {self.contract.level}{self.contract.strain}"
+        auction = "Pass " * bidder_order
+        auction += f"{self.contract.level}{self.contract.strain}"
         if self.contract.doubled:
-            auction += " X Pass Pass Pass"
-        else:
-            auction += " Pass Pass Pass"
+            auction += " X"
         return auction
 
     @classmethod
