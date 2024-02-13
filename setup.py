@@ -13,14 +13,14 @@ import setuptools.command.build_ext
 
 @contextlib.contextmanager
 def patched_path(path, old, new):
-    contents = path.read_text()
+    contents = path.read_text("latin-1")
     if old not in contents:
         raise Exception(f"Invalid patch: {old}")
     try:
-        path.write_text(contents.replace(old, new))
+        path.write_text(contents.replace(old, new), "utf-8")
         yield
     finally:
-        path.write_text(contents)
+        path.write_text(contents, "latin-1")
 
 
 patches = [
@@ -32,6 +32,10 @@ patches = [
      "-Wextra", "-Wextra -Wno-deprecated-declarations -Wno-sign-conversion"),
     ("Makefiles/Makefile_Mac_clang_shared",
      "$(LINK_FLAGS)", "$(LINK_FLAGS) -lc++"),
+    ("TransTableL.cpp",
+     "const unsigned char lengths[][DDS_SUITS]) const",
+     "const unsigned char lengths[DDS_SUITS][DDS_SUITS]) const"),
+    ("Moves.cpp", "", ""),  # Only for reencoding.
 ]
 
 
