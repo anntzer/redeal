@@ -36,7 +36,9 @@ class SmartStack:
         for lvs_hs in product(*[holdings[suit].items() for suit in Suit]):
             lvs, hs = zip(*lvs_hs)
             ls, vs = zip(*lvs)
-            if ls in self._shape and sum(vs) in self._values:
+            if (sum(ls) == len(Rank)
+                    and ls in self._shape
+                    and sum(vs) in self._values):
                 counter[ls, vs] += reduce(operator.mul, map(len, hs))
         patterns, cumsum = zip(*counter.items())
         cumsum = list(cumsum)
