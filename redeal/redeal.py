@@ -460,7 +460,7 @@ class Hand(tuple):
         """
         The hand's `Pavlicek freakness`__.
 
-        __ http://www.rpbridge.net/8j17.htm#8
+        __ http://www.rpbridge.net/8j17.htm#7
         """
         return (sum(max(l - 4, 3 - l) for l in map(len, self))
                 + {0: 2, 1: 1}.get(min(map(len, self)), 0))
@@ -511,7 +511,10 @@ class Holding(frozenset):
         """
         The holding's `Pavlicek playing tricks`__.
 
-        __ http://www.rpbridge.net/8j17.htm#3
+        The following corrections to the table have been made: K and Qx are 0
+        tricks (not 0.5); Kxx is 0.5 tricks (not 1).
+
+        __ http://www.rpbridge.net/8j17.htm#4
         """
         len_pt = max(len(self) - 3, 0)
         if {A, K, Q} <= self:
@@ -526,7 +529,7 @@ class Holding(frozenset):
             return 1.5 + len_pt
         if {A} <= self or {K, Q} <= self or {K, J} <= self:
             return 1 + len_pt
-        if {K, T} <= self or {Q, J} <= self and len(self) >= 3:
+        if {Q, J} <= self and len(self) >= 3:
             return 1 + len_pt
         if ({K} <= self and len(self) >= 2 or
                 ({Q} <= self or {J, T} in self) and len(self) >= 3):
