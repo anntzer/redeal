@@ -11,22 +11,19 @@ open_hand = Counter()
 
 
 def preempt(hand: Hand) -> bool:
-    return (max(len(hand.spades), len(hand.hearts)) >= 6
-            and 6 <= hcp(hand) <= 10)
+    return max(len(hand.spades), len(hand.hearts)) >= 6 and 6 <= hcp(hand) <= 10
 
 
 def major_opener(hand: Hand) -> bool:
-    return (max(len(hand.spades), len(hand.hearts)) >= 5
-            and hcp(hand) >= 11)
+    return max(len(hand.spades), len(hand.hearts)) >= 5 and hcp(hand) >= 11
 
 
 def do(deal: Deal) -> None:
-    tricks_ns[max(deal.dd_tricks('5CN'), deal.dd_tricks('5DS'))] += 1
-    tricks_ew[max(deal.dd_tricks('4SE'), deal.dd_tricks('4HW'))] += 1
-    open_hand['pre'] += preempt(deal.west)
-    open_hand['1M'] += (
-            major_opener(deal.west)
-            or (major_opener(deal.east) and not preempt(deal.west))
+    tricks_ns[max(deal.dd_tricks("5CN"), deal.dd_tricks("5DS"))] += 1
+    tricks_ew[max(deal.dd_tricks("4SE"), deal.dd_tricks("4HW"))] += 1
+    open_hand["pre"] += preempt(deal.west)
+    open_hand["1M"] += major_opener(deal.west) or (
+        major_opener(deal.east) and not preempt(deal.west)
     )
 
 

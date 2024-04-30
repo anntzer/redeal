@@ -6,10 +6,10 @@ from redeal.global_defs import Suit
 
 
 DEBUG = {
-    'hand': False,
-    'hcp': True,
-    'is_clubs': False,
-    'suits': False,
+    "hand": False,
+    "hcp": True,
+    "is_clubs": False,
+    "suits": False,
 }
 
 IS_CLUBS = True
@@ -23,13 +23,13 @@ full_suit_eval = Evaluator(*range(14, 1, -1))
 
 
 def ehaa_nt(hand: Hand) -> bool:
-    is_nt_shape = (Shape('(4333)') + Shape('(4432)')
-                   + Shape('(33)(25)') + Shape('(32)(35)'))
+    is_nt_shape = (
+        Shape("(4333)") + Shape("(4432)") + Shape("(33)(25)") + Shape("(32)(35)")
+    )
     return is_nt_shape(hand) and hcp(hand) in (10, 11, 12)
 
 
 class EHAA2length(Simulation):
-
     def __init__(self):
         super().__init__()
         self.bidsuit = []
@@ -37,51 +37,53 @@ class EHAA2length(Simulation):
         self.points = Counter()
 
     def accept(self, deal: Deal) -> bool:
+        south = deal.south
         return (
-                deal.south.shape in twobidshape
-                and hcp(deal.south) in range(RANGE_MIN, RANGE_MAX + 1)
-                and not ehaa_nt(deal.south)
+            south.shape in twobidshape
+            and hcp(south) in range(RANGE_MIN, RANGE_MAX + 1)
+            and not ehaa_nt(south)
         )
 
     def do(self, deal: Deal) -> None:
-        if DEBUG['hand']:
-            print(deal.south)
+        south = deal.south
+        if DEBUG["hand"]:
+            print(south)
 
-        if DEBUG['is_clubs'] and len(deal.south.clubs) >= 5:
-            other_suit = (len(deal.south.diamonds) >= len(deal.south.clubs)
-                          or len(deal.south.hearts) >= len(deal.south.clubs)
-                          or len(deal.south.spades) >= len(deal.south.clubs))
-            print(f'{deal.south}   {other_suit}')
+        if DEBUG["is_clubs"] and len(south.clubs) >= 5:
+            other_suit = (
+                len(south.diamonds) >= len(south.clubs)
+                or len(south.hearts) >= len(south.clubs)
+                or len(south.spades) >= len(south.clubs)
+            )
+            print(f"{south}   {other_suit}")
 
-        ml = max(deal.south.shape)
+        ml = max(south.shape)
         self.maxlength[ml] += 1
-        self.points[deal.south.hcp] += 1
+        self.points[south.hcp] += 1
         for suit in Suit:
-            if len(deal.south[suit]) == ml:
-                self.bidsuit.append(deal.south[suit])
+            if len(south[suit]) == ml:
+                self.bidsuit.append(south[suit])
                 break  # only store 1 longest suit (highest by fiat) per hand
 
     def final(self, n_tries: int) -> None:
-
-        print('Lengths:')
+        print("Lengths:")
         pprint.pprint(dict(self.maxlength), width=1)
 
-        if DEBUG['hcp']:
-            print('\nHCP:')
+        if DEBUG["hcp"]:
+            print("\nHCP:")
             pprint.pprint(dict(self.points), width=1)
 
         # sort on secondary key first (strength of suit), then primary (length)
         sorted_bidsuit = sorted(self.bidsuit, key=full_suit_eval, reverse=True)
-        sorted_bidsuit = sorted(sorted_bidsuit,
-                                key=lambda x: len(x),
-                                reverse=True)
-        if DEBUG['suits']:
-            pprint.pprint([(str(x), len(x), full_suit_eval(x))
-                           for x in sorted_bidsuit],
-                          width=100,
-                          compact=True)
+        sorted_bidsuit = sorted(sorted_bidsuit, key=lambda x: len(x), reverse=True)
+        if DEBUG["suits"]:
+            pprint.pprint(
+                [(str(x), len(x), full_suit_eval(x)) for x in sorted_bidsuit],
+                width=100,
+                compact=True,
+            )
 
-        print(f'\nMedian hand: {sorted_bidsuit[len(self.bidsuit) // 2]}')
+        print(f"\nMedian hand: {sorted_bidsuit[len(self.bidsuit) // 2]}")
 
 
 simulation = EHAA2length()
