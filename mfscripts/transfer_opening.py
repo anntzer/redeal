@@ -17,33 +17,36 @@ TABLE = defaultdict(int)
 
 def unbalanced(hand: Hand) -> bool:
     """They seem to agree that 5M233 and 5M2(42) are unbalanced, so"""
-
     return not balanced(hand) or len(hand.spades) == 5 or len(hand.hearts) == 5
 
 
 def one_d_hearts(hand: Hand) -> bool:
+    """1D opener, with hearts."""
     return unbalanced(hand) and len(hand.hearts) >= 4 and hand.hcp in range(11, 15)
 
 
 def one_d_bal(hand: Hand) -> bool:
+    """1D opener, balanced."""
     bal = Shape("2344") + Shape("23(35)")
     return bal(hand) and hand.hcp in range(17, 20)
 
 
 def one_h_spades(hand: Hand) -> bool:
+    """1H opener, with spades."""
     return unbalanced(hand) and len(hand.spades) >= 4 and hand.hcp in range(11, 15)
 
 
 def one_h_bal(hand: Hand) -> bool:
+    """1H opener, balanced."""
     bal = Shape("3244") + Shape("32(35)")
     return bal(hand) and (hand.hcp in range(15, 17) or hand.hcp in range(19, 21))
 
 
 class TransferOpeners(Simulation):
-    def __init__(self):
-        super().__init__()
+    """Simulate 1D/1H openers, count the different styles."""
 
     def accept(self, deal: Deal) -> bool:
+        """True if it's a 1D/1H opener."""
         return (
             one_d_bal(deal.south)
             or one_d_hearts(deal.south)
@@ -52,6 +55,7 @@ class TransferOpeners(Simulation):
         )
 
     def do(self, deal: Deal) -> None:
+        """Count 'em up."""
         hand = deal.south
         if DEBUG["hand"]:
             print(f"{'* ' if one_d_bal(hand) or one_h_bal(hand) else ''} {hand}")
@@ -67,6 +71,7 @@ class TransferOpeners(Simulation):
         TABLE["1HB"] += one_h_bal(hand)
 
     def final(self, n_tries: int) -> None:
+        """Print stats."""
         print(TABLE)
         print(
             f"IsRare: 1D: {round((100 * TABLE['1DB'])/(TABLE['1DH'] + TABLE['1DB']), 2)}%"

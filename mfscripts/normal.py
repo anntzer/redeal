@@ -24,14 +24,15 @@ dealvul = (
 
 
 def accept(deal: Deal) -> bool:
-    """Boring hands"""
+    """Boring hands.  No 30+ in one partnership, no 7+ card suits."""
 
     if hcp(deal.north) + hcp(deal.south) not in range(10, 30, 1):
         return False
 
-    x = [hand.shape for hand in deal]
-    # print(x)
-    max_length = max(max(shape_) for shape_ in x)
+    max_length = 0
+    for hand in deal:
+        hand_length = max(hand.shape)
+        max_length = max(max_length, hand_length)
     if max_length > 6:
         return False
 
@@ -41,12 +42,10 @@ def accept(deal: Deal) -> bool:
 Deal.set_str_style("pbn")
 dealer = Deal.prepare()
 
-f = Path(Path.cwd() / "normal.pbn").open("w", newline="\r\n")
-for i in range(18):
-    dv = i % 16
-    print(f'\n[Board "{i+1}"]', file=f)
-    print(f'[Dealer "{dealvul[dv][0]}"]', file=f)
-    print(f'[Vulnerable "{dealvul[dv][1]}"]', file=f)
-    print(dealer(accept), file=f)
-
-f.close()
+with Path(Path.cwd() / "normal.pbn").open("w", newline="\r\n", encoding="utf-8") as f:
+    for i in range(18):
+        dv = i % 16
+        print(f'\n[Board "{i + 1}"]', file=f)
+        print(f'[Dealer "{dealvul[dv][0]}"]', file=f)
+        print(f'[Vulnerable "{dealvul[dv][1]}"]', file=f)
+        print(dealer(accept), file=f)

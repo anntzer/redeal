@@ -1,7 +1,8 @@
 """Does it hurt KS to pass borderline openers? from BBO"""
 
-from redeal import hcp, Hand, Deal
 from collections import Counter
+
+from redeal import hcp, Hand, Deal
 
 
 predeal = {"S": "8 A94 AT843 K942", "N": "A93 5 K752 AT853"}
@@ -11,14 +12,17 @@ open_hand = Counter()
 
 
 def preempt(hand: Hand) -> bool:
+    """True if hand is a major preempt (coarse: 6-10 and 6+card major)"""
     return max(len(hand.spades), len(hand.hearts)) >= 6 and 6 <= hcp(hand) <= 10
 
 
 def major_opener(hand: Hand) -> bool:
+    """True if hand is an 1M (or 2C) opener.  Again, coarse."""
     return max(len(hand.spades), len(hand.hearts)) >= 5 and hcp(hand) >= 11
 
 
 def do(deal: Deal) -> None:
+    """Count stats: tricks in contract, will west open/preempt?"""
     tricks_ns[max(deal.dd_tricks("5CN"), deal.dd_tricks("5DS"))] += 1
     tricks_ew[max(deal.dd_tricks("4SE"), deal.dd_tricks("4HW"))] += 1
     open_hand["pre"] += preempt(deal.west)
@@ -28,6 +32,7 @@ def do(deal: Deal) -> None:
 
 
 def final(n_tries: int) -> None:
+    """Display stats."""
     print(f"N-S in minor: {sorted(tricks_ns.items())}")
     print(f"E-W in major: {sorted(tricks_ew.items())}")
     print(f"West preempt in major: {open_hand['pre']}")

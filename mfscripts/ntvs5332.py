@@ -1,3 +1,5 @@
+"""Should 5M332s transfer over 1NT?"""
+
 from collections import defaultdict
 
 from redeal import hcp, Shape, Simulation, SmartStack
@@ -8,7 +10,7 @@ NT_MAX = 17
 RESP_MIN = 7
 RESP_MAX = 8
 INCLUDE_5M332 = True
-INCLUDE_6m322 = False
+INCLUDE_6m322 = False  # pylint: disable=invalid-name
 PRINT_EACH_HAND = False
 # You shouldn't have to change anything after this.
 
@@ -91,24 +93,15 @@ class MySim(Simulation):
         _increment_if("fit", fit)
 
         if PRINT_EACH_HAND:
-            print(
-                "NT: {nt}, suit: {suit}, HCP: {hcp}{fit}".format(
-                    nt=nt, suit=suit, hcp=points, fit=" FIT" if fit else ""
-                )
-            )
+            print(f"NT: {nt}, suit: {suit}, HCP: {points}{' FIT' if fit else ''}")
 
     def final(self, n_tries):
         """After all processing, print out the results"""
 
         print(
-            "{lo}-{hi} opposite {rm}-{rx},{M5}{m6}".format(
-                lo=NT_MIN,
-                hi=NT_MAX,
-                rm=RESP_MIN,
-                rx=RESP_MAX,
-                M5=" 5M332" if INCLUDE_5M332 else "",
-                m6=" 6m322" if INCLUDE_6m322 else "",
-            )
+            f"{NT_MIN}-{NT_MAX} opposite {RESP_MIN}-{RESP_MAX},"
+            f"{' 5M332' if INCLUDE_5M332 else ''}",
+            f"{' 6m322' if INCLUDE_6m322 else ''}",
         )
         for stat in self.stats.values():
             print(stat["display"].format(item=stat["count"], n_tries=n_tries))
