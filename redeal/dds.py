@@ -161,7 +161,7 @@ if os.name == "posix":
     dll_name = "libdds.so"
     DLL = ctypes.CDLL
 elif os.name == "nt":
-    dll_name = "dds-64.dll" if sys.maxsize > 2 ** 32 else "dds-32.dll"
+    dll_name = "dds.dll"
     DLL = ctypes.WinDLL
 
 if dll_name:

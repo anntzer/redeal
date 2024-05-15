@@ -1,8 +1,8 @@
 from array import array
 from bisect import bisect
 from collections import Counter
-from itertools import permutations, product
-from operator import itemgetter
+from itertools import combinations_with_replacement, permutations
+from operator import itemgetter, attrgetter
 import functools
 import random
 import statistics
@@ -24,7 +24,7 @@ from .smartstack import SmartStack
 
 __all__ = ["Shape", "balanced", "semibalanced",
            "Evaluator", "hcp", "qp", "controls",
-           "Rank", "A", "K", "Q", "J", "T",
+           "Rank", "A", "K", "Q", "J", "T", "Seat", "Strain", "Suit",
            "Card", "Holding", "Hand", "H", "Deal", "SmartStack",
            "Contract", "C", "matchpoints", "imps", "Payoff",
            "Simulation", "OpeningLeadSim"]
@@ -46,9 +46,15 @@ class Shape:
     ``accept`` function of a simulation, for example..
     """
 
-    JOKER = "x"
-    TABLE = {JOKER: -1, "t": 10, "j": 11, "q": 12, "k": 13, "(": "(", ")": ")"}
-    TABLE.update({str(n): n for n in range(10)})
+    _str_to_val = {
+        "x": -1, "t": 10, "j": 11, "q": 12, "k": 13, "(": "(", ")": ")",
+        **{str(n): n for n in range(10)}}
+    _all_shapes = [
+        (s, sh - s, shd - sh, len(Rank) - shd)
+        for s, sh, shd
+        in combinations_with_replacement(range(len(Rank) + 1), len(Suit) - 1)
+    ]
+    _shape_to_index = {shape: idx for idx, shape in enumerate(_all_shapes)}
     _cls_cache = {}
 
     def __new__(cls, init=None):
@@ -57,13 +63,13 @@ class Shape:
             return cls._cls_cache[init]
         except KeyError:
             self = object.__new__(cls)
-            self.table = array("b")
-            self.table.fromlist([0] * (len(Rank) + 1) ** len(Suit))
+            self._table = array("b")
+            self._table.fromlist([0] * len(cls._all_shapes))
             self.min_ls = [len(Rank) for _ in Suit]
             self.max_ls = [0 for _ in Suit]
             self._op_cache = {}
             if init:
-                self.insert([self.TABLE[char.lower()] for char in init])
+                self.insert([self._str_to_val[char.lower()] for char in init])
                 cls._cls_cache[init] = self
             return self
 
@@ -71,16 +77,16 @@ class Shape:
     def from_table(cls, table, min_max_hint=None):
         """Initialize from a table."""
         self = cls()
-        self.table = array("b")
-        self.table.fromlist(list(table))
+        self._table = array("b")
+        self._table.fromlist(list(table))
         if min_max_hint is not None:
             self.min_ls, self.max_ls = min_max_hint
         else:
             self.min_ls = [len(Rank) for _ in Suit]
             self.max_ls = [0 for _ in Suit]
-            for nonflat in product(*[range(len(Rank) + 1) for _ in Suit]):
-                if self.table[self._flatten(nonflat)]:
-                    for dim, coord in enumerate(nonflat):
+            for idx, shape in enumerate(cls._all_shapes):
+                if self._table[idx]:
+                    for dim, coord in enumerate(shape):
                         self.min_ls[dim] = min(self.min_ls[dim], coord)
                         self.max_ls[dim] = max(self.max_ls[dim], coord)
         return self
@@ -89,20 +95,13 @@ class Shape:
     def from_cond(cls, func):
         """Initialize from a shape-accepting function."""
         self = cls()
-        for nonflat in product(*[range(len(Rank) + 1) for _ in Suit]):
-            if sum(nonflat) == len(Rank) and func(*nonflat):
-                self.table[self._flatten(nonflat)] = True
-                for dim, coord in enumerate(nonflat):
+        for idx, shape in enumerate(cls._all_shapes):
+            if func(*shape):
+                self._table[idx] = True
+                for dim, coord in enumerate(shape):
                     self.min_ls[dim] = min(self.min_ls[dim], coord)
                     self.max_ls[dim] = max(self.max_ls[dim], coord)
         return self
-
-    @staticmethod
-    def _flatten(index):
-        """Transform a 4D index into a 1D index."""
-        s, h, d, c = index
-        mul = len(Rank) + 1
-        return ((((s * mul + h) * mul) + d) * mul) + c
 
     def _insert1(self, shape, safe=True):
         """Insert an element, possibly with "x" but no "()" terms."""
@@ -110,7 +109,7 @@ class Shape:
         pre_set = sum(l for l in shape if l >= 0)
         if not jokers:
             if pre_set == len(Rank):
-                self.table[self._flatten(shape)] = 1
+                self._table[self._shape_to_index[shape]] = 1
                 for suit in Suit:
                     self.min_ls[suit] = min(self.min_ls[suit], shape[suit])
                     self.max_ls[suit] = max(self.max_ls[suit], shape[suit])
@@ -143,7 +142,7 @@ class Shape:
 
     def __contains__(self, int_shape):
         """Check if the given shape is included."""
-        return self.table[self._flatten(int_shape)]
+        return self._table[self._shape_to_index[int_shape]]
 
     def __call__(self, hand):
         """Check if the shape of the given hand is included."""
@@ -155,7 +154,7 @@ class Shape:
             return self._op_cache["+", other]
         except KeyError:
             table = array("b")
-            table.fromlist([x or y for x, y in zip(self.table, other.table)])
+            table.fromlist([x or y for x, y in zip(self._table, other._table)])
             min_ls = [min(self.min_ls[suit], other.min_ls[suit])
                       for suit in Suit]
             max_ls = [max(self.max_ls[suit], other.max_ls[suit])
@@ -171,7 +170,7 @@ class Shape:
         except KeyError:
             table = array("b")
             table.fromlist(
-                [x and not y for x, y in zip(self.table, other.table)])
+                [x and not y for x, y in zip(self._table, other._table)])
             result = Shape.from_table(table, (self.min_ls, self.max_ls))
             self._op_cache["-", other] = result
             return result
@@ -353,6 +352,40 @@ class Deal(tuple):
         """
         return dds.solve_all(self, strain, leader)
 
+    def par(self, dealer, nsvul, ewvul):
+        """
+        Compute the double dummy par for the given dealer and vulnerabilities.
+
+        Returns a list of `ScoredContract` with the following attributes: the
+        `.contract`, the `.declarer`, the number of `.tricks`, and the NS
+        `.score`.
+        """
+        bid_order = [Seat((Seat[dealer].value + k) % 4) for k in range(4)]
+        vuls = {Seat.N: nsvul, Seat.S: nsvul, Seat.E: ewvul, Seat.W: ewvul}
+        pars = [ScoredContract(None, None, None)]
+        tricks_lookup = {
+            (strain, declarer): self.dd_tricks(f"1{strain}{declarer.name}")
+            for strain in Strain for declarer in Seat}
+        for level in range(1, 8):
+            for strain in Strain:
+                for declarer in bid_order[::-1]:
+                    tricks = tricks_lookup[strain, declarer]
+                    doubled = tricks < 6 + level
+                    contract = Contract(
+                        level, strain.name, doubled, vuls[declarer])
+                    score = contract.score(tricks)
+                    current_score = pars[0].score * (
+                        +1 if declarer.name in "NS" else -1)
+                    if score > current_score:
+                        pars = [ScoredContract(contract, declarer, tricks)]
+                    elif (score == current_score
+                          # Don't bid higher partscores than necessary.
+                          and not any(sc.declarer == declarer
+                                      and sc.contract.strain == contract.strain
+                                      for sc in pars)):
+                        pars.append(ScoredContract(contract, declarer, tricks))
+        return pars
+
 
 class Hand(tuple):
     """A hand, represented as a tuple of holdings."""
@@ -371,12 +404,12 @@ class Hand(tuple):
         """Initialize with a string, e.g. "AK432 K87 QJT54 -"."""
         suits = [holding if holding != "-" else "" for holding in init.split()]
         if len(suits) != len(Suit):
-            raise Exception("Invalid initializer for Hand.")
+            raise Exception(f"Invalid initializer for Hand ({init}).")
         try:
             cards = [Card(suit=suit, rank=Rank[rank])
                      for suit, holding in zip(Suit, suits) for rank in holding]
         except KeyError:
-            raise Exception("Invalid initializer for Hand.")
+            raise Exception(f"Invalid initializer for Hand ({init}).")
         return cls(cards)
 
     def to_str(self):
@@ -424,23 +457,44 @@ class Hand(tuple):
     clubs = util.reify(
         itemgetter(Suit.C), "The hand's clubs.", "clubs")
 
-    shape = util.reify(lambda self: tuple(len(holding) for holding in self),
-                       "The hand's shape.")
-    hcp = util.reify(lambda self: sum(holding.hcp for holding in self),
-                     "The hand's HCP count.")
-    qp = util.reify(lambda self: sum(holding.qp for holding in self),
-                    "The hand's QP count.")
-    losers = util.reify(lambda self: sum(holding.losers for holding in self),
-                        "The hand's loser count.")
-    pt = util.reify(lambda self: sum(holding.pt for holding in self),
-                    "The hand's playing tricks.")
+    shape = util.reify(
+        lambda self: tuple(map(len, self)),
+        "The hand's shape.")
+    hcp = util.reify(
+        lambda self, _hcp=attrgetter("hcp"): sum(map(_hcp, self)),
+        "The hand's HCP count.")
+    qp = util.reify(
+        lambda self, _qp=attrgetter("qp"): sum(map(_qp, self)),
+        "The hand's QP count.")
+    controls = util.reify(
+        lambda self, _controls=attrgetter("controls"): sum(map(_controls, self)),
+        "The hand's control count.")
+    losers = util.reify(
+        lambda self, _losers=attrgetter("losers"): sum(map(_losers, self)),
+        "The hand's loser count.")
+    newltc = util.reify(
+        lambda self, _newltc=attrgetter("newltc"): sum(map(_newltc, self)),
+        "The hand's loser count.")
+    pt = util.reify(
+        lambda self, _pt=attrgetter("pt"): sum(map(_pt, self)),
+        "The hand's playing tricks.")
+
+    # Compatibility with Deal.
+    l1 = util.reify(lambda self: sorted(map(len, self))[3],
+                    "The length of the hand's longest suit.")
+    l2 = util.reify(lambda self: sorted(map(len, self))[2],
+                    "The length of the hand's second longest suit.")
+    l3 = util.reify(lambda self: sorted(map(len, self))[1],
+                    "The length of the hand's third longest suit.")
+    l4 = util.reify(lambda self: sorted(map(len, self))[0],
+                    "The length of the hand's shortest suit.")
 
     @util.reify
     def freakness(self):
         """
         The hand's `Pavlicek freakness`__.
 
-        __ http://www.rpbridge.net/8j17.htm#8
+        __ http://www.rpbridge.net/8j17.htm#7
         """
         return (sum(max(l - 4, 3 - l) for l in map(len, self))
                 + {0: 2, 1: 1}.get(min(map(len, self)), 0))
@@ -461,31 +515,40 @@ class Holding(frozenset):
 
     hcp = util.reify(hcp, "The holding's HCP.")
     qp = util.reify(qp, "The holding's QP.")
+    controls = util.reify(controls, "The holding's control count.")
 
     @util.reify
     def losers(self):
         """The holding's loser count."""
-        if len(self) == 0:
-            return 0
         losers = 0
-        if not any(rank == A for rank in self):
-            losers += 1
-        if len(self) >= 2 and not any(rank == K for rank in self):
-            losers += 1
-        if len(self) >= 3:
-            if not any(rank == Q for rank in self):
-                losers += 1
-            elif (losers == 2 and
-                  not any(rank in [J, T] for rank in self)):
-                losers += 0.5
+        losers += (A not in self)
+        losers += (len(self) >= 2 and K not in self)
+        losers += (len(self) >= 3 and (
+            (Q not in self)
+            or (losers == 2 and J not in self and T not in self) / 2))
         return losers
+
+    @util.reify
+    def newltc(self):  # For compatibility with Deal.
+        """
+        The holding's new losing trick count (J. Koelman, The Bridge World,
+        2003).
+        """
+        return (
+            1.5 * (len(self) >= 1 and A not in self)
+            + 1.0 * (len(self) >= 2 and K not in self)
+            + 0.5 * (len(self) >= 3 and Q not in self)
+        )
 
     @util.reify
     def pt(self):
         """
         The holding's `Pavlicek playing tricks`__.
 
-        __ http://www.rpbridge.net/8j17.htm#3
+        The following corrections to the table have been made: K and Qx are 0
+        tricks (not 0.5); Kxx is 0.5 tricks (not 1).
+
+        __ http://www.rpbridge.net/8j17.htm#4
         """
         len_pt = max(len(self) - 3, 0)
         if {A, K, Q} <= self:
@@ -500,7 +563,7 @@ class Holding(frozenset):
             return 1.5 + len_pt
         if {A} <= self or {K, Q} <= self or {K, J} <= self:
             return 1 + len_pt
-        if {K, T} <= self or {Q, J} <= self and len(self) >= 3:
+        if {Q, J} <= self and len(self) >= 3:
             return 1 + len_pt
         if ({K} <= self and len(self) >= 2 or
                 ({Q} <= self or {J, T} in self) and len(self) >= 3):
@@ -517,6 +580,9 @@ class Contract:
         self.strain = strain
         self.doubled = doubled
         self.vul = vul
+
+    def __str__(self):
+        return f"{self.level}{self.strain}" + "X" * self.doubled
 
     @classmethod
     def from_str(cls, s, vul=False):
@@ -567,6 +633,26 @@ class Contract:
             if self.doubled == 2:
                 score *= 2
             return score
+
+
+class ScoredContract:
+    def __init__(self, contract, declarer, tricks):
+        self.contract = contract
+        self.declarer = declarer
+        self.tricks = tricks
+        self.score = (
+            0 if contract is None else
+            contract.score(tricks) * (+1 if declarer.name in "NS" else -1))
+
+    def __str__(self):
+        if not self.contract:
+            return "all pass (0)"
+        else:
+            s = f"{self.contract}{self.declarer.name}"
+            delta = self.tricks - self.contract.level - 6
+            s += f"{delta:+}" if delta else "="
+            s += f" ({self.score:+})" if self.score else " (0)"
+            return s
 
 
 H = Hand.from_str

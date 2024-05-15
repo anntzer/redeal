@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "redeal"
+description = "A reimplementation of Thomas Andrews' Deal in Python."
+readme = "README.rst"
+authors = [{name = "Antony Lee"}]
+urls = {Repository = "https://github.com/anntzer/redeal"}
+license = {file = "LICENSE.txt"}
+version = "0.2.0"
+requires-python = ">=3.6"
+dependencies = ["colorama>=0.2.4"]
+
+[project.scripts]
+redeal = "redeal.__main__:console_entry"
+
+[project.gui-scripts]
+redeal-gui = "redeal.__main__:gui_entry"
