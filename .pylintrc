@@ -1,0 +1,10 @@
+[Master]
+# Add redeal module to path to avoid "can't import" issues.
+init-hook='import sys; sys.path.append("/media/data/mycroft/PycharmProjects/redeal")'
+
+[BASIC]
+# Good variable names which should always be accepted, separated by a comma.
+# "do" is the name of a function in redeal and can't be changed.
+# "nt" is Notrump, immediately recognizable by any user of redeal (bridge player)
+good-names=do,
+           nt
