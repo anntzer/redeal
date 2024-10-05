@@ -4,6 +4,7 @@ Question: 1S is 5+ unless 15-19 4333.
     Also, 5S332s 12-14 are opened 1NT.
     What are the probabilities of various hands in 1S?
 """
+
 from collections import Counter
 
 from redeal import Deal, Hand, Shape, Simulation, balanced, hcp
@@ -83,7 +84,9 @@ class Yeti(Simulation):
         )
         print("2S+\t1NT+\tsame: Dealer 12-16 HCP")
         print(
-            f"{self.counts['twoSnv']}\t{self.counts['oneNTnv']}\t{self.counts['equalnv']}"
+            f"{self.counts['twoSnv']}\t"
+            f"{self.counts['oneNTnv']}\t"
+            f"{self.counts['equalnv']}"
         )
 
 

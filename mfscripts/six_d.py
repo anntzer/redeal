@@ -2,7 +2,6 @@
 
 from redeal import Deal
 
-
 predeal = {"W": "4 AJT864 A53 QJ9", "E": "AQ762 7 KQJ94 A4"}
 TABLE = {"6d": 0, "3nt": 0}
 

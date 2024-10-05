@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from redeal import hcp, Shape, Simulation, SmartStack
+from redeal import Shape, Simulation, SmartStack, hcp
 
 # play with these values if desired
 NT_MIN = 15

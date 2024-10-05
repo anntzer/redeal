@@ -5,9 +5,10 @@ and "1H: 11-14, 4+S unbalanced or 15-16/19-20 BAL, 3S2H"
 are Open Legal because they have a "not unlikely hand type" to
 make it allowed.  Let's find out.
 """
+
 from collections import defaultdict
 
-from redeal import Deal, Hand, Shape, balanced, Simulation
+from redeal import Deal, Hand, Shape, Simulation, balanced
 
 DEBUG = {
     "hand": False,
@@ -74,10 +75,12 @@ class TransferOpeners(Simulation):
         """Print stats."""
         print(TABLE)
         print(
-            f"IsRare: 1D: {round((100 * TABLE['1DB'])/(TABLE['1DH'] + TABLE['1DB']), 2)}%"
+            "IsRare: 1D: "
+            f"{round((100 * TABLE['1DB'])/(TABLE['1DH'] + TABLE['1DB']), 2)}%"
         )
         print(
-            f"IsRare: 1H: {round((100 * TABLE['1HB'])/(TABLE['1HS'] + TABLE['1HB']), 2)}%"
+            "IsRare: 1H: "
+            f"{round((100 * TABLE['1HB'])/(TABLE['1HS'] + TABLE['1HB']), 2)}%"
         )
         print(f"Total: {sum(TABLE.values())}")
         print(n_tries)

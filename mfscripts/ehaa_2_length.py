@@ -1,11 +1,10 @@
 """EHAA length of 2 bids checker."""
 
-from collections import Counter
 import pprint
+from collections import Counter
 
-from redeal import Evaluator, hcp, Shape, Simulation, Deal, Hand
+from redeal import Deal, Evaluator, Hand, Shape, Simulation, hcp
 from redeal.global_defs import Suit
-
 
 DEBUG = {
     "hand": False,
@@ -45,7 +44,7 @@ class EHAA2length(Simulation):
         """True if it's a 2 bid."""
         south = deal.south
         return (
-                south.shape in two_bid_shape
+            south.shape in two_bid_shape
             and hcp(south) in range(RANGE_MIN, RANGE_MAX + 1)
             and not ehaa_nt(south)
         )

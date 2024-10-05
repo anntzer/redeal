@@ -2,8 +2,7 @@
 
 from collections import Counter
 
-from redeal import hcp, Hand, Deal
-
+from redeal import Deal, Hand, hcp
 
 predeal = {"S": "8 A94 AT843 K942", "N": "A93 5 K752 AT853"}
 tricks_ns = Counter()
