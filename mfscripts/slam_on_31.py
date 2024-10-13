@@ -2,8 +2,7 @@
 
 from collections import Counter
 
-from redeal import Hand, Deal, semibalanced
-
+from redeal import Deal, Hand, semibalanced
 
 predeal = {"S": "KJ8 K5 A9753 K73"}
 table = Counter()

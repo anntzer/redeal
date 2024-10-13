@@ -1,4 +1,5 @@
 """No strange hands for lesson final tourney."""
+
 from pathlib import Path
 
 from redeal import Deal, hcp
@@ -33,10 +34,7 @@ def accept(deal: Deal) -> bool:
     for hand in deal:
         hand_length = max(hand.shape)
         max_length = max(max_length, hand_length)
-    if max_length > 6:
-        return False
-
-    return True
+    return max_length <= 6
 
 
 Deal.set_str_style("pbn")
