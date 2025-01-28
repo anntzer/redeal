@@ -1,5 +1,6 @@
 """utility functions for SMP bidding practise."""
 
+import itertools
 import random
 from typing import Callable, Optional, TextIO
 
@@ -52,13 +53,12 @@ def one_spade_opener(hand: Hand) -> bool:
 
 def one_nt_opener(hand: Hand) -> bool:
     """True if balanced 14-16.  We do not open 5cM 1NT."""
-    return hcp(hand) in range(14, 17) and balanced_no_5cM(hand)
+    return hcp(hand) in range(14, 17) and balanced(hand)
 
 
 def two_clubs_opener(hand: Hand) -> bool:
     """True if 2C opener.  6 clubs, not 6-6."""
-    clubs = len(hand.clubs)
-    return _non_1c_strength(hand) and clubs >= 6 and clubs > max(hand.shape[:2])
+    return _non_1c_strength(hand) and two_clubs_shape(hand)
 
 
 def two_diamonds_opener(hand: Hand) -> bool:
@@ -78,7 +78,7 @@ def one_diamond_response_sc(hand: Hand) -> bool:
 
 
 def one_heart_response_sc(hand: Hand) -> bool:
-    """True if 8-11 HCP (1H response to 1C). For ease of readng."""
+    """True if 8-11 HCP (1H response to 1C). For ease of reading."""
     return hcp(hand) in range(8, 12)
 
 
@@ -115,36 +115,92 @@ def five_card_major(hand: Hand, plus: bool = True) -> bool:
     return _n_card_major(hand, 5, plus)
 
 
+def ns_hcp(deal: Deal) -> int:
+    """Return NS HCP total"""
+    return hcp(deal.north) + hcp(deal.south)
+
+
 # functions to print hands
 def generate_and_print_hands(
     output: TextIO,
     accept_function: Callable,
     predeal: Optional[dir] = None,
-    num_hands: int = 100,
-    alternate_after: int = 10,
+    num_hands: int = 20,
+    alternate_after: int = 5,
 ) -> None:
-    """Generate and deal hands with constraints.
+    """Generate and deal hands with constraints.  Convenience function.
 
     reverse the PBN (set dealer N and rotate the hand 180 degrees)
     every alternate_after hands.  To not do this, set alternate_after >= num_hands.
+
     """
+    deals = generate_pbn_hands(accept_function, predeal, num_hands)
+    print_pbn_hands(output, deals, alternate_after)
+
+
+def generate_pbn_hands(
+    accept_function: Callable,
+    predeal: Optional[dir] = None,
+    num_hands: int = 20,
+) -> list[str]:
+    """Generate and deal hands with constraints, print as just the deal line in PBN.
+
+    This is useful for later manipulation as "dealer" is always South, and nothing else is needed.
+    """
+
     Deal.set_str_style("pbn")
     dealer = Deal.prepare(predeal)
+    output = []
+
+    for _ in range(num_hands):
+        deal = str(dealer(accept_function))
+        output.append(deal)
+
+    return output
+
+
+def print_pbn_hands(
+    output: TextIO,
+    deals: list[str],
+    alternate_after: int = 5,
+) -> None:
+    """Print the hands in full pbn format."""
+
     vulnerabilities = ["None", "NS", "EW", "Both"]
 
-    for i in range(1, num_hands):
-        deal = str(dealer(accept_function))
+    for i, deal in enumerate(deals):
         dlr = "S"
         if i // alternate_after % 2:
             deal = deal.replace("N", "S", 1)
             dlr = "N"
-
         output.writelines(
             [
-                f'\n[Board "{i}"]',
+                f'\n[Board "{i + 1}"]',
                 f'\n[Dealer "{dlr}"]',
                 f'\n[Vulnerable "{random.choice(vulnerabilities)}"]\n',
                 deal,
                 "\n",
             ]
         )
+
+
+def combine_and_print_hands(
+    output: TextIO,
+    deal_sets: list[list[str]],
+    randomize: bool = True,
+    alternate_after: int = 5,
+) -> None:
+    """Combine multiple sets of deals created with generate_pbn_hands and print them.
+
+    This interleaves the hands from each set.
+    If randomize is True, then randomize after interleave.
+    """
+
+    combined_deals = [
+        x
+        for x in itertools.chain.from_iterable(itertools.zip_longest(*deal_sets))
+        if x is not None
+    ]
+    if randomize:
+        random.shuffle(combined_deals)
+    print_pbn_hands(output, combined_deals, alternate_after)
