@@ -8,7 +8,7 @@ from smp_definitions import generate_and_print_hands, two_diamond_shape
 
 # TWEAK HERE
 # Set this true if the hands should be 2D-2NT, False if any response allowed
-RESP_2NT = True
+RESP_2NT = False
 DEBUG = True
 
 # convenience definitions
@@ -60,4 +60,6 @@ def accept(deal: Deal) -> bool:
 predeal = {"S": SmartStack(two_diamond_shape, hcp, range(11, 16))}
 F = f"2D{"-2NT" if RESP_2NT else ""}.pbn"
 with Path(Path.cwd() / F).open(encoding="utf=8", mode="w") as f:
-    generate_and_print_hands(f, accept, predeal=predeal)
+    generate_and_print_hands(
+        f, accept, predeal=predeal, alternate_after=5, num_hands=20
+    )
