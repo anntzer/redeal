@@ -287,6 +287,9 @@ placeholder:
 
    major_two_suited = Shape("(54)xx") - Shape("(54)(40)")
 
+To specify extreme shapes, "T", "J", "Q", and "K" can be used to specify 10,
+11, 12, and 13 card suits.
+
 Vector additive functions
 -------------------------
 
