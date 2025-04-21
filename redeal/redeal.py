@@ -520,13 +520,12 @@ class Holding(frozenset):
     @util.reify
     def losers(self):
         """The holding's loser count."""
-        losers = 0
-        losers += (A not in self)
-        losers += (len(self) >= 2 and K not in self)
-        losers += (len(self) >= 3 and (
-            (Q not in self)
-            or (losers == 2 and J not in self and T not in self) / 2))
-        return losers
+        return (
+            (len(self) >= 1 and A not in self)
+            + (len(self) >= 2 and K not in self)
+            + (len(self) >= 3 and (
+                (Q not in self)
+                or (losers == 2 and J not in self and T not in self) / 2)))
 
     @util.reify
     def newltc(self):  # For compatibility with Deal.
